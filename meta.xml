@@ -1,0 +1,6 @@
+﻿<meta>
+  <info name="Roleplay" description="RP alap" />
+  <script src="bin/Debug/netcoreapp3.1/Server.dll" />
+  <assembly ref="bin/Debug/netcoreapp3.1/MySqlConnector.dll" />
+</meta>
+

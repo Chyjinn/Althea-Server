@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using GTANetworkAPI;
 using GTANetworkMethods;
+using static Google.Protobuf.WellKnownTypes.Field.Types;
 
 namespace Server.Admin
 {
@@ -15,6 +17,13 @@ namespace Server.Admin
         private bool checkAdmin()
         {
             return true;
+        }
+
+        [Command("fly")]
+        public void ToggleFly(GTANetworkAPI.Player player)
+        {
+            NAPI.Notification.SendNotificationToPlayer(player, "FLY bekapcsolva.", false);
+            player.TriggerEvent("client:Fly",true);
         }
 
         [Command("createveh", Alias = "makeveh", GreedyArg = true)]
@@ -70,22 +79,33 @@ namespace Server.Admin
         }
 
 
-        [Command("setplayerface", Alias = "face", GreedyArg = true)]
-        public void SetPlayerApperance(GTANetworkAPI.Player player)
+        [Command("setplayerhead", Alias = "head", GreedyArg = true)]
+        public void SetPlayerHead(GTANetworkAPI.Player player, byte Shape1, byte Shape2, byte Shape3, byte Skin1, byte Skin2, byte Skin3, float ShapeMix, float SkinMix, float ThirdMix)
         {
             HeadBlend h = player.HeadBlend;
-            h.ShapeFirst = 45;
-            h.ShapeSecond = 21;
-            h.ShapeThird = 25;
-            h.SkinFirst = 12;
-            h.SkinSecond = 23;
-            h.SkinThird = 25;
-            h.ShapeMix = 0.5f;
-            h.SkinMix = 0.5f;
-            h.ThirdMix = 0.5f;
-            NAPI.Player.SetPlayerClothes(player, 11, 30, 0);
+            h.ShapeFirst = Shape1;
+            h.ShapeSecond = Shape2;
+            h.ShapeThird = Shape3;
+            h.SkinFirst = Skin1;
+            h.SkinSecond = Skin2;
+            h.SkinThird = Skin3;
+            h.ShapeMix = ShapeMix;
+            h.SkinMix = SkinMix;
+            h.ThirdMix = ThirdMix;
             NAPI.Player.SetPlayerHeadBlend(player, h);
         }
+        /*
+        [Command("setplayerface", Alias = "face", GreedyArg = true)]
+        public void SetPlayerFace(GTANetworkAPI.Player player, )
+        {
+            float[] faceFeatures = new float[20];
+            for (int i = 0; i < faceFeatures.Length; i++)
+            {
+                faceFeatures[i] = 0;
+                NAPI.Player.SetPlayerFaceFeature(player, i, 0);
+            }
+        }*/
+
 
         [Command("setclothes", Alias = "clothes", GreedyArg = true)]
         public void SetPlayerClothes(GTANetworkAPI.Player player,string slot, string drawable, string texture)
@@ -94,6 +114,55 @@ namespace Server.Admin
             player.SendChatMessage($"Ruha sikeresen beállítva! S:{slot}D:{drawable}T:{texture}");
             NAPI.Player.SetPlayerClothes(player, Convert.ToInt32(slot), Convert.ToInt32(drawable), Convert.ToInt32(texture));
             
+        }
+
+
+        [Command("testclothes")]
+        public void SetPlayerClothes(GTANetworkAPI.Player player)
+        {
+            HeadBlend h = player.HeadBlend;
+            h.ShapeFirst = 21;
+            h.ShapeSecond = 45;
+            h.ShapeThird = 31;
+            h.SkinFirst = 21;
+            h.SkinSecond = 45;
+            h.SkinThird = 31;
+            h.ShapeMix = 0.5f;
+            h.SkinMix = 0.5f;
+            h.ThirdMix = 0.5f;
+            NAPI.Player.SetPlayerHeadBlend(player, h);
+
+            float[] faceFeatures = new float[20];
+            for (int i = 0; i < faceFeatures.Length; i++)
+            {
+                faceFeatures[i] = 0;
+                NAPI.Player.SetPlayerFaceFeature(player, i, 0);
+            }
+            Dictionary<int, HeadOverlay> headOv = new Dictionary<int, HeadOverlay>();
+            Decoration[] dec = new Decoration[0];
+            NAPI.Player.SetPlayerCustomization(player, false, h, 0, 0, 0, faceFeatures, headOv, dec);
+            NAPI.Player.SetPlayerClothes(player, Convert.ToInt32(11), Convert.ToInt32(450), Convert.ToInt32(0));
+
+        }
+
+        [Command("settime", GreedyArg = true)]
+        public void SetTime(GTANetworkAPI.Player player, string hours, string minutes, string seconds)
+        {
+            NAPI.World.SetTime(Convert.ToInt16(hours), Convert.ToInt16(minutes), Convert.ToInt16(seconds));
+            NAPI.World.SetWeather(Weather.CLEAR);
+        }
+
+        [Command("loadipl", Alias = "ipl", GreedyArg = true)]
+        public void LoadIPL(GTANetworkAPI.Player player, string name)
+        {
+            NAPI.ClientEvent.TriggerClientEvent(player, "LoadIPL", name);
+        }
+
+
+        [Command("charedit", Alias = "editchar", GreedyArg =true)]
+        public void CharEdit(GTANetworkAPI.Player player)
+        {
+
         }
 
     }

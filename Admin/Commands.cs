@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using GTANetworkAPI;
-using GTANetworkMethods;
 using static Google.Protobuf.WellKnownTypes.Field.Types;
 
 namespace Server.Admin
@@ -19,11 +18,34 @@ namespace Server.Admin
             return true;
         }
 
-        [Command("fly")]
+        [Command("fly", Alias ="freecam")]
         public void ToggleFly(GTANetworkAPI.Player player)
         {
-            NAPI.Notification.SendNotificationToPlayer(player, "FLY bekapcsolva.", false);
-            player.TriggerEvent("client:Fly",true);
+            bool state = false;
+            if (NAPI.Data.HasEntitySharedData(player, "flying"))
+            {
+                state = (bool)NAPI.Data.GetEntitySharedData(player, "flying");
+            }
+
+            if (state)
+            {
+                NAPI.Notification.SendNotificationToPlayer(player, "FLY kikapcsolva.", false);
+                NAPI.Data.SetEntitySharedData(player, "flying", false);
+                player.TriggerEvent("client:Fly");
+            }
+            else
+            {
+                NAPI.Notification.SendNotificationToPlayer(player, "FLY bekapcsolva.", false);
+                NAPI.Data.SetEntitySharedData(player, "flying", true);
+                player.TriggerEvent("client:Fly");
+            }
+
+        }
+
+        [Command("flashlight")]
+        public void GiveWeapon(Player player)
+        {
+            NAPI.Player.GivePlayerWeapon(player, WeaponHash.Flashlight, 1);
         }
 
         [Command("createveh", Alias = "makeveh", GreedyArg = true)]

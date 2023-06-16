@@ -25,6 +25,7 @@ namespace Server.PlayerAttach
         {
             NAPI.Chat.SendChatMessageToAll("Lefut a szerver" + lastArgsToVectorZ);
             var clientPosition = NAPI.Entity.GetEntityPosition(client);
+            //azért teszem ide, hogy jó legyen
             clientPosition.Z = lastArgsToVectorZ;
             NAPI.Checkpoint.CreateCheckpoint(CheckpointType.CylinderCheckerboard, clientPosition, new Vector3(0, 1, 0), 1f, new Color(255, 0, 0), 0);
         }

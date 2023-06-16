@@ -24,7 +24,7 @@ namespace Server
         [ServerEvent(Event.ResourceStart)]
         public void Start()
         {
-            NAPI.Server.SetAutoSpawnOnConnect(false);
+            NAPI.Server.SetAutoSpawnOnConnect(true);
             NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
             NAPI.Server.SetGlobalServerChat(true);

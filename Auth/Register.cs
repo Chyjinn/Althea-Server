@@ -14,12 +14,10 @@ namespace Server.Auth
             string salt = Password.GenerateSalt(70);
             string pwdHashed = Password.HashPassword(password1, salt);
 
-            //NAPI.Notification.SendNotificationToPlayer(player, password1 + " HASH: " + pwdHashed + " SALT: " + salt, false);
-
             if (Password.verifypassword(password1, pwdHashed, salt))
             {
-                NAPI.Chat.SendChatMessageToPlayer(player, pwdHashed);
-                NAPI.Notification.SendNotificationToPlayer(player, "Működik", false);
+
+                NAPI.Notification.SendNotificationToPlayer(player, "Sikeres regisztráció!", false);
             }
             else
             {

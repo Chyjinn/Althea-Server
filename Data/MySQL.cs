@@ -56,6 +56,13 @@ namespace Server.Data
             }
         }
 
+        public static void RegisterPlayer(string username, string email, string password)
+        {
+
+        }
+
+
+
 
     }
 }

@@ -19,7 +19,7 @@ namespace Server.Admin
         }
 
         [Command("fly", Alias ="freecam")]
-        public void ToggleFly(GTANetworkAPI.Player player)
+        public void ToggleFly(Player player)
         {
             bool state = false;
             if (NAPI.Data.HasEntitySharedData(player, "flying"))
@@ -34,7 +34,6 @@ namespace Server.Admin
                 NAPI.Data.SetEntitySharedData(player, "invisible", false);
                 NAPI.Data.SetEntitySharedData(player, "frozen", false);
                 player.TriggerEvent("client:Fly");
-
             }
             else
             {

@@ -3,7 +3,7 @@ using GTANetworkAPI;
 
 namespace Server.Login
 {
-    internal class Login : Script
+    internal class Authentication : Script
     {
         [ServerEvent(Event.PlayerConnected)]
         public void OnPlayerConnected(Player player) {

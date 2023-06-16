@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Server.Auth
 {
-    public class Password
+    /*public class Password
     {
         private const int SaltSize = 16; //128 / 8, length in bytes
         private const int KeySize = 32; //256 / 8, length in bytes
@@ -28,5 +28,5 @@ namespace Server.Auth
             var hashInput = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, _hashAlgorithmName, KeySize);
             return CryptographicOperations.FixedTimeEquals(hash, hashInput);
         }
-    }
+    }*/
 }

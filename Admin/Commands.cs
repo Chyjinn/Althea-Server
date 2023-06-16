@@ -31,12 +31,17 @@ namespace Server.Admin
             {
                 NAPI.Notification.SendNotificationToPlayer(player, "FLY kikapcsolva.", false);
                 NAPI.Data.SetEntitySharedData(player, "flying", false);
+                NAPI.Data.SetEntitySharedData(player, "invisible", false);
+                NAPI.Data.SetEntitySharedData(player, "frozen", false);
                 player.TriggerEvent("client:Fly");
+
             }
             else
             {
                 NAPI.Notification.SendNotificationToPlayer(player, "FLY bekapcsolva.", false);
                 NAPI.Data.SetEntitySharedData(player, "flying", true);
+                NAPI.Data.SetEntitySharedData(player, "invisible", true);
+                NAPI.Data.SetEntitySharedData(player, "frozen", true);
                 player.TriggerEvent("client:Fly");
             }
 

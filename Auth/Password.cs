@@ -14,11 +14,12 @@ namespace Server.Auth
         private const char SaltDelimeter = ';';
         public string Hash(string password)
         {
-            byte[] salt = RandomNumberGenerator.GetBytes(16);
+            byte[] salt = RandomNumberGenerator.GetBytes(SaltSize);
 
             var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, _hashAlgorithmName, KeySize);
             return string.Join(SaltDelimeter, Convert.ToBase64String(salt), Convert.ToBase64String(hash));
         }
+
         public bool Validate(string passwordHash, string password)
         {
             var pwdElements = passwordHash.Split(SaltDelimeter);

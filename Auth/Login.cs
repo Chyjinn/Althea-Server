@@ -6,24 +6,12 @@ namespace Server.Login
     internal class Login : Script
     {
 
-        [ServerEvent(Event.PlayerConnected)]
-        public void OnPlayerConnected(Player player) {
-            //NAPI.ClientEvent.TriggerClientEvent(player, "ShowLoginForm", true);
-        }
-
-        [RemoteEvent("LoginInfoFromClient")]
-        public void LoginInfoFromClient(Player player, string username, string password)
+        [RemoteEvent("server:LoginAttempt")]
+        public void LoginAttempt(Player player, string username, string password)
         {
-            if (true)
-            {
-
-            }
-            else
-            {
-
-            }
-
+            NAPI.Notification.SendNotificationToPlayer(player, "Username: " + username + " - Password: " + password, false);
 
         }
+
     }
 }

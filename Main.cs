@@ -46,12 +46,6 @@ namespace Server
             //player.TriggerEvent("SetLoginCamera", -426.0f, 1117.0f, 350.0f, 0.0f, 0.0f, -163.0f, 70.0f);
         }
 
-        [RemoteEvent("server:LoginAttempt")]
-        public void LoginAttempt(Player player, string username, string password)
-        {
-            NAPI.Notification.SendNotificationToPlayer(player, "Megkapta a szerver oldal " + username + ":"+ password, false);
-        }
-
         [RemoteEvent("server:Fly")]
         public void Fly(Player player, int x, int y, int z)
         {

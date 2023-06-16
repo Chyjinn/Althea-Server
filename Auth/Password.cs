@@ -5,28 +5,37 @@ using System.Text;
 
 namespace Server.Auth
 {
-    /*public class Password
+    public class Password
     {
-        private const int SaltSize = 16; //128 / 8, length in bytes
-        private const int KeySize = 32; //256 / 8, length in bytes
-        private const int Iterations = 10000;
-        private static readonly HashAlgorithmName _hashAlgorithmName = HashAlgorithmName.SHA512;
-        private const char SaltDelimeter = ';';
-        public string Hash(string password)
-        {
-            byte[] salt = RandomNumberGenerator.GetBytes(SaltSize);
+    
+            public static string GenerateSalt(int nSalt)
+            {
+                var saltBytes = new byte[nSalt];
 
-            var hash = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, _hashAlgorithmName, KeySize);
-            return string.Join(SaltDelimeter, Convert.ToBase64String(salt), Convert.ToBase64String(hash));
-        }
+                using (var provider = new RNGCryptoServiceProvider())
+                {
+                    provider.GetNonZeroBytes(saltBytes);
+                }
 
-        public bool Validate(string passwordHash, string password)
+                return Convert.ToBase64String(saltBytes);
+            }
+
+            public static string HashPassword(string password, string salt)
+            {
+                int nIterations = 9856;
+                int nHash = 70;
+                var saltBytes = Convert.FromBase64String(salt);
+
+                using (var rfc2898DeriveBytes = new Rfc2898DeriveBytes(password, saltBytes, nIterations))
+                {
+                    return Convert.ToBase64String(rfc2898DeriveBytes.GetBytes(nHash));
+                }
+            }
+
+        public static bool verifypassword(string password, string hashed_password, string salt)
         {
-            var pwdElements = passwordHash.Split(SaltDelimeter);
-            var salt = Convert.FromBase64String(pwdElements[0]);
-            var hash = Convert.FromBase64String(pwdElements[1]);
-            var hashInput = Rfc2898DeriveBytes.Pbkdf2(password, salt, Iterations, _hashAlgorithmName, KeySize);
-            return CryptographicOperations.FixedTimeEquals(hash, hashInput);
+            string new_hashed = HashPassword(password, salt);
+            return new_hashed.Equals(hashed_password);
         }
-    }*/
+    }
 }

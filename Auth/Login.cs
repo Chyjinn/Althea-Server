@@ -10,9 +10,10 @@ namespace Server.Login
         [RemoteEvent("server:LoginAttempt")]
         public void LoginAttempt(Player player, string username, string password)
         {
-            Password p = new Password();
+            NAPI.Notification.SendNotificationToPlayer(player, password, false);
+            /*Password p = new Password();
             string hashedPw = p.Hash(password);
-            NAPI.Notification.SendNotificationToPlayer(player,hashedPw, false);
+            
             bool correct = p.Validate(hashedPw, password);
             if (correct)
             {
@@ -22,7 +23,7 @@ namespace Server.Login
             {
                 NAPI.Notification.SendNotificationToPlayer(player, "Incorrect", false);
             }
-            
+            */
         }
 
     }

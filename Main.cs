@@ -24,19 +24,18 @@ namespace Server
         [ServerEvent(Event.ResourceStart)]
         public void Start()
         {
-            NAPI.Server.SetAutoSpawnOnConnect(true);
-            NAPI.Server.SetAutoRespawnAfterDeath(true);
+            NAPI.Server.SetAutoSpawnOnConnect(false);
+            NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
             NAPI.Server.SetGlobalServerChat(true);
-            //Data.MySQL.InitConnection();
+            Data.MySQL.InitConnection();
         }
 
 
         [ServerEvent(Event.PlayerConnected)]
         public void PlayerConnected(Player player)
         {
-            PlayerAPI.Data p = new PlayerAPI.Data(player);
-            player.SetData(PlayerAPI.Data.DataIdentifier, p);
+            
         }
 
 

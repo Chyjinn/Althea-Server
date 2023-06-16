@@ -3,8 +3,9 @@ using GTANetworkAPI;
 
 namespace Server.Login
 {
-    internal class Authentication : Script
+    internal class Login : Script
     {
+
         [ServerEvent(Event.PlayerConnected)]
         public void OnPlayerConnected(Player player) {
             //NAPI.ClientEvent.TriggerClientEvent(player, "ShowLoginForm", true);

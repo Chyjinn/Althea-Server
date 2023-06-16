@@ -1,5 +1,6 @@
 ﻿using System;
 using GTANetworkAPI;
+using Server.Auth;
 
 namespace Server.Login
 {
@@ -9,8 +10,19 @@ namespace Server.Login
         [RemoteEvent("server:LoginAttempt")]
         public void LoginAttempt(Player player, string username, string password)
         {
-            NAPI.Notification.SendNotificationToPlayer(player, "Username: " + username + " - Password: " + password, false);
-
+            Password p = new Password();
+            string hashedPw = p.Hash(password);
+            NAPI.Notification.SendNotificationToPlayer(player,hashedPw, false);
+            bool correct = p.Validate(hashedPw, password);
+            if (correct)
+            {
+                NAPI.Notification.SendNotificationToPlayer(player, "Correct", false);
+            }
+            else
+            {
+                NAPI.Notification.SendNotificationToPlayer(player, "Incorrect", false);
+            }
+            
         }
 
     }

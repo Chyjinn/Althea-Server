@@ -24,19 +24,18 @@ namespace Server
         [ServerEvent(Event.ResourceStart)]
         public void Start()
         {
-            NAPI.Server.SetAutoSpawnOnConnect(true);
+            NAPI.Server.SetAutoSpawnOnConnect(false);
             NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
             NAPI.Server.SetGlobalServerChat(true);
-            //Data.MySQL.InitConnection();
+            Data.MySQL.InitConnection();
         }
 
 
         [ServerEvent(Event.PlayerConnected)]
         public void PlayerConnected(Player player)
         {
-            PlayerAPI.Data p = new PlayerAPI.Data(player);
-            player.SetData(PlayerAPI.Data.DataIdentifier, p);
+            
         }
 
 
@@ -45,12 +44,6 @@ namespace Server
         {
             //player.TriggerEvent("CreateAuthForms");
             //player.TriggerEvent("SetLoginCamera", -426.0f, 1117.0f, 350.0f, 0.0f, 0.0f, -163.0f, 70.0f);
-        }
-
-        [RemoteEvent("server:LoginAttempt")]
-        public void LoginAttempt(Player player, string username, string password)
-        {
-            NAPI.Notification.SendNotificationToPlayer(player, "Megkapta a szerver oldal " + username + ":"+ password, false);
         }
 
         [RemoteEvent("server:Fly")]

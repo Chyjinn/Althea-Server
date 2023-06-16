@@ -70,24 +70,19 @@ namespace Server.Admin
             GTANetworkAPI.Vehicle v = player.Vehicle;
             if (v != null)
             {
-                if (r1 != null && g1 != null && b1 != null && r2 != null && g2 != null && b2 != null)
-                {
-
                     if (checkAdmin())
                     {
-
                         NAPI.Vehicle.SetVehicleCustomPrimaryColor(v, r1, g1, b1);
                         NAPI.Vehicle.SetVehicleCustomSecondaryColor(v, r2, g2, b2);
                         player.SendChatMessage("Jármű átszínezve!");
                         return;
-
                     }
                     else
                     {
                         player.SendChatMessage("Add meg a színeket!");
                         return;
                     }
-                }
+                
             }
             player.SendChatMessage("Nem ülsz járműben!");
             return;

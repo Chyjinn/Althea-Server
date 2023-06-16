@@ -16,10 +16,11 @@ namespace Server.Data
         public MySQL ()
         {
             this.Host = "localhost";
-            this.Username = "dev";
-            this.Password = "12345";
+            this.Username = "root";
+            this.Password = "";
             this.Database = "althea";
         }
+
         public static void InitConnection()
         {
             MySQL sql = new MySQL();

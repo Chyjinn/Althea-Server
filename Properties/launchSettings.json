@@ -2,8 +2,8 @@
   "profiles": {
     "RAGE": {
       "commandName": "Executable",
-      "executablePath": "C:\\RageMP\\server-files\\ragemp-server.exe",
-      "workingDirectory": "C:\\RageMP\\server-files"
+      "executablePath": "E:\\RageMP\\server-files\\ragemp-server.exe",
+      "workingDirectory": "E:\\RageMP\\server-files"
     }
   }
 }

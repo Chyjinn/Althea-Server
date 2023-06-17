@@ -1,30 +1,46 @@
-﻿using System;
-using GTANetworkAPI;
-using Server.Auth;
+﻿using GTANetworkAPI;
+using MySql.Data.MySqlClient;
+using Server.Data;
+using System;
+using System.Threading.Tasks;
 
-namespace Server.Login
+namespace Server.Auth
 {
     internal class Login : Script
     {
-
         [RemoteEvent("server:LoginAttempt")]
-        public void LoginAttempt(Player player, string username, string password)
+        public async void LoginAttempt(Player player, string username, string password)
         {
-            NAPI.Notification.SendNotificationToPlayer(player, password, false);
-            /*Password p = new Password();
-            string hashedPw = p.Hash(password);
-            
-            bool correct = p.Validate(hashedPw, password);
-            if (correct)
+            bool timeout = false;
+            if (NAPI.Data.HasEntitySharedData(player, "server:LoginTimeout"))
             {
-                NAPI.Notification.SendNotificationToPlayer(player, "Correct", false);
+                timeout = (bool)NAPI.Data.GetEntitySharedData(player, "server:LoginTimeout");
+            }
+
+                
+            if (!timeout)
+            {
+                if (await Auth.AccountExists(username))
+                {
+                    if (await Auth.LoginPlayer(player,username,password))
+                    {
+                        player.SendChatMessage("Sikeres bejelentkezés!");
+                    }
+                    else
+                    {
+                        Auth.TimeoutPlayer(player);
+                    }
+                }
+                else
+                {
+                    Auth.TimeoutPlayer(player);
+                    player.SendChatMessage("Nem létezik ilyen felhasználónév");
+                }
             }
             else
             {
-                NAPI.Notification.SendNotificationToPlayer(player, "Incorrect", false);
+                player.SendChatMessage("Várj egy kicsit az újra próbálkozással");
             }
-            */
         }
-
     }
 }

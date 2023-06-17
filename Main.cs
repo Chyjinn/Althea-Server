@@ -8,16 +8,6 @@ namespace Server
 {
     public class Main : Script
     {
-        static DateTime DT = DateTime.Now;
-        static string ServerLogPath = $"{DT.Year}{DT.Month}{DT.Day}-{DT.Hour}{DT.Minute}{DT.Second}.log";
-        
-        public static void Log_Server(string message)
-        {
-            DateTime now = DateTime.Now;
-            NAPI.Util.ConsoleOutput($"[{now.Hour}:{now.Minute}:{now.Second}] {message}");
-            File.AppendAllText(ServerLogPath, $"[{now.Hour}:{now.Minute}:{now.Second}] {message}");
-            return;
-        }
         //PLAYER -811.6, 175.1, 76.7, 110
         //CAM -814 174.1 76.7, -70
 

@@ -12,7 +12,7 @@ namespace Server.Chat
         [ServerEvent(Event.ResourceStart)]
         public void onResourceStart()
         {
-            NAPI.Util.ConsoleOutput("Elindult a chat is!");
+            
         }
         //c2a2da
         [Command("me", "HASZNÁLAT: /me cselekvés", GreedyArg = true)]

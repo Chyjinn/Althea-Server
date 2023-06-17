@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Cryptography;
 using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 
@@ -30,36 +31,16 @@ namespace Server.Data
             try
             {
                 con.Open();
-                Main.Log_Server("");
                 isConnectionSetUp = true;
             }
             catch (Exception ex)
             {
-                Main.Log_Server(ex.ToString());
+                Log.Log_Server(ex.ToString());
                 throw;
             }
         }
 
-        public static void ExecuteNonQuery(string SqlStr)
-        {
-            try
-            {
-                using (MySqlCommand command = new MySqlCommand(SqlStr, con))
-                {
-                    command.Prepare();
-                    command.ExecuteNonQuery();
-                }
-            }
-            catch (Exception ex)
-            {
-                //
-            }
-        }
 
-        public static void RegisterPlayer(string username, string email, string password)
-        {
-
-        }
 
 
 

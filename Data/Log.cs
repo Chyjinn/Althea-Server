@@ -14,8 +14,8 @@ namespace Server.Data
         public void Log_Server_From_Player(Player p, string msg)
         {
             DateTime now = DateTime.Now;
-            NAPI.Util.ConsoleOutput($"[{now.Hour}:{now.Minute}:{now.Second}] {message}");
-            File.AppendAllText(ServerLogPath, $"[{now.Hour}:{now.Minute}:{now.Second}] {message}");
+            NAPI.Util.ConsoleOutput($"[{now.Hour}:{now.Minute}:{now.Second}] {msg}");
+            File.AppendAllText(ServerLogPath, $"[{now.Hour}:{now.Minute}:{now.Second}] {msg}");
             return;
         }
 

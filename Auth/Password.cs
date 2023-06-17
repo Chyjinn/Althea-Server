@@ -7,7 +7,6 @@ namespace Server.Auth
 {
     public class Password
     {
-    
             public static string GenerateSalt(int nSalt)
             {
                 var saltBytes = new byte[nSalt];

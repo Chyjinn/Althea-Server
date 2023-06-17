@@ -1,6 +1,4 @@
-﻿using Discord;
-using Discord.WebSocket;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,7 +7,7 @@ namespace Server
 {
     internal class Discord
     {
-
+        /*
         public static Task Main() => new Discord().MainAsync();
         
         
@@ -31,6 +29,6 @@ namespace Server
         {
             Server.Main.Log_Server(msg.ToString());
             return Task.CompletedTask;
-        }
+        }*/
     }
 }

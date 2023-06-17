@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using GTANetworkAPI;
-using static Google.Protobuf.WellKnownTypes.Field.Types;
 
 namespace Server.Admin
 {
@@ -11,12 +9,13 @@ namespace Server.Admin
         [ServerEvent(Event.ResourceStart)]
         public void onResourceStart()
         {
-            NAPI.Util.ConsoleOutput("Parancsok készen!");
+
         }
         private bool checkAdmin()
         {
             return true;
         }
+
 
         [Command("fly", Alias ="freecam")]
         public void ToggleFly(Player player)

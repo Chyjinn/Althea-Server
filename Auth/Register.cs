@@ -14,7 +14,7 @@ namespace Server.Auth
             string salt = Password.GenerateSalt(70);
             string pwdHashed = Password.HashPassword(password1, salt);
 
-            if (Password.verifypassword(password1, pwdHashed, salt))
+            if (Password.verifyPassword(password1, pwdHashed, salt))
             {
 
                 NAPI.Notification.SendNotificationToPlayer(player, "Sikeres regisztráció!", false);

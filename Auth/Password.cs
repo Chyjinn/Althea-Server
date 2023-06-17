@@ -32,7 +32,7 @@ namespace Server.Auth
                 }
             }
 
-        public static bool verifypassword(string password, string hashed_password, string salt)
+        public static bool verifyPassword(string password, string hashed_password, string salt)
         {
             string new_hashed = HashPassword(password, salt);
             return new_hashed.Equals(hashed_password);

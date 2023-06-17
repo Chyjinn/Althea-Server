@@ -25,17 +25,14 @@ namespace Server.PlayerAttach
         {
             var obj = NAPI.Object.CreateObject(2930714276, client.Position, client.Rotation, 255, 0);
             tempObjList.Add(obj);
-            foreach (var item in objDic)
-            {                
-                if (item.Key != client)
-                {                    
-                    objDic.Add(client, tempObjList);
-                }
-                else
-                {
-                    objDic[client] = tempObjList;
-                }
+            if (objDic.ContainsKey(client))
+            {
+                objDic[client] = tempObjList;
             }
+            else
+            {
+                objDic.Add(client, tempObjList);
+            }            
             client.TriggerEvent("client:getBoxDictionary", client, obj);
             //client.TriggerEvent("client:createBox", client);
         }
@@ -64,13 +61,16 @@ namespace Server.PlayerAttach
         [ServerEvent(Event.PlayerDisconnected)]
         
         public void onPlayerDisconnect(GTANetworkAPI.Player client, DisconnectionType type, string reason)
-        {
+        {            
             foreach (var item in objDic)
             {
-                if(item.Key == client)
-                {                    
+                //Data.Log.Log_Server("onPlayerDisconnet lefut a foreach");
+                if (item.Key == client)
+                {
+                    //Data.Log.Log_Server("onPlayerDisconnet lefut az IF-ben");
                     foreach (var tempObj in tempObjList)
                     {
+                        //Data.Log.Log_Server("onPlayerDisconnet lefut a második foreach");
                         NAPI.Entity.DeleteEntity(tempObj);
                     }
                 }

@@ -24,9 +24,9 @@ namespace Server.PlayerAttach
         public void createBox(GTANetworkAPI.Player client)
         {
             var obj = NAPI.Object.CreateObject(2930714276, client.Position, client.Rotation, 255, 0);
+            tempObjList.Add(obj);
             foreach (var item in objDic)
-            {
-                tempObjList.Add(obj);
+            {                
                 if (item.Key != client)
                 {                    
                     objDic.Add(client, tempObjList);

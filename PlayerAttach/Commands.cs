@@ -5,12 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using GTANetworkAPI;
 using GTANetworkMethods;
-using Org.BouncyCastle.Bcpg;
 
 namespace Server.PlayerAttach
 {
     internal class Commands: Script
     {
+        Dictionary<GTANetworkAPI.Player, GTANetworkAPI.Object> objDic = new Dictionary<GTANetworkAPI.Player, GTANetworkAPI.Object>();
         [Command("cp")]
         public void createCp(GTANetworkAPI.Player client)
         {
@@ -22,7 +22,11 @@ namespace Server.PlayerAttach
         [Command("box")]
         public void createBox(GTANetworkAPI.Player client)
         {
-            client.TriggerEvent("client:createBox", client);
+            var obj = NAPI.Object.CreateObject(2930714276, client.Position, client.Rotation, 255, 0);
+            objDic.Add(client, obj);            
+            
+
+            //client.TriggerEvent("client:createBox", client);
         }
 
         [RemoteEvent("server:getGroundHeight")]
@@ -40,6 +44,19 @@ namespace Server.PlayerAttach
             var playerPos = NAPI.Entity.GetEntityPosition(client);
             return playerPos;
         }
+        [ServerEvent(Event.PlayerDisconnected)]
+        
+        public void onPlayerDisconnect(GTANetworkAPI.Player client, DisconnectionType type, string reason)
+        {
+            foreach (var item in objDic)
+            {
+                if(item.Key == client)
+                {
+                    NAPI.Entity.DeleteEntity(item.Value);
+                }
+            }
+        }
+
 
     }
     

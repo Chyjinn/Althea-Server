@@ -28,7 +28,7 @@ namespace Server
             NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
             NAPI.Server.SetGlobalServerChat(true);
-            Data.MySQL.InitConnection();
+            //Data.MySQL.InitConnection();
         }
 
 

@@ -19,6 +19,11 @@ namespace Server.PlayerAttach
             NAPI.Chat.SendChatMessageToAll(clientPosition.ToString()); //Teszt miatt kell
                         
         }
+        [Command("box")]
+        public void createBox(GTANetworkAPI.Player client)
+        {
+            client.TriggerEvent("client:createBox", client);
+        }
 
         [RemoteEvent("server:getGroundHeight")]
         public void getGroundHeight(GTANetworkAPI.Player client, float lastArgsToVectorZ)

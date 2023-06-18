@@ -81,7 +81,7 @@ namespace Server.PlayerAttach
             }
         }
 
-        [RemoteEvent("server:stopAnim")]
+        /*[RemoteEvent("server:stopAnim")]
         public void stopAnim(GTANetworkAPI.Player client)
         {
             if (NAPI.Data.HasEntitySharedData(client, "anim"))
@@ -94,7 +94,7 @@ namespace Server.PlayerAttach
                     NAPI.Data.SetEntitySharedData(client, "anim", "");
                 }
             }
-        }
+        }*/
 
 
     }

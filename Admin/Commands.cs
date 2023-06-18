@@ -16,6 +16,19 @@ namespace Server.Admin
             return true;
         }
 
+        [Command("pedtest")]
+        public void PedTest(Player player, int szam)
+        {
+            player.TriggerEvent("client:PedTest", szam);
+        }
+
+        [Command("haz")]
+        public void Haz(Player player)
+        {
+            Vector3 v = new Vector3(-815.22f, 177.95f, 76.74f);
+            player.Position = v;
+        }
+
 
         [Command("fly", Alias ="freecam")]
         public void ToggleFly(Player player)

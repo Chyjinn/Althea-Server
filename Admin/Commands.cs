@@ -16,12 +16,6 @@ namespace Server.Admin
             return true;
         }
 
-        [Command("pedtest")]
-        public void PedTest(Player player, int szam)
-        {
-            player.TriggerEvent("client:PedTest", szam);
-        }
-
         [Command("haz")]
         public void Haz(Player player)
         {

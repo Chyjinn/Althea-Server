@@ -151,10 +151,11 @@ namespace Server.Characters
             {
                 string json = NAPI.Util.ToJson(characters);
                 player.SetData("characterData", json);
-                player.TriggerEvent("client:SetCamera", -814.07f, 174.25f, 76.5f, 0f, 0f, -75f, 48f);
-                player.TriggerEvent("client:showCharScreen");
-                HandleCharacterAppearance(player, 0);
+                
+                player.TriggerEvent("client:showCharScreen",NAPI.Util.ToJson(characters));
                 SetPlayerToWalkIn(player);
+                player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
+                HandleCharacterAppearance(player, 0);
             });
         }
 
@@ -265,10 +266,10 @@ namespace Server.Characters
 
 
 
-
-        [Command("char")]
+        [RemoteEvent("server:CharChange")]
     public static void HandleCharacterChange(Player player, int charid)
     {
+            player.SendChatMessage("Server megkapja "+charid);
         SetPlayerToWalkOut(player);
         NAPI.Task.Run(() =>
         {
@@ -287,18 +288,16 @@ namespace Server.Characters
         player.Rotation = rot;
         NAPI.Task.Run(() =>
         {
-            player.SendChatMessage("Karakter elindult");
             player.TriggerEvent("client:CharWalkIn");
-        }, 750);
+        }, 500);
     }
 
     public static void SetPlayerToWalkOut(Player player)
     {
         NAPI.Task.Run(() =>
         {
-            player.SendChatMessage("Karakter elindult");
             player.TriggerEvent("client:CharWalkOut");
-        }, 750);
+        }, 100);
     }
 }
 }

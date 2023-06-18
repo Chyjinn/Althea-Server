@@ -277,7 +277,7 @@ namespace Server.Characters
             //itt kell majd átváltani a karit
             HandleCharacterAppearance(player, charid);
             SetPlayerToWalkIn(player);
-        }, 3000);
+        }, 2000);
     }
 
     public static void SetPlayerToWalkIn(Player player)

@@ -10,12 +10,20 @@ namespace Server.Animator
     internal class Commands : Script
     {
         [Command("animator")]
-        public void playAnimator(GTANetworkAPI.Player player)
+        public void playAnimator(GTANetworkAPI.Player player, bool valami)
         {
-            NAPI.Chat.SendChatMessageToAll("Anyád", "Megy a parancs");
-            //player.TriggerEvent("client:playAnimator");
-            //player.SetSharedData("isInAnimator", "true");
-            player.TriggerEvent("client:bindRightArrow");
-        }        
+            if (valami)
+            {
+                NAPI.Chat.SendChatMessageToAll("Anyád", "Megy a parancs");
+                //player.TriggerEvent("client:playAnimator");
+                //player.SetSharedData("isInAnimator", "true");
+                player.TriggerEvent("client:bindRightArrow");
+            }
+            else
+            {
+                player.TriggerEvent("client:unbindRightArrow");
+            }
+            
+        }
     }
 }

@@ -14,6 +14,20 @@ namespace Server.BoxCarrier
         Dictionary<GTANetworkAPI.Player, List<GTANetworkAPI.Object>> objDic = new Dictionary<GTANetworkAPI.Player, List<GTANetworkAPI.Object>>();
         List<GTANetworkAPI.Object> objects = new List<GTANetworkAPI.Object> ();
 
+        [Command("drawbox")]
+        public void drawBox(GTANetworkAPI.Player player, bool startStop, string cpType)
+        {
+            NAPI.Chat.SendChatMessageToAll("megy a drawbox");
+            if (startStop)
+            {
+                player.TriggerEvent("client:drawBox", cpType);
+            }
+            else
+            {
+                player.TriggerEvent("client:delDrawBox", cpType);
+            }
+        }
+
         [Command("destroyobj")]
         public void destroyObjByHandle(GTANetworkAPI.Player player, string handle, string rotX, string rotY, string rotZ)
         {

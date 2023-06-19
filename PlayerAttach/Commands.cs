@@ -12,6 +12,8 @@ namespace Server.PlayerAttach
     {
         Dictionary<GTANetworkAPI.Player, List<GTANetworkAPI.Object>> objDic = new Dictionary<GTANetworkAPI.Player, List<GTANetworkAPI.Object>>();
         List<GTANetworkAPI.Object> tempObjList = new List<GTANetworkAPI.Object>();
+
+
         [Command("cp")]
         public void createCp(GTANetworkAPI.Player client)
         {

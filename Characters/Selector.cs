@@ -127,7 +127,7 @@ namespace Server.Characters
     }
 
 
-    internal class CharacterScreen : Script
+    internal class Selector : Script
     {
         //CHAR:
         //-811.8078, 175.06, 76.75, 0, 0, 104.9
@@ -155,7 +155,7 @@ namespace Server.Characters
                 player.TriggerEvent("client:showCharScreen",NAPI.Util.ToJson(characters));
                 SetPlayerToWalkIn(player);
                 player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
-                HandleCharacterAppearance(player, 0);
+                HandleCharacterAppearance(player, characters[0].Id);
             });
         }
 
@@ -193,7 +193,6 @@ namespace Server.Characters
             using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
             {
                 cmd.Parameters.AddWithValue("@appearanceID", c.AppearanceID);
-                cmd.Prepare();
                 try
                 {
                     using (var reader = await cmd.ExecuteReaderAsync())
@@ -226,43 +225,40 @@ namespace Server.Characters
             }
         }
 
-
-
-
         public static async void HandleCharacterAppearance(Player player, int charid)
         {
-            Character[] characters = await GetCharacterData(player);
+            Character character = await GetCharacterDataByID(player, charid);
             HeadBlend h = new HeadBlend();
-            h.ShapeFirst = characters[charid].Appearance.Parent1Face;
-            h.ShapeSecond = characters[charid].Appearance.Parent2Face;
-            h.ShapeThird = characters[charid].Appearance.Parent3Face;
-            h.SkinFirst = characters[charid].Appearance.Parent1Skin;
-            h.SkinSecond = characters[charid].Appearance.Parent2Skin;
-            h.SkinThird = characters[charid].Appearance.Parent3Skin;
-            h.ShapeMix = characters[charid].Appearance.FaceMix;
-            h.SkinMix = characters[charid].Appearance.SkinMix;
-            h.ThirdMix = characters[charid].Appearance.OverrideMix;
-            float[] FaceFeatures = characters[charid].Appearance.GetFaceFeatures();
+            h.ShapeFirst = character.Appearance.Parent1Face;
+            h.ShapeSecond = character.Appearance.Parent2Face;
+            h.ShapeThird = character.Appearance.Parent3Face;
+            h.SkinFirst = character.Appearance.Parent1Skin;
+            h.SkinSecond = character.Appearance.Parent2Skin;
+            h.SkinThird = character.Appearance.Parent3Skin;
+            h.ShapeMix = character.Appearance.FaceMix;
+            h.SkinMix = character   .Appearance.SkinMix;
+            h.ThirdMix = character.Appearance.OverrideMix;
+            float[] FaceFeatures = character.Appearance.GetFaceFeatures();
             NAPI.Task.Run(() =>
             {
                 Dictionary<int, HeadOverlay> overlays = new Dictionary<int, HeadOverlay>();
                 Decoration[] decor = new Decoration[0];
-                player.SetCustomization(characters[charid].Appearance.Gender, h, characters[charid].Appearance.EyeColor, characters[charid].Appearance.HairColor, characters[charid].Appearance.HairHighlight, FaceFeatures, overlays, decor);
+                player.SetCustomization(character.Appearance.Gender, h, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
             });
         }
 
-        public static async Task<Character[]> GetCharacters(Player player, int accID)
-        {
-            Character[] characters = await GetCharacterData(player);
-            return characters;
-        }
-
-        public static async Task<Character[]> GetCharacterData(Player player)
+        public static async Task<Character> GetCharacterDataByID(Player player, int charid)//karakter ID alapján egy karaktert ad vissza
         {
             Character[] characters = NAPI.Util.FromJson<Character[]>(player.GetData<string>("characterData"));
-            return characters;
+            for (int i = 0; i < characters.Length; i++)
+            {
+                if (characters[i].Id == charid)
+                {
+                    return characters[i];
+                }
+            }
+            return characters[0];
         }
-
 
 
 

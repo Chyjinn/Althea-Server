@@ -30,7 +30,7 @@ namespace Server.Data
 
             try
             {
-                con.Open();
+                con.OpenAsync();
                 isConnectionSetUp = true;
             }
             catch (Exception ex)

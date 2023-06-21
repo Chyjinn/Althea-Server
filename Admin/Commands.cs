@@ -28,7 +28,7 @@ namespace Server.Admin
         }
 
 
-        private bool checkAdmin(string command, int adminlevel)
+        private bool checkAdmin()
         {
             return true;
         }
@@ -46,8 +46,14 @@ namespace Server.Admin
         {
             
         }
-        
-        
+
+        [Command("yt")]
+        public void YoutubeTest(Player player)
+        {
+            player.TriggerEvent("client:YTtest");
+        }
+
+
         [Command("fly", Alias ="freecam",GreedyArg = false)]
         public void ToggleFly(Player player, string fullText)
         {

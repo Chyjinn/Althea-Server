@@ -12,13 +12,17 @@ namespace Server.Characters
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public DateTime DOB { get; set; }
+        public string POB { get; set; }
         public float posX { get; set; }
         public float posY { get; set; }
         public float posZ { get; set; }
         public int AppearanceID { get; set; }
         public Appearance Appearance { get; set; }
-        public Character(int Id, string Name, int AppearanceID, float posX, float posY, float posZ)
+        public Character(int Id, string Name, DateTime DOB, string POB, int AppearanceID, float posX, float posY, float posZ)
         {
+            this.DOB = DOB;
+            this.POB = POB;
             this.Id = Id;
             this.Name = Name;
             this.AppearanceID = AppearanceID;
@@ -133,7 +137,6 @@ namespace Server.Characters
         }
     }
 
-
     internal class Selector : Script
     {
         //CHAR:
@@ -143,6 +146,8 @@ namespace Server.Characters
         public static void ProcessCharScreen(Player player)//bejelentkezés után ezt hívjuk meg, a logika itt lesz megvalósítva (van-e már karaktere, ha igen akkor betölteni)
         {
             int accID = player.GetSharedData<int>("player:accID");
+            player.Dimension = Convert.ToUInt32(accID);
+            player.SendChatMessage("Dimenzió: " + accID);
             SetCharacterDataForPlayer(player, accID);
         }
 
@@ -161,10 +166,11 @@ namespace Server.Characters
                     string json = NAPI.Util.ToJson(characters);
                     player.SetData("characterData", json);
 
-                    player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
                     SetPlayerToWalkIn(player);
-                    player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
+                    player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
+                    
                     HandleCharacterAppearance(player, characters[0].Id);
+                    player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
                 });
             }
             else
@@ -176,7 +182,7 @@ namespace Server.Characters
 
         public static async Task<Character[]> LoadCharacterData(int accID)
         {
-            string query = $"SELECT id,characterName,appearanceId,posX,posY,posZ FROM `characters` WHERE `accountId` = @accountID";
+            string query = $"SELECT id,characterName,dob,pob,appearanceId,posX,posY,posZ FROM `characters` WHERE `accountId` = @accountID";
             List<Character> characters = new List<Character>();
             using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
             {
@@ -188,7 +194,7 @@ namespace Server.Characters
                     {
                         while (await reader.ReadAsync())
                         {
-                            Character c = new Character(Convert.ToInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]));
+                            Character c = new Character(Convert.ToInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"])) ;
                             characters.Add(c);
                         }
                     }
@@ -277,10 +283,9 @@ namespace Server.Characters
 
 
 
-        [RemoteEvent("server:CharChange")]
+    [RemoteEvent("server:CharChange")]
     public static void HandleCharacterChange(Player player, int charid)
     {
-            player.SendChatMessage("Server megkapja "+charid);
         SetPlayerToWalkOut(player);
         NAPI.Task.Run(() =>
         {

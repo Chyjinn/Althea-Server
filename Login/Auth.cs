@@ -21,7 +21,7 @@ namespace Server.Auth
                 return Convert.ToBase64String(saltBytes);
             }
 
-            public static string HashPassword(string password, string salt)
+            public static string HashPassword(string password, string salt)//jelszó, GeneratedSalt
             {
                 int nIterations = 9856;
                 int nHash = 70;
@@ -33,13 +33,13 @@ namespace Server.Auth
                 }
             }
 
-        public static bool verifyPassword(string password, string hashed_password, string salt)
+        public static bool verifyPassword(string password, string hashed_password, string salt)//jelszó, hash, salt - return true/false
         {
             string new_hashed = HashPassword(password, salt);
             return new_hashed.Equals(hashed_password);
         }
 
-        public static async Task<string> GenerateNewToken(uint AccountID)
+        public static async Task<string> GenerateNewToken(uint AccountID)//addig generál tokent amíg olyat kap ami még nem létezik
             {
             using (var cryptoProvider = new RNGCryptoServiceProvider())
             {
@@ -55,10 +55,8 @@ namespace Server.Auth
             }
 
             }
-
-
         
-        public static async Task<bool> SaveGeneratedToken(uint AccountID, string token, DateTime expiration)
+        public static async Task<bool> SaveGeneratedToken(uint AccountID, string token, DateTime expiration)//token mentése amit GenerateNewToken-el szereztünk
         {
                 string query = $"INSERT INTO `tokens` (accountId,token,expiration) VALUES (@accID,@Token,@Expiration)";
                 try
@@ -90,7 +88,7 @@ namespace Server.Auth
             return false;
         }
 
-        public static async Task<bool> DeleteUsedToken(string token)
+        public static async Task<bool> DeleteUsedToken(string token)//felhasznált token törlése
         {
             string query = $"DELETE FROM `tokens` WHERE `tokens`.`token` LIKE @Token";
             try
@@ -121,7 +119,7 @@ namespace Server.Auth
         }
 
 
-        public static async Task<bool> VerifyToken(uint AccountID, string token)
+        public static async Task<bool> VerifyToken(uint AccountID, string token)//account id alapján token ellenőrzés
         {
             string query = $"SELECT accountId,token,expiration FROM `tokens` WHERE `token` = @Token LIMIT 1";
 
@@ -138,7 +136,7 @@ namespace Server.Auth
                             uint acc = Convert.ToUInt32(reader["accountId"]);
                             string dbToken = reader["token"].ToString();
                             DateTime expiration = Convert.ToDateTime(reader["expiration"]);
-                            if (expiration > DateTime.Now && acc == AccountID && dbToken == token)
+                            if (expiration > DateTime.Now && acc == AccountID && dbToken == token)//lejárati dátumot ellenőrizzük, illetve hogy a megfelelő account ID és token van-e használva
                             {
                                 return true;
                             }
@@ -154,11 +152,65 @@ namespace Server.Auth
         }
 
 
+        public static async Task<string[]> GetLoginData(string username)//felhasználónév alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
+        {
+            string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `userName` = @Username LIMIT 1";
+            string[] res;
+            using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
+            {
+                cmd.Parameters.AddWithValue("@Username", username);
+                cmd.Prepare();
+                try
+                {
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            res = new string[7] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString() };
+                            return res;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Log_Server(ex.ToString());
+                }
+            }
+            res = new string[0];
+            return res;
+        }
 
-                
+        public static async Task<string[]> GetLoginData(uint accountID)//account id alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
+        {
+            string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `id` = @AccID LIMIT 1";
+            string[] res;
+            using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
+            {
+                cmd.Parameters.AddWithValue("@AccID", accountID);
+                cmd.Prepare();
+                try
+                {
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            res = new string[7] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString() };
+                            return res;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Log_Server(ex.ToString());
+                }
+            }
+            res = new string[0];
+            return res;
+        }
 
 
-            public static async Task<bool> TokenInUse(string token)
+
+        public static async Task<bool> TokenInUse(string token)//ha létezik a token akkor return true
         {
             string query = $"SELECT COUNT(id) FROM `tokens` WHERE `token` = @TokenString";
 
@@ -181,7 +233,7 @@ namespace Server.Auth
             return false;
         }
 
-        public static async Task<string> GetPasswordSalt(string username)
+        public static async Task<string> GetPasswordSalt(string username)//return salt
         {
             string query = $"SELECT passwordSalt AS pwSalt FROM `accounts` WHERE `userName` = @Username LIMIT 1";
 
@@ -207,7 +259,7 @@ namespace Server.Auth
             return "";
         }
 
-        public static async Task<string> GetPasswordHash(string username)
+        public static async Task<string> GetPasswordHash(string username)//return hash
         {
             string query = $"SELECT passwordHash AS pwHash FROM `accounts` WHERE `userName` = @Username LIMIT 1";
 
@@ -233,7 +285,7 @@ namespace Server.Auth
             return "";
         }
 
-        public static async Task<bool> AccountExists(string username)
+        public static async Task<bool> AccountExists(string username)//felhasználónév alapján
         {
             string query = $"SELECT userName FROM `accounts` WHERE `userName` = @Username LIMIT 1";
 
@@ -261,7 +313,7 @@ namespace Server.Auth
             return false;
         }
 
-        public static async Task<bool> AccountExists(uint accountID)
+        public static async Task<bool> AccountExists(uint accountID)//account id alapján
         {
             string query = $"SELECT id FROM `accounts` WHERE `id` = @AccID LIMIT 1";
 
@@ -289,7 +341,7 @@ namespace Server.Auth
             return false;
         }
 
-        public static async Task<bool> EmailInUse(string email)
+        public static async Task<bool> EmailInUse(string email)//használatban van-e az email
         {
             string query = $"SELECT email AS Email FROM `accounts` WHERE `email` = @Email LIMIT 1";
 
@@ -317,7 +369,7 @@ namespace Server.Auth
             return false;
         }
 
-        public static async Task<bool> SocialClubInUse(ulong socialclubid)
+        public static async Task<bool> SocialClubInUse(ulong socialclubid)//social club ellenőrzés
         {
             string query = $"SELECT scId AS SocialClubId FROM `accounts` WHERE `scId` = @ScId LIMIT 1";
 
@@ -345,7 +397,7 @@ namespace Server.Auth
             return false;
         }
 
-        public static async Task<bool> SerialInUse(string serial)
+        public static async Task<bool> SerialInUse(string serial)//serial ellenőrzés
         {
             string query = $"SELECT serial AS Serial FROM `accounts` WHERE `serial` = @SerialNumber LIMIT 1";
 
@@ -373,7 +425,7 @@ namespace Server.Auth
             return false;
         }
 
-        public static async Task<bool> RegisterPlayer(Player player, string username, string email, string passwordHash, string salt, string serial, ulong scID, string scName)
+        public static async Task<bool> RegisterPlayer(Player player, string username, string email, string passwordHash, string salt, string serial, ulong scID, string scName)//minden adatot vár ami egy accounthoz tartozik
         {
             string query = $"INSERT INTO `accounts` (userName,email,passwordHash,passwordSalt,serial,scId,sc) VALUES (@Username,@Email,@pwHash,@Salt,@Serial,@SCID,@SCNAME)";
             try
@@ -409,63 +461,10 @@ namespace Server.Auth
             return false;
         }
 
-        public static async Task<string[]> GetLoginData(string username)
-        {
-            string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `userName` = @Username LIMIT 1";
-            string[] res;
-            using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
-            {
-                cmd.Parameters.AddWithValue("@Username", username);
-                cmd.Prepare();
-                try
-                {
-                    using (var reader = await cmd.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            res = new string[7] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(),reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString() };
-                            return res;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Log_Server(ex.ToString());
-                }
-            }
-            res = new string[0];
-            return res;
-        }
 
-        public static async Task<string[]> GetLoginData(uint accountID)
-        {
-            string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `id` = @AccID LIMIT 1";
-            string[] res;
-            using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
-            {
-                cmd.Parameters.AddWithValue("@AccID", accountID);
-                cmd.Prepare();
-                try
-                {
-                    using (var reader = await cmd.ExecuteReaderAsync())
-                    {
-                        if (await reader.ReadAsync())
-                        {
-                            res = new string[7] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString() };
-                            return res;
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Log_Server(ex.ToString());
-                }
-            }
-            res = new string[0];
-            return res;
-        }
+        //MISC
 
-        public static void TimeoutPlayer(Player player)
+        public static void TimeoutPlayer(Player player)//timeout a bejelentkezés / regisztráció kérésekre - ne lehessen spamelni
         {
             NAPI.Task.Run(() =>
             {

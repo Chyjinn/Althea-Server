@@ -96,7 +96,7 @@ namespace Server.Characters
             NeckWidth = neckwidth;
         }
 
-        public float[] GetFaceFeatures()
+        public float[] GetFaceFeatures()//RAGE API SetCustomization-hoz szükséges float tömböt ad vissza
         {
             float[] features = new float[20]
             {
@@ -133,7 +133,7 @@ namespace Server.Characters
         //-811.8078, 175.06, 76.75, 0, 0, 104.9
         //CAM:
         //-814,07, 174.25, 76.74, 0, 0, -73
-        public static void ProcessCharScreen(Player player)
+        public static void ProcessCharScreen(Player player)//bejelentkezés után ezt hívjuk meg, a logika itt lesz megvalósítva (van-e már karaktere, ha igen akkor betölteni)
         {
             int accID = player.GetSharedData<int>("player:accID");
             SetCharacterDataForPlayer(player, accID);

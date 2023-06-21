@@ -12,12 +12,19 @@ namespace Server.Characters
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public float posX { get; set; }
+        public float posY { get; set; }
+        public float posZ { get; set; }
         public int AppearanceID { get; set; }
         public Appearance Appearance { get; set; }
-        public Character(int charID, string charName, int charApperanceID) {
-            Id = charID;
-            Name = charName;
-            AppearanceID = charApperanceID;
+        public Character(int Id, string Name, int AppearanceID, float posX, float posY, float posZ)
+        {
+            this.Id = Id;
+            this.Name = Name;
+            this.AppearanceID = AppearanceID;
+            this.posX = posX;
+            this.posY = posY;
+            this.posZ = posZ;
         }
     }
 
@@ -60,7 +67,7 @@ namespace Server.Characters
 
         public void Set(int id, bool gender, byte eyecolor, byte haircolor, byte hairhighlight, byte p1f, byte p2f, byte p3f, byte p1s, byte p2s, byte p3s, byte facemix, byte skinmix, byte overridemix, sbyte nosewidth, sbyte noseheight, sbyte noselength, sbyte nosebridge, sbyte nosetip, sbyte nosebroken, sbyte browheight, sbyte browwidth, sbyte cheekboneheight, sbyte cheekbonewidth, sbyte cheekwidth, sbyte eyes, sbyte lips, sbyte jawwidth, sbyte jawheight, sbyte chinlength, sbyte chinposition, sbyte chinwidth, sbyte chinshape, sbyte neckwidth)
         {
-            Id = id;
+            Id = id;//adatbázis id
             Gender = gender; // false-> female, true-> male
             EyeColor = eyecolor;
             HairColor = haircolor;
@@ -142,26 +149,34 @@ namespace Server.Characters
         public static async void SetCharacterDataForPlayer(Player player, int accID)
         {
             Character[] characters = await LoadCharacterData(accID);
-            foreach (Character character in characters)
+            if (characters.Length > 0)//van legalább 1 karaktere
             {
-                Appearance a = await LoadCharacterAppearance(character);
-                character.Appearance = a;
+                foreach (Character character in characters)
+                {
+                    Appearance a = await LoadCharacterAppearance(character);
+                    character.Appearance = a;
+                }
+                NAPI.Task.Run(() =>
+                {
+                    string json = NAPI.Util.ToJson(characters);
+                    player.SetData("characterData", json);
+
+                    player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
+                    SetPlayerToWalkIn(player);
+                    player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
+                    HandleCharacterAppearance(player, characters[0].Id);
+                });
             }
-            NAPI.Task.Run(() =>
+            else
             {
-                string json = NAPI.Util.ToJson(characters);
-                player.SetData("characterData", json);
-                
-                player.TriggerEvent("client:showCharScreen",NAPI.Util.ToJson(characters));
-                SetPlayerToWalkIn(player);
-                player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
-                HandleCharacterAppearance(player, characters[0].Id);
-            });
+                //TODO: nincs karaktere, bedobni karakter készítőbe
+            }
+
         }
 
         public static async Task<Character[]> LoadCharacterData(int accID)
         {
-            string query = $"SELECT id,characterName,appearanceId FROM `characters` WHERE `accountId` = @accountID";
+            string query = $"SELECT id,characterName,appearanceId,posX,posY,posZ FROM `characters` WHERE `accountId` = @accountID";
             List<Character> characters = new List<Character>();
             using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
             {
@@ -173,7 +188,7 @@ namespace Server.Characters
                     {
                         while (await reader.ReadAsync())
                         {
-                            Character c = new Character(Convert.ToInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToInt32(reader["appearanceId"]));
+                            Character c = new Character(Convert.ToInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]));
                             characters.Add(c);
                         }
                     }

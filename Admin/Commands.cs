@@ -1,31 +1,55 @@
 ﻿using System;
 using System.Collections.Generic;
+using Google.Protobuf.WellKnownTypes;
 using GTANetworkAPI;
 
 namespace Server.Admin
 {
+    class AdminCommand
+    {
+        public string Command { get; set; }//pl: "goto"
+        public int Level { get; set; }//pl: 1
+        public string Description { get; set; }//pl: "oda tud teleportálni egy játékoshoz"
+
+        public AdminCommand(string cmd, int adminlevel, string description)
+        {
+            Command = cmd;
+            Level = adminlevel;
+            Description = description;
+        }
+    }
+
     class Commands : Script
     {
-        [ServerEvent(Event.ResourceStart)]
+        List<AdminCommand> acmds = new List<AdminCommand>();
         public void onResourceStart()
         {
-
+            acmds.Add(new AdminCommand("fly", 1, "repülés"));
         }
-        private bool checkAdmin()
+
+
+        private bool checkAdmin(string command, int adminlevel)
         {
             return true;
         }
-
+        
         [Command("haz")]
         public void Haz(Player player)
         {
             Vector3 v = new Vector3(-815.22f, 177.95f, 76.74f);
             player.Position = v;
+            
         }
 
-
-        [Command("fly", Alias ="freecam")]
-        public void ToggleFly(Player player)
+        [Command("freeze")]
+        public void FreezePlayer(Player player, int target)
+        {
+            
+        }
+        
+        
+        [Command("fly", Alias ="freecam",GreedyArg = false)]
+        public void ToggleFly(Player player, string fullText)
         {
             bool state = false;
             if (NAPI.Data.HasEntitySharedData(player, "flying"))

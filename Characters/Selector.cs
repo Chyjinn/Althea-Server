@@ -148,10 +148,10 @@ namespace Server.Characters
             int accID = player.GetSharedData<int>("player:accID");
             player.Dimension = Convert.ToUInt32(accID);
             player.SendChatMessage("Dimenzió: " + accID);
-            SetCharacterDataForPlayer(player, accID);
+            SetCharacterDataForPlayer(player, accID);//adatbázis műveletek miatt átmegyünk async-ba
         }
 
-        public static async void SetCharacterDataForPlayer(Player player, int accID)
+        public static async void SetCharacterDataForPlayer(Player player, int accID)//betöltjük a karakter adatait, kinézetét, ezt egy Character osztályba mentjük 
         {
             Character[] characters = await LoadCharacterData(accID);
             if (characters.Length > 0)//van legalább 1 karaktere
@@ -163,6 +163,7 @@ namespace Server.Characters
                 }
                 NAPI.Task.Run(() =>
                 {
+                    //ameddig beállítjuk a karakter adatait, kamerát, stb. addig megnyithatnánk egy betöltő videót hogy látványos legyen
                     string json = NAPI.Util.ToJson(characters);
                     player.SetData("characterData", json);
 

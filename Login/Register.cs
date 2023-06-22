@@ -15,7 +15,7 @@ namespace Server.Auth
             string playerSerial = player.Serial;
             ulong playerScId = player.SocialClubId;
             string playerScName = player.SocialClubName;
-            RegisterPlayer(player, username, email, password, playerSerial, playerScId, playerScName);//eddig sync a player használatához - RAGE API hívások csak main thread-en mennek
+            RegisterPlayer(player, username, email, password, playerSerial, playerScId, playerScName);//player adatait megszerezni - RAGE API hívások csak main thread-en mennek
         }
 
         public async void RegisterPlayer(Player player, string username, string email, string password, string playerSerial, ulong playerScId, string playerScName)//itt kezeljük a regisztrációt

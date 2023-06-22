@@ -54,7 +54,7 @@ namespace Server.Auth
                 string pwdHashed = Auth.HashPassword(password, salt);
                 if(await Auth.RegisterPlayer(player, username, email, pwdHashed, salt, playerSerial, playerScId, playerScName))//megpróbálunk regisztrálni
                 {
-                    //ha sikerült akkor akár be is jelentkeztethetjük a playert, hiszent új account
+                    //ha sikerült akkor akár be is jelentkeztethetjük a playert, hiszent új account - vagy átrakjuk a bejelentkezéshez
                     NAPI.Task.Run(() =>
                     {
                         player.TriggerEvent("client:IncorrectToken");

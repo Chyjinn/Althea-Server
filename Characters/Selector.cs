@@ -185,7 +185,7 @@ namespace Server.Characters
         {
             string query = $"SELECT id,characterName,dob,pob,appearanceId,posX,posY,posZ FROM `characters` WHERE `accountId` = @accountID";
             List<Character> characters = new List<Character>();
-            using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Data.Connection.con))
             {
                 cmd.Parameters.AddWithValue("@accountID", accID);
                 cmd.Prepare();
@@ -212,7 +212,7 @@ namespace Server.Characters
         {
             string query = $"SELECT id,gender,eyeColor,hairColor,hairHighlight, parent1face,parent2face,parent3face, parent1skin,parent2skin,parent3skin, faceMix,skinMix,thirdMix, noseWidth,noseHeight,noseLength,noseBridge,noseTip,noseBroken,browHeight,browWidth,cheekboneHeight,cheekboneWidth,cheekWidth,eyes,lips,jawWidth,jawHeight,chinLength,chinPosition,chinWidth,chinShape,neckWidth FROM `appearances` WHERE `id` = @appearanceID LIMIT 1";
             Appearance app = new Appearance();
-            using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Data.Connection.con))
             {
                 cmd.Parameters.AddWithValue("@appearanceID", c.AppearanceID);
                 try

@@ -5,7 +5,7 @@ using MySql.Data.MySqlClient;
 
 namespace Server.Data
 {
-    class MySQL
+    class Connection
     {
         public static bool isConnectionSetUp = false;
         public static MySqlConnection con;
@@ -14,7 +14,7 @@ namespace Server.Data
         public String Password { get; set; }
         public String Database { get; set; }
 
-        public MySQL ()
+        public Connection ()
         {
             this.Host = "localhost";
             this.Username = "root";
@@ -24,7 +24,7 @@ namespace Server.Data
 
         public static void InitConnection()
         {
-            MySQL sql = new MySQL();
+            Connection sql = new Connection();
             string SqlCon = $"SERVER={sql.Host};PASSWORD={sql.Password};UID={sql.Username};DATABASE={sql.Database};";
             con = new MySqlConnection(SqlCon);
 

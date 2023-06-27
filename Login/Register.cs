@@ -15,7 +15,7 @@ namespace Server.Auth
             string playerSerial = player.Serial;
             ulong playerScId = player.SocialClubId;
             string playerScName = player.SocialClubName;
-            RegisterPlayer(player, username, email, password, playerSerial, playerScId, playerScName);//eddig sync a player használatához - RAGE API hívások csak main thread-en mennek
+            RegisterPlayer(player, username, email, password, playerSerial, playerScId, playerScName);//player adatait megszerezni - RAGE API hívások csak main thread-en mennek
         }
 
         public async void RegisterPlayer(Player player, string username, string email, string password, string playerSerial, ulong playerScId, string playerScName)//itt kezeljük a regisztrációt
@@ -54,7 +54,7 @@ namespace Server.Auth
                 string pwdHashed = Auth.HashPassword(password, salt);
                 if(await Auth.RegisterPlayer(player, username, email, pwdHashed, salt, playerSerial, playerScId, playerScName))//megpróbálunk regisztrálni
                 {
-                    //ha sikerült akkor akár be is jelentkeztethetjük a playert, hiszent új account
+                    //ha sikerült akkor akár be is jelentkeztethetjük a playert, hiszent új account - vagy átrakjuk a bejelentkezéshez
                     NAPI.Task.Run(() =>
                     {
                         player.TriggerEvent("client:IncorrectToken");

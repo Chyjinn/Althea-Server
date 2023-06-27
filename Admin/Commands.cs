@@ -219,6 +219,29 @@ namespace Server.Admin
 
         }
 
+        [Command("testoverlay")]//szemöldök, ráncok, stb.
+        public void TestOverlay(Player player)
+        {
+            HeadOverlay overlay = new HeadOverlay();
+            overlay.Index = 0;
+            overlay.Opacity = 0.8f;
+            overlay.Color = 10;
+            overlay.SecondaryColor = 10;
+            NAPI.Player.SetPlayerHeadOverlay(player,0, overlay);//meg kell nézni hogy az ID mit befolyásol, az overlayek sorrendjét? mert van az overlaynek is index tulajdonsága
+        }
+
+        [Command("testdecoration")]//tetkók, shirt decals
+        public void TestDecoration(Player player)
+        {
+            uint hash = NAPI.Util.GetHashKey("tetkó collection-ból");
+            uint hash2 = NAPI.Util.GetHashKey("valami tetkó");
+            Decoration d = new Decoration();
+            d.Collection = hash;
+            d.Overlay = hash2;
+            NAPI.Player.SetPlayerDecoration(player, d);
+        }
+
+
         [Command("settime", GreedyArg = true)]
         public void SetTime(GTANetworkAPI.Player player, string hours, string minutes, string seconds)
         {

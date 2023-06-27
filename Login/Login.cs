@@ -4,12 +4,18 @@ using MySqlX.XDevAPI;
 using Server.Characters;
 using Server.Data;
 using System;
+using System.Diagnostics.Tracing;
 using System.Threading.Tasks;
 
 namespace Server.Auth
 {
     internal class Login : Script
     {
+        [ServerEvent(Event.PlayerConnected)]
+        public void OnPlayerConnect(Player player)
+        {
+            player.SetSharedData("player:Frozen", true);
+        }
         [RemoteEvent("server:LoginAttempt")]//kliens hívja meg (login.html)
         public void LoginAttempt(Player player, string username, string password, bool remember)
         {
@@ -58,7 +64,7 @@ namespace Server.Auth
                                     NAPI.Task.Run(() =>
                                     {
                                         player.TriggerEvent("client:SaveToken", id, newtoken, expiration.ToString());
-                                        player.SetSharedData("player:accID", id);
+                                        player.SetData("player:accID", id);
                                         player.TriggerEvent("client:DestroyAuthForm");
                                         Selector.ProcessCharScreen(player);
                                     });
@@ -146,7 +152,7 @@ namespace Server.Auth
                             //Külön beléptetjük a játékost akár sikerült menteni az új tokent akár nem
                             NAPI.Task.Run(() =>
                             {
-                                player.SetSharedData("player:accID", id);
+                                player.SetData("player:accID", id);
                                 player.TriggerEvent("client:DestroyAuthForm");
                                 Selector.ProcessCharScreen(player);
 

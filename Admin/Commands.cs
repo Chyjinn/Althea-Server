@@ -46,37 +46,54 @@ namespace Server.Admin
         {
             
         }
-
-        [Command("yt")]
-        public void YoutubeTest(Player player)
+        
+        [Command("teszt", "/teszt [x] [y] [z]")]
+        public void Teszteles(Player player, float x, float y, float z)
         {
-            player.TriggerEvent("client:YTtest");
+            try
+            {
+                player.TriggerEvent("client:YTtest");
+            }
+            catch (FormatException ex)
+            {
+                player.SendChatMessage(x.ToString());
+                player.SendChatMessage(ex.ToString());
+            }
+                
+
         }
 
 
-        [Command("fly", Alias ="freecam",GreedyArg = false)]
-        public void ToggleFly(Player player, string fullText)
+        [Command("yt", "youtube", Hide =true)]
+        public void YoutubeTest(Player player)
+        {
+                player.TriggerEvent("client:YTtest");
+        }
+
+
+        [Command("fly", "repülés", Alias ="freecam",GreedyArg = false)]
+        public void ToggleFly(Player player)
         {
             bool state = false;
-            if (NAPI.Data.HasEntitySharedData(player, "flying"))
+            if (NAPI.Data.HasEntitySharedData(player, "player:Flying"))
             {
-                state = (bool)NAPI.Data.GetEntitySharedData(player, "flying");
+                state = (bool)NAPI.Data.GetEntitySharedData(player, "player:Flying");
             }
 
             if (state)
             {
                 NAPI.Notification.SendNotificationToPlayer(player, "FLY kikapcsolva.", false);
-                NAPI.Data.SetEntitySharedData(player, "flying", false);
-                NAPI.Data.SetEntitySharedData(player, "invisible", false);
-                NAPI.Data.SetEntitySharedData(player, "frozen", false);
+                NAPI.Data.SetEntitySharedData(player, "player:Flying", false);
+                NAPI.Data.SetEntitySharedData(player, "player:Invisible", false);
+                NAPI.Data.SetEntitySharedData(player, "player:Frozen", false);
                 player.TriggerEvent("client:Fly");
             }
             else
             {
                 NAPI.Notification.SendNotificationToPlayer(player, "FLY bekapcsolva.", false);
-                NAPI.Data.SetEntitySharedData(player, "flying", true);
-                NAPI.Data.SetEntitySharedData(player, "invisible", true);
-                NAPI.Data.SetEntitySharedData(player, "frozen", true);
+                NAPI.Data.SetEntitySharedData(player, "player:Flying", true);
+                NAPI.Data.SetEntitySharedData(player, "player:Invisible", true);
+                NAPI.Data.SetEntitySharedData(player, "player:Frozen", true);
                 player.TriggerEvent("client:Fly");
             }
 

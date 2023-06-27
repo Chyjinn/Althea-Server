@@ -17,9 +17,10 @@ namespace Server.Characters
         public float posX { get; set; }
         public float posY { get; set; }
         public float posZ { get; set; }
+        public float Rot { get; set; }
         public int AppearanceID { get; set; }
         public Appearance Appearance { get; set; }
-        public Character(int Id, string Name, DateTime DOB, string POB, int AppearanceID, float posX, float posY, float posZ)
+        public Character(int Id, string Name, DateTime DOB, string POB, int AppearanceID, float posX, float posY, float posZ, float rot)
         {
             this.DOB = DOB;
             this.POB = POB;
@@ -29,6 +30,7 @@ namespace Server.Characters
             this.posX = posX;
             this.posY = posY;
             this.posZ = posZ;
+            this.Rot = rot;  
         }
     }
 
@@ -145,13 +147,12 @@ namespace Server.Characters
         //-814,07, 174.25, 76.74, 0, 0, -73
         public static void ProcessCharScreen(Player player)//bejelentkezés után ezt hívjuk meg, a logika itt lesz megvalósítva (van-e már karaktere, ha igen akkor betölteni)
         {
-            int accID = player.GetSharedData<int>("player:accID");
+            uint accID = player.GetData<uint>("player:accID");
             player.Dimension = Convert.ToUInt32(accID);
-            player.SendChatMessage("Dimenzió: " + accID);
             SetCharacterDataForPlayer(player, accID);
         }
 
-        public static async void SetCharacterDataForPlayer(Player player, int accID)
+        public static async void SetCharacterDataForPlayer(Player player, uint accID)
         {
             Character[] characters = await LoadCharacterData(accID);
             if (characters.Length > 0)//van legalább 1 karaktere
@@ -180,9 +181,9 @@ namespace Server.Characters
 
         }
 
-        public static async Task<Character[]> LoadCharacterData(int accID)
+        public static async Task<Character[]> LoadCharacterData(uint accID)
         {
-            string query = $"SELECT id,characterName,dob,pob,appearanceId,posX,posY,posZ FROM `characters` WHERE `accountId` = @accountID";
+            string query = $"SELECT id,characterName,dob,pob,appearanceId,posX,posY,posZ,rot FROM `characters` WHERE `accountId` = @accountID";
             List<Character> characters = new List<Character>();
             using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
             {
@@ -194,7 +195,7 @@ namespace Server.Characters
                     {
                         while (await reader.ReadAsync())
                         {
-                            Character c = new Character(Convert.ToInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"])) ;
+                            Character c = new Character(Convert.ToInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]), Convert.ToSingle(reader["rot"])) ;
                             characters.Add(c);
                         }
                     }
@@ -281,8 +282,6 @@ namespace Server.Characters
             return characters[0];
         }
 
-
-
     [RemoteEvent("server:CharChange")]
     public static void HandleCharacterChange(Player player, int charid)
     {
@@ -296,7 +295,50 @@ namespace Server.Characters
         }, 2000);
     }
 
-    public static void SetPlayerToWalkIn(Player player)
+    [RemoteEvent("server:CharSelect")]
+    public async void SetPlayerCharacter(Player player, int charid)//kiválasztotta a karakterét és be szeretne lépni
+    {
+            
+            uint accID = player.GetData<uint>("player:accID");
+            Character c = await GetCharacterDataByID(player, charid);
+            if (await IsCharacterOwner(accID, charid))
+            {
+                NAPI.Task.Run(() =>
+                {
+                    player.TriggerEvent("client:ChatStopWalk");
+                    player.TriggerEvent("client:DeleteCamera");
+                    player.TriggerEvent("client:hideCharScreen");
+                    player.SetSharedData("player:Frozen", false);
+                    NAPI.Player.SpawnPlayer(player, new Vector3(c.posX, c.posY, c.posZ), c.Rot);
+                });
+            }
+
+    }
+
+        public static async Task<bool> IsCharacterOwner(uint accid, int charid)//ha létezik a token akkor return true
+        {
+            string query = $"SELECT COUNT(id) FROM `characters` WHERE `accountId` = @AccID";
+
+            using (MySqlCommand cmd = new MySqlCommand(query, Data.MySQL.con))
+            {
+                cmd.Parameters.AddWithValue("@AccID", accid);
+                try
+                {
+                    var count = await cmd.ExecuteScalarAsync();
+                    if (Convert.ToInt32(count) > 0)
+                    {
+                        return true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    //Log.Log_Server(ex.ToString());
+                }
+            }
+            return false;
+        }
+
+        public static void SetPlayerToWalkIn(Player player)
     {
         Vector3 pos = new Vector3(-813.35, 173.24f, 76.74f);
         Vector3 rot = new Vector3(0f, 0f, -37f);
@@ -315,6 +357,8 @@ namespace Server.Characters
             player.TriggerEvent("client:CharWalkOut");
         }, 100);
     }
+
+    
 }
 }
 

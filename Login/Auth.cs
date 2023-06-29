@@ -368,6 +368,31 @@ namespace Server.Auth
             return false;
         }
 
+        public static async Task<Tuple<int, string>> GetAdminData(uint accID)//admin szint és név
+        {
+            string query = $"SELECT adminLevel, adminNick FROM `accounts` WHERE `id` = @AccID LIMIT 1";
+
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            {
+                cmd.Parameters.AddWithValue("@AccID", accID);
+                try
+                {
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return Tuple.Create(Convert.ToInt32(reader["adminLevel"]), Convert.ToString(reader["adminNick"]));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+            }
+            return Tuple.Create(0,""); ;
+        }
+
         public static async Task<bool> SocialClubInUse(ulong socialclubid)//social club ellenőrzés
         {
             string query = $"SELECT scId AS SocialClubId FROM `accounts` WHERE `scId` = @ScId LIMIT 1";
@@ -459,6 +484,8 @@ namespace Server.Auth
             }
             return false;
         }
+
+
 
 
         //MISC

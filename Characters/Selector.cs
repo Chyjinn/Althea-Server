@@ -313,6 +313,9 @@ namespace Server.Characters
                     player.TriggerEvent("client:hideCharScreen");
                     player.SetSharedData("player:Frozen", false);
                     player.SetData("player:charID",charid);
+                    player.SetSharedData("player:CharacterName",c.Name);
+                    player.SetSharedData("player:VisibleName",c.Name);
+                    player.Dimension = 0;
                     NAPI.Player.SpawnPlayer(player, new Vector3(c.posX, c.posY, c.posZ), c.Rot);
                 });
             }

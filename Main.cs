@@ -22,33 +22,37 @@ namespace Server
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
             NAPI.Server.SetGlobalServerChat(true);
             Database.MySQL.InitConnection();
-            AutosavePlayers();
+            //AutosavePlayers();
+            NAPI.Task.Run(() =>
+            {
+                Admin.Levels.LoadAcmds();
+            },10000);
+            
         }
 
 
-        public async void AutosavePlayers()
+        public void AutosavePlayers()
         {
             List<Player> players = NAPI.Pools.GetAllPlayers();
             foreach (var item in players)
             {
-                Vector3 pos = item.Position;
-                Vector3 rot = item.Rotation;
                 if (item.HasData("player:charID"))
                 {
+                    Vector3 pos = item.Position;
+                    Vector3 rot = item.Rotation;
                     uint charid = item.GetData<uint>("player:charID");
-                    if (await SavePlayerPosition(charid, pos.X, pos.Y, pos.Z, rot.Z))
-                    {
-                        NAPI.Task.Run(() =>
-                        {
-                            Database.Log.Log_Server(item.Name + " mentve");
-                        });
-                    }
+                    SavePlayerPos(charid, pos.X, pos.Y, pos.Z, rot.Z);
                 }
             }
             NAPI.Task.Run(() =>
             {
                 AutosavePlayers();
             }, 30000);
+        }
+
+        public async void SavePlayerPos(uint charid, float posX, float posY, float posZ, float rot)
+        {
+            await SavePlayerPosition(charid, posX, posY, posZ, rot);
         }
 
         [ServerEvent(Event.PlayerDisconnected)]

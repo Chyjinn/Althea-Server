@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
 using GTANetworkAPI;
@@ -26,14 +27,114 @@ namespace Server.Admin
         public void onResourceStart()
         {
             acmds.Add(new AdminCommand("fly", 1, "repülés"));
+            
         }
-
 
         private bool checkAdmin()
         {
             return true;
         }
-        
+
+        [Command("editcurrentlyrequiredadminlevelforcommandandsaveintodatabase")]
+        public void EditAdminLevel(Player player)
+        {
+            player.SendChatMessage("[HASZNÁLAT]: /editcurrentlyrequiredadminlevelforcommandandsaveintodatabase [parancs] [admin szint]");
+        }
+
+        [Command("reloadacmds")]
+        public void ReloadAdminCommands(Player player)
+        {
+            int adminlevel = player.GetData<int>("player:AdminLevel");
+            if (Levels.IsPlayerAdmin("reloadacmds", adminlevel))
+            {
+                Admin.Levels.LoadAcmds();
+                player.SendChatMessage("Admin parancsok újratöltése.");
+            }
+        }
+
+        [Command("setcommandlevel", Alias = "setacmd", GreedyArg = true, Hide = true)]
+        public async void SetAdminCommandLevel(Player player, string parameters = "")
+        {
+            int adminlevel = player.GetData<int>("player:AdminLevel");
+
+            if (Levels.IsPlayerAdmin("setcommandlevel", adminlevel))
+            {
+                string[] p = parameters.Split(' ');
+
+                if (p.Length == 2)
+                {
+                    string cmd = p[0];
+
+                    if (Int32.TryParse(p[1], out int targetlevel) == true)
+                    {
+                        player.SendChatMessage("/" + cmd + " parancs sikeresen átállítva [" + targetlevel + "]");
+                        await Admin.Levels.SetCommandLevel(cmd,targetlevel);
+                    }
+                }
+                else
+                {
+                    player.SendChatMessage("[HASZNÁLAT]: /setcommandlevel [parancs] [admin szint]");
+                }
+            }
+        }
+
+        [Command("setadminlevel",Alias = "setalevel", GreedyArg = true, Hide = true)]
+        public async void SetPlayerAdminLevel(Player player, string parameters = "")
+        {
+
+
+            int adminlevel = player.GetData<int>("player:AdminLevel");
+            
+            if (Levels.IsPlayerAdmin("setadminlevel", adminlevel))
+            {
+                Player target = null;
+                string[] p = parameters.Split(' ');
+
+                if (p.Length == 2)
+                {
+
+                
+
+                if (p[0] == "*")
+                {
+                    target = player;
+                }
+                else
+                {
+                    if(Int32.TryParse(p[0], out int targetid) == true)
+                    {
+                        target = GetPlayerById(targetid);
+                    }
+                    else
+                    {
+                        player.SendChatMessage("Játékos nem található!");
+                    }
+                }
+
+                    if (Int32.TryParse(p[1], out int targetlevel) == true)
+                    {
+                        //megkeressük a target játékost
+                        if (target != null)
+                        {
+                            target.SetData("player:AdminLevel", targetlevel);
+                            uint accid = target.GetData<uint>("player:accID");
+                            NAPI.Chat.SendChatMessageToAll(player.Name + " átállította " + target.Name + " admin szintjét. [" + adminlevel + "->" + targetlevel+"]");
+                            await Admin.Levels.SetAdminLevel(accid, targetlevel);
+                        }
+                        else
+                        {
+                            player.SendChatMessage("Játékos nem található");
+                        }
+                    }
+                }
+                else
+                {
+                    player.SendChatMessage("[HASZNÁLAT]: /setadminlevel [játékos ID] [admin szint]");
+                }
+            }
+        }
+
+
         [Command("haz")]
         public void Haz(Player player)
         {
@@ -42,7 +143,13 @@ namespace Server.Admin
             
         }
 
+        [Command("helicam")]
+        public void GetId(Player player)
+        {
+            player.TriggerEvent("client:HeliCam");
+        }
 
+        
         public static Player GetPlayerById(int id)
         {
             return NAPI.Pools.GetAllPlayers().FirstOrDefault(plr => plr.Id == id);
@@ -77,9 +184,122 @@ namespace Server.Admin
             }
         }
 
+        [Command("dim", Alias = "dimesion")]
+        public void ShowDimension(Player player)
+        {
+
+            player.SendChatMessage("Dimenziód: " + player.Dimension.ToString());
+        }
+
+
+        [Command("adminduty", Alias = "aduty")]
+        public void AdminDuty(Player player)
+        {
+            if (player.HasSharedData("player:AdminDuty"))
+            {
+                bool state = player.GetSharedData<bool>("player:AdminDuty");
+                player.SetSharedData("player:AdminDuty", !state);
+                player.SendChatMessage("AdminDuty " + state);
+            }
+            else
+            {
+                player.SetSharedData("player:AdminDuty", true);
+                player.SendChatMessage("AdminDuty true");
+            }
+
+        }
+
+        [Command("setdimension", Alias = "setdim", GreedyArg = true, Hide = true)]
+        public void SetDimension(Player player, string parameters = "")
+        {
+            int adminlevel = player.GetData<int>("player:AdminLevel");
+
+            if (Levels.IsPlayerAdmin("setadminlevel", adminlevel))
+            {
+                Player target = null;
+                string[] p = parameters.Split(' ');//felbontjuk a dolgokat
+
+                if (p[0] == "*")
+                {
+                    target = player;
+                }
+                else
+                {
+                    if (Int32.TryParse(p[0], out int targetid) == true)
+                    {
+                        target = GetPlayerById(targetid);
+                    }
+                    else
+                    {
+                        player.SendChatMessage("Játékos nem található!");
+                    }
+                }
+
+                if (Int32.TryParse(p[1], out int dimension) == true)//megvizsgáljuk hogy jót adott-e meg
+                {
+                    //megkeressük a target játékost
+                    if (target != null)
+                    {
+                        target.Dimension = Convert.ToUInt32(dimension);//átállítjuk és kiírjuk akinek kell
+                        player.SendChatMessage(target.Name + " dimenzióját átállítottad: " + dimension);
+                        target.SendChatMessage(player.Name + " átállította a dimenziódat: " + dimension);
+                    }
+                    else
+                    {
+                        player.SendChatMessage("Játékos nem található");//nincs ilyen player
+                    }
+                }
+                else
+                {
+                    player.SendChatMessage("[HASZNÁLAT]: /setdimension [játékos ID] [dimenzió]");//rossz értékeket adott meg (nem lehet parse-elni)
+                }
+            }
+        }
+
+
+        [Command("admin")]
+        public void GetAdminLevel(Player player)
+        {
+            int adminlevel = player.GetData<int>("player:AdminLevel");
+            player.SendChatMessage("Admin szinted: " + adminlevel);
+        }
+
+
+        [Command("goto")]
+        public void GotoPlayer(Player player, int targetid)
+        {
+            Player target = GetPlayerById(targetid);
+            if (target != null)
+            {
+                player.Position = target.Position;
+                player.SendChatMessage("Goto");
+            }
+        }
+
+        [Command("ipl")]
+        public void LoadIplForPlayer(Player player, string ipl)
+        {
+            player.TriggerEvent("client:LoadIPL", ipl);
+        }
+
+        [Command("gotopos", Alias ="gotoxyz")]
+        public void GotoPlayer(Player player, float x, float y, float z)
+        {
+            player.Position = new Vector3(x, y, z);
+        }
+
+        [Command("get")]
+        public void GetPlayer(Player player, int targetid)
+        {
+            Player target = GetPlayerById(targetid);
+            if (target != null)
+            {
+                target.Position = player.Position;
+            }
+        }
 
         [Command("freeze",Description = "Freeze így")]
-        public void FreezePlayer(Player player, int targetid)
+        public void FreezePlayer(Player player, int targetid = -1)
         {
             Player target = GetPlayerById(targetid);
             if (target != null)
@@ -144,31 +364,37 @@ namespace Server.Admin
         }
 
 
-        [Command("fly", "repülés", Alias ="freecam",GreedyArg = false)]
+        [Command("fly", Alias ="freecam")]
         public void ToggleFly(Player player)
         {
-            bool state = false;
-            if (NAPI.Data.HasEntitySharedData(player, "player:Flying"))
+            int adminlevel = player.GetData<int>("player:AdminLevel");
+
+            if (Levels.IsPlayerAdmin("fly", adminlevel))
             {
-                state = (bool)NAPI.Data.GetEntitySharedData(player, "player:Flying");
+                bool state = false;
+                if (NAPI.Data.HasEntitySharedData(player, "player:Flying"))
+                {
+                    state = (bool)NAPI.Data.GetEntitySharedData(player, "player:Flying");
+                }
+
+                if (state)
+                {
+                    NAPI.Notification.SendNotificationToPlayer(player, "FLY kikapcsolva.", false);
+                    NAPI.Data.SetEntitySharedData(player, "player:Flying", false);
+                    NAPI.Data.SetEntitySharedData(player, "player:Invisible", false);
+                    NAPI.Data.SetEntitySharedData(player, "player:Frozen", false);
+                    player.TriggerEvent("client:Fly");
+                }
+                else
+                {
+                    NAPI.Notification.SendNotificationToPlayer(player, "FLY bekapcsolva.", false);
+                    NAPI.Data.SetEntitySharedData(player, "player:Flying", true);
+                    NAPI.Data.SetEntitySharedData(player, "player:Invisible", true);
+                    NAPI.Data.SetEntitySharedData(player, "player:Frozen", true);
+                    player.TriggerEvent("client:Fly");
+                }
             }
 
-            if (state)
-            {
-                NAPI.Notification.SendNotificationToPlayer(player, "FLY kikapcsolva.", false);
-                NAPI.Data.SetEntitySharedData(player, "player:Flying", false);
-                NAPI.Data.SetEntitySharedData(player, "player:Invisible", false);
-                NAPI.Data.SetEntitySharedData(player, "player:Frozen", false);
-                player.TriggerEvent("client:Fly");
-            }
-            else
-            {
-                NAPI.Notification.SendNotificationToPlayer(player, "FLY bekapcsolva.", false);
-                NAPI.Data.SetEntitySharedData(player, "player:Flying", true);
-                NAPI.Data.SetEntitySharedData(player, "player:Invisible", true);
-                NAPI.Data.SetEntitySharedData(player, "player:Frozen", true);
-                player.TriggerEvent("client:Fly");
-            }
         }
 
         [Command("serial")]
@@ -184,14 +410,15 @@ namespace Server.Admin
             NAPI.Player.GivePlayerWeapon(player, WeaponHash.Flashlight, 1);
         }
 
-        [Command("createveh", Alias = "makeveh", GreedyArg = true)]
-        public void CreateVehicle(GTANetworkAPI.Player player, string model)
+        [Command("veh", Alias = "tempveh", GreedyArg = true)]
+        public void CreateVehicle(Player player, string model)
         {
             if (checkAdmin())
                 {
                 uint vHash = NAPI.Util.GetHashKey(model);
-                NAPI.Vehicle.CreateVehicle(vHash, new Vector3(player.Position.X, player.Position.Y + 2.0, player.Position.Z), 0f, 1, 1, "TEMP");
-                    
+                Vehicle v = NAPI.Vehicle.CreateVehicle(vHash, new Vector3(player.Position.X, player.Position.Y + 2.0, player.Position.Z), 0f, 1, 1, "TEMP");
+                v.Dimension = player.Dimension;
+                player.SendChatMessage("Jármű létrehozva: " + v.DisplayName);
                 }
         }
 
@@ -219,11 +446,6 @@ namespace Server.Admin
             return;
         }
 
-        [Command("gotopos")]
-        public void GotoPositionXYZ(GTANetworkAPI.Player player, float X, float Y, float Z)
-        {
-            NAPI.Player.SpawnPlayer(player, new Vector3(X, Y, Z), player.Heading);
-        }
 
         [Command("respawn")]
         public void RespawnPlayer(GTANetworkAPI.Player player)
@@ -326,12 +548,6 @@ namespace Server.Admin
         {
             NAPI.World.SetTime(Convert.ToInt16(hours), Convert.ToInt16(minutes), Convert.ToInt16(seconds));
             NAPI.World.SetWeather(Weather.CLEAR);
-        }
-
-        [Command("loadipl", Alias = "ipl", GreedyArg = true)]
-        public void LoadIPL(GTANetworkAPI.Player player, string name)
-        {
-            NAPI.ClientEvent.TriggerClientEvent(player, "LoadIPL", name);
         }
 
 

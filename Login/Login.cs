@@ -2,7 +2,6 @@
 using MySql.Data.MySqlClient;
 using MySqlX.XDevAPI;
 using Server.Characters;
-using Server.Data;
 using System;
 using System.Diagnostics.Tracing;
 using System.Threading.Tasks;

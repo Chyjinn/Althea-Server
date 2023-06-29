@@ -3,9 +3,9 @@ using System.Security.Cryptography;
 using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 
-namespace Server.Data
+namespace Database
 {
-    class Connection
+    class MySQL
     {
         public static bool isConnectionSetUp = false;
         public static MySqlConnection con;
@@ -14,7 +14,7 @@ namespace Server.Data
         public String Password { get; set; }
         public String Database { get; set; }
 
-        public Connection ()
+        public MySQL ()
         {
             this.Host = "localhost";
             this.Username = "root";
@@ -24,7 +24,7 @@ namespace Server.Data
 
         public static void InitConnection()
         {
-            Connection sql = new Connection();
+            MySQL sql = new MySQL();
             string SqlCon = $"SERVER={sql.Host};PASSWORD={sql.Password};UID={sql.Username};DATABASE={sql.Database};";
             con = new MySqlConnection(SqlCon);
 
@@ -35,7 +35,7 @@ namespace Server.Data
             }
             catch (Exception ex)
             {
-                Log.Log_Server(ex.ToString());
+                //
                 throw;
             }
         }

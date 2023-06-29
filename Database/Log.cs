@@ -4,7 +4,7 @@ using System.IO;
 using System.Text;
 using GTANetworkAPI;
 
-namespace Server.Data
+namespace Database
 {
     class Log : Script
     {

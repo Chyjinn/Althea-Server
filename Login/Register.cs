@@ -1,6 +1,5 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
-using Server.Data;
 using System;
 using System.Threading.Tasks;
 

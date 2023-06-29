@@ -10,7 +10,7 @@ namespace Server.Characters
 {
     class Character
     {
-        public int Id { get; set; }
+        public uint Id { get; set; }
         public string Name { get; set; }
         public DateTime DOB { get; set; }
         public string POB { get; set; }
@@ -20,7 +20,7 @@ namespace Server.Characters
         public float Rot { get; set; }
         public int AppearanceID { get; set; }
         public Appearance Appearance { get; set; }
-        public Character(int Id, string Name, DateTime DOB, string POB, int AppearanceID, float posX, float posY, float posZ, float rot)
+        public Character(uint Id, string Name, DateTime DOB, string POB, int AppearanceID, float posX, float posY, float posZ, float rot)
         {
             this.DOB = DOB;
             this.POB = POB;
@@ -164,8 +164,9 @@ namespace Server.Characters
                 }
                 NAPI.Task.Run(() =>
                 {
+                    player.SetSharedData("player:Frozen", false);
                     string json = NAPI.Util.ToJson(characters);
-                    player.SetData("characterData", json);
+                    player.SetData("player:CharacterSelector", json);
 
                     SetPlayerToWalkIn(player);
                     player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
@@ -196,7 +197,7 @@ namespace Server.Characters
                     {
                         while (await reader.ReadAsync())
                         {
-                            Character c = new Character(Convert.ToInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]), Convert.ToSingle(reader["rot"])) ;
+                            Character c = new Character(Convert.ToUInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]), Convert.ToSingle(reader["rot"])) ;
                             characters.Add(c);
                         }
                     }
@@ -248,7 +249,7 @@ namespace Server.Characters
             }
         }
 
-        public static async void HandleCharacterAppearance(Player player, int charid)
+        public static async void HandleCharacterAppearance(Player player, uint charid)
         {
             Character character = await GetCharacterDataByID(player, charid);
             HeadBlend h = new HeadBlend();
@@ -270,9 +271,9 @@ namespace Server.Characters
             });
         }
 
-        public static async Task<Character> GetCharacterDataByID(Player player, int charid)//karakter ID alapján egy karaktert ad vissza
+        public static async Task<Character> GetCharacterDataByID(Player player, uint charid)//karakter ID alapján egy karaktert ad vissza
         {
-            Character[] characters = NAPI.Util.FromJson<Character[]>(player.GetData<string>("characterData"));
+            Character[] characters = NAPI.Util.FromJson<Character[]>(player.GetData<string>("player:CharacterSelector"));
             for (int i = 0; i < characters.Length; i++)
             {
                 if (characters[i].Id == charid)
@@ -284,8 +285,10 @@ namespace Server.Characters
         }
 
     [RemoteEvent("server:CharChange")]
-    public static void HandleCharacterChange(Player player, int charid)
+    public static void HandleCharacterChange(Player player, int characterid)
     {
+        player.SetSharedData("player:Frozen", false);
+        uint charid = Convert.ToUInt32(characterid);
         SetPlayerToWalkOut(player);
         NAPI.Task.Run(() =>
         {
@@ -297,9 +300,8 @@ namespace Server.Characters
     }
 
     [RemoteEvent("server:CharSelect")]
-    public async void SetPlayerCharacter(Player player, int charid)//kiválasztotta a karakterét és be szeretne lépni
+    public async void SetPlayerCharacter(Player player, uint charid)//kiválasztotta a karakterét és be szeretne lépni
     {
-            
             uint accID = player.GetData<uint>("player:accID");
             Character c = await GetCharacterDataByID(player, charid);
             if (await IsCharacterOwner(accID, charid))
@@ -310,19 +312,20 @@ namespace Server.Characters
                     player.TriggerEvent("client:DeleteCamera");
                     player.TriggerEvent("client:hideCharScreen");
                     player.SetSharedData("player:Frozen", false);
+                    player.SetData("player:charID",charid);
                     NAPI.Player.SpawnPlayer(player, new Vector3(c.posX, c.posY, c.posZ), c.Rot);
                 });
             }
-
     }
 
-        public static async Task<bool> IsCharacterOwner(uint accid, int charid)//ha létezik a token akkor return true
+        public static async Task<bool> IsCharacterOwner(uint accid, uint charid)//ha az adott account-hoz tartozik a karakter akkor true, különben false
         {
-            string query = $"SELECT COUNT(id) FROM `characters` WHERE `accountId` = @AccID";
+            string query = $"SELECT COUNT(id) FROM `characters` WHERE `accountId` = @AccID AND `id` = @CharID";
 
             using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
             {
                 cmd.Parameters.AddWithValue("@AccID", accid);
+                cmd.Parameters.AddWithValue("@CharID", charid);
                 try
                 {
                     var count = await cmd.ExecuteScalarAsync();

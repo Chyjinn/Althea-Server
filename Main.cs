@@ -1,8 +1,10 @@
 ﻿using System;
-using System.Numerics;
 using System.Threading;
 using System.IO;
 using GTANetworkAPI;
+using MySql.Data.MySqlClient;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Server
 {
@@ -14,17 +16,96 @@ namespace Server
         [ServerEvent(Event.ResourceStart)]
         public void Start()
         {
+            NAPI.Server.SetCommandErrorMessage("Parancs nem található!");
             NAPI.Server.SetAutoSpawnOnConnect(true);
             NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
             NAPI.Server.SetGlobalServerChat(true);
             Database.MySQL.InitConnection();
+            AutosavePlayers();
         }
 
 
+        public async void AutosavePlayers()
+        {
+            List<Player> players = NAPI.Pools.GetAllPlayers();
+            foreach (var item in players)
+            {
+                Vector3 pos = item.Position;
+                Vector3 rot = item.Rotation;
+                if (item.HasData("player:charID"))
+                {
+                    uint charid = item.GetData<uint>("player:charID");
+                    if (await SavePlayerPosition(charid, pos.X, pos.Y, pos.Z, rot.Z))
+                    {
+                        NAPI.Task.Run(() =>
+                        {
+                            Database.Log.Log_Server(item.Name + " mentve");
+                        });
+                    }
+                }
+            }
+            NAPI.Task.Run(() =>
+            {
+                AutosavePlayers();
+            }, 30000);
+        }
+
+        [ServerEvent(Event.PlayerDisconnected)]
+        public async void OnPlayerDisconnect(Player player, DisconnectionType type, string reason)
+        {
+            Vector3 pos = player.Position;
+            Vector3 rot = player.Rotation;
+            if (player.HasData("player:charID"))
+            {
+                uint charid = player.GetData<uint>("player:charID");
+                if (!await SavePlayerPosition(charid, pos.X, pos.Y, pos.Z, rot.Z))
+                {
+                    Database.Log.Log_Server(player.Name + " nem lett mentve!");
+                }
+            }
+        }
+
+        public static async Task<bool> SavePlayerPosition(uint charid, float posX, float posY, float posZ, float rot)
+        {
+
+            string query = $"UPDATE `characters` SET `posX` = @PositionX, `posY` = @PositionY, `posZ` = @PositionZ, `rot` = @Rotation WHERE `characters`.`id` = @CharacterID;";
+            
+            try
+            {
+                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.con))
+                {
+                    command.Parameters.AddWithValue("@PositionX", posX);
+                    command.Parameters.AddWithValue("@PositionY", posY);
+                    command.Parameters.AddWithValue("@PositionZ", posZ);
+                    command.Parameters.AddWithValue("@Rotation", rot);
+                    command.Parameters.AddWithValue("@CharacterID", charid);
+                    command.Prepare();
+                    try
+                    {
+                        int rows = await command.ExecuteNonQueryAsync();
+                        if (rows > 0)
+                        {
+                            return true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Database.Log.Log_Server(ex.ToString());
+            }
+            
+            return false;
+        }
+
 
         [ServerEvent(Event.PlayerConnected)]
-        public void PlayerConnected(Player player)
+        public void OnPlayerConnect(Player player)
         {
             
         }

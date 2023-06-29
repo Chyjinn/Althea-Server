@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Google.Protobuf.WellKnownTypes;
 using GTANetworkAPI;
 
@@ -41,12 +42,84 @@ namespace Server.Admin
             
         }
 
-        [Command("freeze")]
-        public void FreezePlayer(Player player, int target)
+
+        public static Player GetPlayerById(int id)
         {
+            return NAPI.Pools.GetAllPlayers().FirstOrDefault(plr => plr.Id == id);
+        }
+
+        [Command("id", Hide = true)]
+        public void GetId(Player player, int id = -1)
+        {
+            if (id == -1)
+            {
+                id = player.Id;
+            }
+            Player target = GetPlayerById(id);
+            if (target != null)
+            {
+                player.SendChatMessage("ID: " + target.Id.ToString());
+            }
+            else
+            {
+                player.SendChatMessage("Nincs ilyen játékos");
+            }
             
         }
-        
+
+        [Command("players")]
+        public void ListPlayers(Player player)
+        {
+            List<Player> playerlist = NAPI.Pools.GetAllPlayers();
+            foreach (var item in playerlist)
+            {
+                player.SendChatMessage("[" + item.Id + "] " + item.Name);
+            }
+        }
+
+
+        [Command("freeze",Description = "Freeze így")]
+        public void FreezePlayer(Player player, int targetid)
+        {
+            Player target = GetPlayerById(targetid);
+            if (target != null)
+            {
+                if (target.HasSharedData("player:Frozen"))
+                {
+                    bool state = target.GetSharedData<bool>("player:Frozen");
+                    NAPI.Data.SetEntitySharedData(target, "player:Frozen", !state);
+                    if (!state)
+                    {
+                        player.SendChatMessage("Lefagyasztottad " + target.Name + " játékost.");
+                        target.SendChatMessage(player.Name + " lefagyasztott téged.");
+                    }
+                    else
+                    {
+                        player.SendChatMessage("Kiolvasztottad " + target.Name + " játékost.");
+                        target.SendChatMessage(player.Name + " kiolvasztott téged.");
+                    }
+
+                }
+                else
+                {
+                    NAPI.Data.SetEntitySharedData(target, "player:Frozen", true);
+                    player.SendChatMessage("Lefagyasztottad " + target.Name + " játékost.");
+                    target.SendChatMessage(player.Name + " lefagyasztott téged.");
+                }
+            }
+            else
+            {
+                player.SendChatMessage("Játékos nem található");
+            }
+
+        }
+
+        [Command("disappear", Alias = "dis")]
+        public void Disappear(Player player)
+        {
+            NAPI.Data.SetEntitySharedData(player, "player:Invisible", false);
+        }
+
         [Command("teszt", "/teszt [x] [y] [z]")]
         public void Teszteles(Player player, float x, float y, float z)
         {
@@ -96,7 +169,13 @@ namespace Server.Admin
                 NAPI.Data.SetEntitySharedData(player, "player:Frozen", true);
                 player.TriggerEvent("client:Fly");
             }
+        }
 
+        [Command("serial")]
+        public void ShowSerial(Player player)
+        {
+            player.SendChatMessage(player.Serial);
+            Database.Log.Log_Server(player.Serial);
         }
 
         [Command("flashlight")]

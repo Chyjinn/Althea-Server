@@ -60,7 +60,7 @@ namespace Server.Auth
                 string query = $"INSERT INTO `tokens` (accountId,token,expiration) VALUES (@accID,@Token,@Expiration)";
                 try
                 {
-                    using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.con))
+                    using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
                     {
                         command.Parameters.AddWithValue("@accID", AccountID);
                         command.Parameters.AddWithValue("@Token", token);
@@ -92,7 +92,7 @@ namespace Server.Auth
             string query = $"DELETE FROM `tokens` WHERE `tokens`.`token` LIKE @Token";
             try
             {
-                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.con))
+                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
                 {
                     command.Parameters.AddWithValue("@Token", token);
                     command.Prepare();
@@ -123,7 +123,7 @@ namespace Server.Auth
             string query = $"SELECT accountId,token,expiration FROM `tokens` WHERE `token` = @Token LIMIT 1";
 
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@Token", token);
                 try
@@ -155,7 +155,7 @@ namespace Server.Auth
         {
             string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `userName` = @Username LIMIT 1";
             string[] res;
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@Username", username);
                 cmd.Prepare();
@@ -183,7 +183,7 @@ namespace Server.Auth
         {
             string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `id` = @AccID LIMIT 1";
             string[] res;
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@AccID", accountID);
                 cmd.Prepare();
@@ -213,7 +213,7 @@ namespace Server.Auth
         {
             string query = $"SELECT COUNT(id) FROM `tokens` WHERE `token` = @TokenString";
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@TokenString", token);
                 try
@@ -237,7 +237,7 @@ namespace Server.Auth
             string query = $"SELECT passwordSalt AS pwSalt FROM `accounts` WHERE `userName` = @Username LIMIT 1";
 
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@Username", username);
                 try
@@ -263,7 +263,7 @@ namespace Server.Auth
             string query = $"SELECT passwordHash AS pwHash FROM `accounts` WHERE `userName` = @Username LIMIT 1";
 
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@Username", username);
                 try
@@ -288,7 +288,7 @@ namespace Server.Auth
         {
             string query = $"SELECT userName FROM `accounts` WHERE `userName` = @Username LIMIT 1";
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@Username", username);
                 try
@@ -316,7 +316,7 @@ namespace Server.Auth
         {
             string query = $"SELECT id FROM `accounts` WHERE `id` = @AccID LIMIT 1";
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@AccID", accountID);
                 try
@@ -344,7 +344,7 @@ namespace Server.Auth
         {
             string query = $"SELECT email AS Email FROM `accounts` WHERE `email` = @Email LIMIT 1";
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@Email", email);
                 try
@@ -372,7 +372,7 @@ namespace Server.Auth
         {
             string query = $"SELECT adminLevel, adminNick FROM `accounts` WHERE `id` = @AccID LIMIT 1";
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@AccID", accID);
                 try
@@ -397,7 +397,7 @@ namespace Server.Auth
         {
             string query = $"SELECT scId AS SocialClubId FROM `accounts` WHERE `scId` = @ScId LIMIT 1";
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@ScId", socialclubid);
                 try
@@ -425,7 +425,7 @@ namespace Server.Auth
         {
             string query = $"SELECT serial AS Serial FROM `accounts` WHERE `serial` = @SerialNumber LIMIT 1";
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 cmd.Parameters.AddWithValue("@SerialNumber", serial);
                 try
@@ -454,7 +454,7 @@ namespace Server.Auth
             string query = $"INSERT INTO `accounts` (userName,email,passwordHash,passwordSalt,serial,scId,sc) VALUES (@Username,@Email,@pwHash,@Salt,@Serial,@SCID,@SCNAME)";
             try
             {
-                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.con))
+                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
                 {
                     command.Parameters.AddWithValue("@Username", username);
                     command.Parameters.AddWithValue("@Email", email);

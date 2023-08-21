@@ -4,6 +4,7 @@ using System.Diagnostics.Tracing;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
 using GTANetworkAPI;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace Server.Admin
 {
@@ -149,7 +150,83 @@ namespace Server.Admin
             player.TriggerEvent("client:HeliCam");
         }
 
-        
+
+        [Command("ragdoll")]
+        public void Ragdoll(Player player)
+        {
+            if (player.HasSharedData("player:Ragdoll"))
+            {
+                bool state = player.GetSharedData<bool>("player:Ragdoll");
+                NAPI.Data.SetEntitySharedData(player, "player:Ragdoll", !state);
+                if (!state)
+                {
+                    player.SendChatMessage("ragdoll on");
+                    player.SetSharedData("player:Ragdoll", true);
+                }
+                else
+                {
+                    player.SendChatMessage("ragdoll off");
+                    player.SetSharedData("player:Ragdoll", false); ;
+                }
+
+            }
+            else
+            {
+                player.SendChatMessage("ragdoll on");
+                NAPI.Data.SetEntitySharedData(player, "player:Ragdoll", true);
+            }
+
+
+            
+        }
+
+        [Command("sethp")]
+        public void SetHP(Player player, int targetid = -1, int hp = 100)
+        {
+            if (targetid == -1)
+            {
+                if (player.Dead == true)
+                {
+                    Vector3 pos = player.Position;
+                    NAPI.Player.SpawnPlayer(player, pos);
+                    player.SendChatMessage("HP-d sikeresen átállítva. (" + hp + ")");
+                }
+                else
+                {
+                    NAPI.Player.SetPlayerHealth(player, hp);
+                    player.SendChatMessage("HP-d sikeresen átállítva. (" + hp + ")");
+                }
+            }
+            else
+            {
+                Player target = GetPlayerById(targetid);
+                if (target != null)
+                {
+                    if (target.Dead == true)
+                    {
+                        Vector3 pos = target.Position;
+                        NAPI.Player.SpawnPlayer(target, pos);
+                        player.SendChatMessage(target.Name + " HP-ja átállítva. (" + hp + ")");
+                        target.SendChatMessage(player.Name + " átállította a HP-d. (" + hp + ")");
+                    }
+                    else
+                    {
+                        NAPI.Player.SetPlayerHealth(target, hp);
+                        player.SendChatMessage(target.Name + " HP-ja átállítva. (" + hp + ")");
+                        target.SendChatMessage(player.Name + " átállította a HP-d. (" + hp + ")");
+                    }
+                    
+                }
+                else
+                {
+                    player.SendChatMessage("Nincs ilyen játékos");
+                }
+
+
+            }
+        }
+
+
         public static Player GetPlayerById(int id)
         {
             return NAPI.Pools.GetAllPlayers().FirstOrDefault(plr => plr.Id == id);
@@ -161,16 +238,21 @@ namespace Server.Admin
             if (id == -1)
             {
                 id = player.Id;
-            }
-            Player target = GetPlayerById(id);
-            if (target != null)
-            {
-                player.SendChatMessage("ID: " + target.Id.ToString());
+                player.SendChatMessage("Az ID-d: " + player.Id.ToString());
             }
             else
             {
-                player.SendChatMessage("Nincs ilyen játékos");
+                Player target = GetPlayerById(id);
+                if (target != null)
+                {
+                    player.SendChatMessage("ID: " + target.Id.ToString() + " - " + target.Name);
+                }
+                else
+                {
+                    player.SendChatMessage("Nincs ilyen játékos");
+                }
             }
+
             
         }
 
@@ -363,6 +445,11 @@ namespace Server.Admin
                 player.TriggerEvent("client:YTtest");
         }
 
+        [Command("weapon")]
+        public void WeaponCommand(Player sender, WeaponHash hash)
+        {
+            NAPI.Player.GivePlayerWeapon(sender, hash, 500);
+        }
 
         [Command("fly", Alias ="freecam")]
         public void ToggleFly(Player player)
@@ -393,6 +480,10 @@ namespace Server.Admin
                     NAPI.Data.SetEntitySharedData(player, "player:Frozen", true);
                     player.TriggerEvent("client:Fly");
                 }
+            }
+            else
+            {
+                NAPI.Chat.SendChatMessageToPlayer(player, "Nincs jogod ehhez a parancshoz!");
             }
 
         }
@@ -446,6 +537,58 @@ namespace Server.Admin
             return;
         }
 
+        [Command("setvehextra", Alias = "setcarextra")]
+        public void SetVehicleExtra(GTANetworkAPI.Player player, int slot, bool state)
+        {
+            if (checkAdmin())
+            {
+                GTANetworkAPI.Vehicle v = player.Vehicle;
+                if (v != null)
+                {
+                
+                        NAPI.Vehicle.SetVehicleExtra(v, slot, state);
+                        player.SendChatMessage("Extra átállítva!");
+                        return;
+                }
+                else
+                {
+                    player.SendChatMessage("Nem ülsz járműben!");
+                    return;
+                }
+
+            }
+            else
+            {
+                return;
+            }
+        }
+
+
+        [Command("setvehlivery", Alias = "setcarlivery")]
+        public void SetVehicleLivery(GTANetworkAPI.Player player, int livery)
+        {
+            if (checkAdmin())
+            {
+                GTANetworkAPI.Vehicle v = player.Vehicle;
+                if (v != null)
+                {
+
+                    NAPI.Vehicle.SetVehicleLivery(v, livery);
+                    player.SendChatMessage("Paintjob átállítva!");
+                    return;
+                }
+                else
+                {
+                    player.SendChatMessage("Nem ülsz járműben!");
+                    return;
+                }
+
+            }
+            else
+            {
+                return;
+            }
+        }
 
         [Command("respawn")]
         public void RespawnPlayer(GTANetworkAPI.Player player)

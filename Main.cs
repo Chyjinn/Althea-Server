@@ -34,6 +34,7 @@ namespace Server
         public void AutosavePlayers()
         {
             List<Player> players = NAPI.Pools.GetAllPlayers();
+            NAPI.Chat.SendChatMessageToAll("AUTOSAVE: " + players.Count + " játékos.");
             foreach (var item in players)
             {
                 if (item.HasData("player:charID"))
@@ -77,7 +78,7 @@ namespace Server
             
             try
             {
-                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.con))
+                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
                 {
                     command.Parameters.AddWithValue("@PositionX", posX);
                     command.Parameters.AddWithValue("@PositionY", posY);

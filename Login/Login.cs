@@ -15,6 +15,7 @@ namespace Server.Auth
         {
             player.SetSharedData("player:Frozen", true);
         }
+
         [RemoteEvent("server:LoginAttempt")]//kliens hívja meg (login.html)
         public void LoginAttempt(Player player, string username, string password, bool remember)
         {

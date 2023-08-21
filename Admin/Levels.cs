@@ -28,7 +28,7 @@ namespace Server.Admin
         {
             string query = $"SELECT command, adminLevel FROM `acmds`";
 
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.con))
+            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
             {
                 try
                 {
@@ -73,7 +73,7 @@ namespace Server.Admin
 
             try
             {
-                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.con))
+                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
                 {
                     command.Parameters.AddWithValue("@AdminLevel", adminlevel);
                     command.Parameters.AddWithValue("@AdminCMD", adminCmd);
@@ -110,7 +110,7 @@ namespace Server.Admin
 
             try
             {
-                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.con))
+                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
                 {
                     command.Parameters.AddWithValue("@AdminLevel", adminlevel);
                     command.Parameters.AddWithValue("@AccID", accid);

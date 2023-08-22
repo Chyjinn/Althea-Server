@@ -58,9 +58,12 @@ namespace Server.Auth
         public static async Task<bool> SaveGeneratedToken(uint AccountID, string token, DateTime expiration)//token mentése amit GenerateNewToken-el szereztünk
         {
                 string query = $"INSERT INTO `tokens` (accountId,token,expiration) VALUES (@accID,@Token,@Expiration)";
-                try
-                {
-                    using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
                     {
                         command.Parameters.AddWithValue("@accID", AccountID);
                         command.Parameters.AddWithValue("@Token", token);
@@ -80,19 +83,19 @@ namespace Server.Auth
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
-                }
             return false;
         }
 
         public static async Task<bool> DeleteUsedToken(string token)//felhasznált token törlése
         {
             string query = $"DELETE FROM `tokens` WHERE `tokens`.`token` LIKE @Token";
-            try
+            using (MySqlConnection con = new MySqlConnection())
             {
-                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
                 {
                     command.Parameters.AddWithValue("@Token", token);
                     command.Prepare();
@@ -110,10 +113,6 @@ namespace Server.Auth
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Database.Log.Log_Server(ex.ToString());
-            }
             return false;
         }
 
@@ -121,30 +120,34 @@ namespace Server.Auth
         public static async Task<bool> VerifyToken(uint AccountID, string token)//account id alapján token ellenőrzés
         {
             string query = $"SELECT accountId,token,expiration FROM `tokens` WHERE `token` = @Token LIMIT 1";
-
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@Token", token);
-                try
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    cmd.Parameters.AddWithValue("@Token", token);
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            uint acc = Convert.ToUInt32(reader["accountId"]);
-                            string dbToken = reader["token"].ToString();
-                            DateTime expiration = Convert.ToDateTime(reader["expiration"]);
-                            if (expiration > DateTime.Now && acc == AccountID && dbToken == token)//lejárati dátumot ellenőrizzük, illetve hogy a megfelelő account ID és token van-e használva
+                            if (await reader.ReadAsync())
                             {
-                                return true;
+                                uint acc = Convert.ToUInt32(reader["accountId"]);
+                                string dbToken = reader["token"].ToString();
+                                DateTime expiration = Convert.ToDateTime(reader["expiration"]);
+                                if (expiration > DateTime.Now && acc == AccountID && dbToken == token)//lejárati dátumot ellenőrizzük, illetve hogy a megfelelő account ID és token van-e használva
+                                {
+                                    return true;
+                                }
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
             }
             return false;
@@ -155,18 +158,30 @@ namespace Server.Auth
         {
             string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `userName` = @Username LIMIT 1";
             string[] res;
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@Username", username);
-                cmd.Prepare();
+                con.ConnectionString = Database.DBCon.GetConString();
                 try
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    await con.OpenAsync();
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
                     {
-                        if (await reader.ReadAsync())
+                        cmd.Parameters.AddWithValue("@Username", username);
+                        cmd.Prepare();
+                        try
                         {
-                            res = new string[7] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString() };
-                            return res;
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                if (await reader.ReadAsync())
+                                {
+                                    res = new string[7] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString() };
+                                    return res;
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Database.Log.Log_Server(ex.ToString());
                         }
                     }
                 }
@@ -174,6 +189,9 @@ namespace Server.Auth
                 {
                     Database.Log.Log_Server(ex.ToString());
                 }
+                
+
+
             }
             res = new string[0];
             return res;
@@ -182,25 +200,32 @@ namespace Server.Auth
         public static async Task<string[]> GetLoginData(uint accountID)//account id alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
             string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `id` = @AccID LIMIT 1";
+            
             string[] res;
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@AccID", accountID);
-                cmd.Prepare();
-                try
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    cmd.Parameters.AddWithValue("@AccID", accountID);
+                    cmd.Prepare();
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            res = new string[7] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString() };
-                            return res;
+                            if (await reader.ReadAsync())
+                            {
+                                res = new string[7] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString() };
+                                return res;
+                            }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
             }
             res = new string[0];
@@ -212,21 +237,26 @@ namespace Server.Auth
         public static async Task<bool> TokenInUse(string token)//ha létezik a token akkor return true
         {
             string query = $"SELECT COUNT(id) FROM `tokens` WHERE `token` = @TokenString";
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@TokenString", token);
-                try
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    var count = await cmd.ExecuteScalarAsync();
-                    if (Convert.ToInt32(count) > 0)
+                    cmd.Parameters.AddWithValue("@TokenString", token);
+                    try
                     {
-                        return true;
+                        var count = await cmd.ExecuteScalarAsync();
+                        if (Convert.ToInt32(count) > 0)
+                        {
+                            return true;
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
             }
             return false;
@@ -235,50 +265,61 @@ namespace Server.Auth
         public static async Task<string> GetPasswordSalt(string username)//return salt
         {
             string query = $"SELECT passwordSalt AS pwSalt FROM `accounts` WHERE `userName` = @Username LIMIT 1";
-
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@Username", username);
-                try
-                { 
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@Username", username);
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            return reader["pwSalt"].ToString();
+                            if (await reader.ReadAsync())
+                            {
+ 
+                                return reader["pwSalt"].ToString();
+                            }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
-                catch(Exception ex)
-                {
-                Database.Log.Log_Server(ex.ToString());
             }
-        }
             return "";
         }
 
         public static async Task<string> GetPasswordHash(string username)//return hash
         {
             string query = $"SELECT passwordHash AS pwHash FROM `accounts` WHERE `userName` = @Username LIMIT 1";
-
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@Username", username);
-                try
-                { 
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@Username", username);
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            return reader["pwHash"].ToString();
+                            if (await reader.ReadAsync())
+                            {
+                                return reader["pwHash"].ToString();
+                            }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
             }
             return "";
@@ -287,26 +328,32 @@ namespace Server.Auth
         public static async Task<bool> AccountExists(string username)//felhasználónév alapján
         {
             string query = $"SELECT userName FROM `accounts` WHERE `userName` = @Username LIMIT 1";
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@Username", username);
-                try
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    cmd.Parameters.AddWithValue("@Username", username);
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            if ((string)reader["userName"] == username)
+                            if (await reader.ReadAsync())
                             {
-                                return true;
+                                if ((string)reader["userName"] == username)
+                                {
+                                    return true;
+                                }
                             }
                         }
                     }
-                }
-                catch(Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
             }
             return false;
@@ -315,26 +362,31 @@ namespace Server.Auth
         public static async Task<bool> AccountExists(uint accountID)//account id alapján
         {
             string query = $"SELECT id FROM `accounts` WHERE `id` = @AccID LIMIT 1";
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@AccID", accountID);
-                try
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    cmd.Parameters.AddWithValue("@AccID", accountID);
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            if (Convert.ToUInt16(reader["id"]) == accountID)
+                            if (await reader.ReadAsync())
                             {
-                                return true;
+                                if (Convert.ToUInt16(reader["id"]) == accountID)
+                                {
+                                    return true;
+                                }
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
             }
             return false;
@@ -343,51 +395,61 @@ namespace Server.Auth
         public static async Task<bool> EmailInUse(string email)//használatban van-e az email
         {
             string query = $"SELECT email AS Email FROM `accounts` WHERE `email` = @Email LIMIT 1";
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@Email", email);
-                try
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    cmd.Parameters.AddWithValue("@Email", email);
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            if ((string)reader["Email"] == email)
+                            if (await reader.ReadAsync())
                             {
-                                return true;
+                                if ((string)reader["Email"] == email)
+                                {
+                                    return true;
+                                }
                             }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
-                catch(Exception ex)
-                {
-                Database.Log.Log_Server(ex.ToString());
-                }
-        }
+            }
             return false;
         }
 
         public static async Task<Tuple<int, string>> GetAdminData(uint accID)//admin szint és név
         {
             string query = $"SELECT adminLevel, adminNick FROM `accounts` WHERE `id` = @AccID LIMIT 1";
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@AccID", accID);
-                try
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    cmd.Parameters.AddWithValue("@AccID", accID);
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            return Tuple.Create(Convert.ToInt32(reader["adminLevel"]), Convert.ToString(reader["adminNick"]));
+                            if (await reader.ReadAsync())
+                            {
+                                return Tuple.Create(Convert.ToInt32(reader["adminLevel"]), Convert.ToString(reader["adminNick"]));
+                            }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
             }
             return Tuple.Create(0,""); ;
@@ -396,54 +458,65 @@ namespace Server.Auth
         public static async Task<bool> SocialClubInUse(ulong socialclubid)//social club ellenőrzés
         {
             string query = $"SELECT scId AS SocialClubId FROM `accounts` WHERE `scId` = @ScId LIMIT 1";
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@ScId", socialclubid);
-                try
-                { 
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@ScId", socialclubid);
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            if (Convert.ToUInt32(reader["SocialClubId"]) == socialclubid)
+                            if (await reader.ReadAsync())
                             {
-                                return true;
+                                if (Convert.ToUInt32(reader["SocialClubId"]) == socialclubid)
+                                {
+                                    return true;
+                                }
                             }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
-                catch(Exception ex)
-                {
-                Database.Log.Log_Server(ex.ToString());
-                }
-        }
+            }
             return false;
         }
 
         public static async Task<bool> SerialInUse(string serial)//serial ellenőrzés
         {
             string query = $"SELECT serial AS Serial FROM `accounts` WHERE `serial` = @SerialNumber LIMIT 1";
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@SerialNumber", serial);
-                try
-                { 
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@SerialNumber", serial);
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            if ((string)reader["Serial"] == serial)
+                            if (await reader.ReadAsync())
                             {
-                                return true;
+                                if ((string)reader["Serial"] == serial)
+                                {
+   
+                                    return true;
+                                }
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
             }
             return false;
@@ -452,9 +525,13 @@ namespace Server.Auth
         public static async Task<bool> RegisterPlayer(Player player, string username, string email, string passwordHash, string salt, string serial, ulong scID, string scName)//minden adatot vár ami egy accounthoz tartozik
         {
             string query = $"INSERT INTO `accounts` (userName,email,passwordHash,passwordSalt,serial,scId,sc) VALUES (@Username,@Email,@pwHash,@Salt,@Serial,@SCID,@SCNAME)";
-            try
+            using (MySqlConnection con = new MySqlConnection())
             {
-                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
                 {
                     command.Parameters.AddWithValue("@Username", username);
                     command.Parameters.AddWithValue("@Email", email);
@@ -477,10 +554,6 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Database.Log.Log_Server(ex.ToString());
             }
             return false;
         }

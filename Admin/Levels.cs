@@ -27,25 +27,30 @@ namespace Server.Admin
         public static async Task LoadAdminCommands()
         {
             string query = $"SELECT command, adminLevel FROM `acmds`";
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                try
-                {
-                    using (var reader = await cmd.ExecuteReaderAsync())
-                    {
-                        while (await reader.ReadAsync())
-                        {
-                            string command = Convert.ToString(reader["command"]);
-                            int level = Convert.ToInt32(reader["adminLevel"]);
-                            acmds.Add(command, level);
-                        }
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
 
-                    }
-                }
-                catch (Exception ex)
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    Database.Log.Log_Server(ex.ToString());
+                    try
+                    {
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                string command = Convert.ToString(reader["command"]);
+                                int level = Convert.ToInt32(reader["adminLevel"]);
+                                acmds.Add(command, level);
+                            }
+
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
             }
         }
@@ -70,10 +75,12 @@ namespace Server.Admin
         {
 
             string query = $"UPDATE `acmds` SET `adminLevel` = @AdminLevel WHERE `acmds`.`command` = @AdminCMD;";
-
-            try
+            using (MySqlConnection con = new MySqlConnection())
             {
-                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
                 {
                     command.Parameters.AddWithValue("@AdminLevel", adminlevel);
                     command.Parameters.AddWithValue("@AdminCMD", adminCmd);
@@ -93,10 +100,6 @@ namespace Server.Admin
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Database.Log.Log_Server(ex.ToString());
-            }
 
             return false;
         }
@@ -107,10 +110,12 @@ namespace Server.Admin
         {
 
             string query = $"UPDATE `accounts` SET `adminLevel` = @AdminLevel WHERE `accounts`.`id` = @AccID;";
-
-            try
+            using (MySqlConnection con = new MySqlConnection())
             {
-                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
                 {
                     command.Parameters.AddWithValue("@AdminLevel", adminlevel);
                     command.Parameters.AddWithValue("@AccID", accid);
@@ -128,10 +133,6 @@ namespace Server.Admin
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Database.Log.Log_Server(ex.ToString());
             }
 
             return false;

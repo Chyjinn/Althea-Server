@@ -21,10 +21,10 @@ namespace Server
             NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
             NAPI.Server.SetGlobalServerChat(true);
-            Database.MySQL.InitConnection();
-            //AutosavePlayers();
+            AutosavePlayers();
             NAPI.Task.Run(() =>
             {
+                Database.Log.Log_Server("admin parancsok betöltésének megkezdése...");
                 Admin.Levels.LoadAcmds();
             },10000);
             
@@ -75,10 +75,12 @@ namespace Server
         {
 
             string query = $"UPDATE `characters` SET `posX` = @PositionX, `posY` = @PositionY, `posZ` = @PositionZ, `rot` = @Rotation WHERE `characters`.`id` = @CharacterID;";
-            
-            try
+            using (MySqlConnection con = new MySqlConnection())
             {
-                using (MySqlCommand command = new MySqlCommand(query, Database.MySQL.connection))
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
                 {
                     command.Parameters.AddWithValue("@PositionX", posX);
                     command.Parameters.AddWithValue("@PositionY", posY);
@@ -100,11 +102,6 @@ namespace Server
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Database.Log.Log_Server(ex.ToString());
-            }
-            
             return false;
         }
 

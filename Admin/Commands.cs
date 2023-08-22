@@ -694,11 +694,5 @@ namespace Server.Admin
         }
 
 
-        [Command("charedit", Alias = "editchar", GreedyArg =true)]
-        public void CharEdit(GTANetworkAPI.Player player)
-        {
-
-        }
-
     }
 }

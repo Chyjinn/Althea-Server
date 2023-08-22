@@ -186,25 +186,30 @@ namespace Server.Characters
         {
             string query = $"SELECT id,characterName,dob,pob,appearanceId,posX,posY,posZ,rot FROM `characters` WHERE `accountId` = @accountID";
             List<Character> characters = new List<Character>();
-            
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@accountID", accID);
-                cmd.Prepare();
-                try
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    cmd.Parameters.AddWithValue("@accountID", accID);
+                    cmd.Prepare();
+                    try
                     {
-                        while (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            Character c = new Character(Convert.ToUInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]), Convert.ToSingle(reader["rot"])) ;
-                            characters.Add(c);
+                            while (await reader.ReadAsync())
+                            {
+                                Character c = new Character(Convert.ToUInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]), Convert.ToSingle(reader["rot"]));
+                                characters.Add(c);
+                            }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
             }
             return characters.ToArray();
@@ -214,38 +219,44 @@ namespace Server.Characters
         {
             string query = $"SELECT id,gender,eyeColor,hairColor,hairHighlight, parent1face,parent2face,parent3face, parent1skin,parent2skin,parent3skin, faceMix,skinMix,thirdMix, noseWidth,noseHeight,noseLength,noseBridge,noseTip,noseBroken,browHeight,browWidth,cheekboneHeight,cheekboneWidth,cheekWidth,eyes,lips,jawWidth,jawHeight,chinLength,chinPosition,chinWidth,chinShape,neckWidth FROM `appearances` WHERE `id` = @appearanceID LIMIT 1";
             Appearance app = new Appearance();
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@appearanceID", c.AppearanceID);
-                try
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    using (var reader = await cmd.ExecuteReaderAsync())
+                    cmd.Parameters.AddWithValue("@appearanceID", c.AppearanceID);
+                    try
                     {
-                        if (await reader.ReadAsync())
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            bool gender = false;
-                            if (Convert.ToInt32(reader["gender"]) == 1)
+                            if (await reader.ReadAsync())
                             {
-                                gender = true;
+                                bool gender = false;
+                                if (Convert.ToInt32(reader["gender"]) == 1)
+                                {
+                                    gender = true;
+                                }
+
+                                app.Set(Convert.ToInt32(reader["id"]), gender, Convert.ToByte(reader["eyeColor"]), Convert.ToByte(reader["hairColor"]), Convert.ToByte(reader["hairHighlight"]), Convert.ToByte(reader["parent1face"]), Convert.ToByte(reader["parent2face"]), Convert.ToByte(reader["parent3face"]),
+                                    Convert.ToByte(reader["parent1skin"]), Convert.ToByte(reader["parent2skin"]), Convert.ToByte(reader["parent3skin"]),
+                                    Convert.ToByte(reader["faceMix"]), Convert.ToByte(reader["skinMix"]), Convert.ToByte(reader["thirdMix"]),
+                                    Convert.ToSByte(reader["noseWidth"]), Convert.ToSByte(reader["noseHeight"]), Convert.ToSByte(reader["noseLength"]), Convert.ToSByte(reader["noseBridge"]), Convert.ToSByte(reader["noseTip"]), Convert.ToSByte(reader["noseBroken"]),
+                                Convert.ToSByte(reader["browHeight"]), Convert.ToSByte(reader["browWidth"]), Convert.ToSByte(reader["cheekboneHeight"]), Convert.ToSByte(reader["cheekboneWidth"]), Convert.ToSByte(reader["cheekWidth"]),
+                                Convert.ToSByte(reader["eyes"]), Convert.ToSByte(reader["lips"]), Convert.ToSByte(reader["jawWidth"]), Convert.ToSByte(reader["jawHeight"]), Convert.ToSByte(reader["chinLength"]), Convert.ToSByte(reader["chinPosition"]), Convert.ToSByte(reader["chinWidth"]), Convert.ToSByte(reader["chinShape"]), Convert.ToSByte(reader["neckWidth"]));
+
+                                //sbyte -128 - 127
+                                //byte 0 - 255
                             }
-
-                            app.Set(Convert.ToInt32(reader["id"]), gender, Convert.ToByte(reader["eyeColor"]), Convert.ToByte(reader["hairColor"]), Convert.ToByte(reader["hairHighlight"]), Convert.ToByte(reader["parent1face"]), Convert.ToByte(reader["parent2face"]), Convert.ToByte(reader["parent3face"]),
-                                Convert.ToByte(reader["parent1skin"]), Convert.ToByte(reader["parent2skin"]), Convert.ToByte(reader["parent3skin"]),
-                                Convert.ToByte(reader["faceMix"]), Convert.ToByte(reader["skinMix"]), Convert.ToByte(reader["thirdMix"]),
-                                Convert.ToSByte(reader["noseWidth"]), Convert.ToSByte(reader["noseHeight"]), Convert.ToSByte(reader["noseLength"]), Convert.ToSByte(reader["noseBridge"]), Convert.ToSByte(reader["noseTip"]), Convert.ToSByte(reader["noseBroken"]),
-                            Convert.ToSByte(reader["browHeight"]), Convert.ToSByte(reader["browWidth"]), Convert.ToSByte(reader["cheekboneHeight"]), Convert.ToSByte(reader["cheekboneWidth"]), Convert.ToSByte(reader["cheekWidth"]),
-                            Convert.ToSByte(reader["eyes"]), Convert.ToSByte(reader["lips"]), Convert.ToSByte(reader["jawWidth"]), Convert.ToSByte(reader["jawHeight"]), Convert.ToSByte(reader["chinLength"]), Convert.ToSByte(reader["chinPosition"]), Convert.ToSByte(reader["chinWidth"]), Convert.ToSByte(reader["chinShape"]), Convert.ToSByte(reader["neckWidth"]));
-
-                            //sbyte -128 - 127
-                            //byte 0 - 255
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                    return app;
                 }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
-                }
-                return app;
             }
         }
 
@@ -324,22 +335,27 @@ namespace Server.Characters
         public static async Task<bool> IsCharacterOwner(uint accid, uint charid)//ha az adott account-hoz tartozik a karakter akkor true, különben false
         {
             string query = $"SELECT COUNT(id) FROM `characters` WHERE `accountId` = @AccID AND `id` = @CharID";
-
-            using (MySqlCommand cmd = new MySqlCommand(query, Database.MySQL.connection))
+            using (MySqlConnection con = new MySqlConnection())
             {
-                cmd.Parameters.AddWithValue("@AccID", accid);
-                cmd.Parameters.AddWithValue("@CharID", charid);
-                try
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
-                    var count = await cmd.ExecuteScalarAsync();
-                    if (Convert.ToInt32(count) > 0)
+                    cmd.Parameters.AddWithValue("@AccID", accid);
+                    cmd.Parameters.AddWithValue("@CharID", charid);
+                    try
                     {
-                        return true;
+                        var count = await cmd.ExecuteScalarAsync();
+                        if (Convert.ToInt32(count) > 0)
+                        {
+                            return true;
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    //Log.Log_Server(ex.ToString());
+                    catch (Exception ex)
+                    {
+                        //Log.Log_Server(ex.ToString());
+                    }
                 }
             }
             return false;

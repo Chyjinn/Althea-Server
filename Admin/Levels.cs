@@ -59,6 +59,7 @@ namespace Server.Admin
 
         public static bool IsPlayerAdmin(string command, int adminlevel)
         {
+            return true;//placeholder, bejelentkezésig maradhat így
             if (acmds.ContainsKey(command))
             {
                 acmds.TryGetValue(command, out int requiredlevel);

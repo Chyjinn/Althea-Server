@@ -133,6 +133,7 @@ namespace Server.Admin
                     player.SendChatMessage("[HASZNÁLAT]: /setadminlevel [játékos ID] [admin szint]");
                 }
             }
+            
         }
 
 
@@ -296,7 +297,7 @@ namespace Server.Admin
         {
             int adminlevel = player.GetData<int>("player:AdminLevel");
 
-            if (Levels.IsPlayerAdmin("setadminlevel", adminlevel))
+            if (Levels.IsPlayerAdmin("setdimension", adminlevel))
             {
                 Player target = null;
                 string[] p = parameters.Split(' ');//felbontjuk a dolgokat
@@ -501,16 +502,25 @@ namespace Server.Admin
             NAPI.Player.GivePlayerWeapon(player, WeaponHash.Flashlight, 1);
         }
 
+        [Command("siren")]
+        public void VehicleSiren(Player player, string siren)
+        {
+            Vehicle v = NAPI.Player.GetPlayerVehicle(player);
+            v.SetSharedData("vehicle:Siren", siren);
+            player.TriggerEvent("client:Siren",siren);
+        }
+
         [Command("veh", Alias = "tempveh", GreedyArg = true)]
         public void CreateVehicle(Player player, string model)
         {
             if (checkAdmin())
-                {
+            {
                 uint vHash = NAPI.Util.GetHashKey(model);
                 Vehicle v = NAPI.Vehicle.CreateVehicle(vHash, new Vector3(player.Position.X, player.Position.Y + 2.0, player.Position.Z), 0f, 1, 1, "TEMP");
                 v.Dimension = player.Dimension;
+
                 player.SendChatMessage("Jármű létrehozva: " + v.DisplayName);
-                }
+            }
         }
 
         [Command("setvehcolor", Alias = "setcarcolor")]

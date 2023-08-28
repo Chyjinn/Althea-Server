@@ -14,14 +14,34 @@ namespace Server.Chat
         {
             
         }
+
+
+        [ServerEvent(Event.PlayerWeaponSwitch)]
+        public void PlayerWeaponSwitch(Player player, WeaponHash oldWeapon, WeaponHash newWeapon)
+        {
+            if (oldWeapon == WeaponHash.Unarmed)
+            {
+                ChatEmoteME(player, "elővesz egy fegyvert.");
+            }
+            else if(newWeapon == WeaponHash.Unarmed)
+            {
+                ChatEmoteME(player, "eltesz egy fegyvert.");
+            }
+            else
+            {
+                ChatEmoteME(player, $"lecseréli "+ oldWeapon.ToString() + " fegyverét egy "+ newWeapon.ToString() + "-ra.");
+            }    
+            
+        }
+
         //c2a2da
         [Command("me", "HASZNÁLAT: /me cselekvés", GreedyArg = true)]
-        public void emote_ME(Player player, String message)
+        public void ChatEmoteME(Player player, String message)
         {
             var nearbyPlayers = NAPI.Player.GetPlayersInRadiusOfPlayer(5.0, player);
             foreach(Player item in nearbyPlayers)
                 {
-                item.SendChatMessage("!{#c2a2da}** " + player.Name + " " + message);
+                item.SendChatMessage("!{#c2a2da}*** " + player.Name + " " + message);
             }
         }
 

@@ -229,6 +229,78 @@ namespace Server.Characters
         public Dictionary<int, HeadOverlay> GetHeadOverlays()
         {
             Dictionary<int, HeadOverlay> overlays = new Dictionary<int, HeadOverlay>();
+
+            HeadOverlay Blemishes = new HeadOverlay();
+            Blemishes.Index = BlemishId;
+            Blemishes.Opacity = BlemishOpacity;
+
+            HeadOverlay FacialHair = new HeadOverlay();
+            FacialHair.Index = FacialHairId;
+            FacialHair.Color = FacialHairColor;
+            FacialHair.Opacity = FacialHairOpacity;
+
+            HeadOverlay EyeBrows = new HeadOverlay();
+            EyeBrows.Index = EyeBrowId;
+            EyeBrows.Color = EyeBrowColor;
+            EyeBrows.Opacity = EyeBrowOpacity;
+            
+            HeadOverlay Ageing = new HeadOverlay();
+            Ageing.Index = AgeId;
+            Ageing.Opacity = AgeOpacity;
+
+            HeadOverlay Makeup = new HeadOverlay();
+            Makeup.Index = MakeupId;
+            Makeup.Opacity = MakeupOpacity;
+
+            HeadOverlay Blush = new HeadOverlay();
+            Blush.Index = BlushId;
+            Blush.Color = BlushColor;
+            Blush.Opacity = BlushOpacity;
+
+            HeadOverlay Complexion = new HeadOverlay();
+            Complexion.Index = ComplexionId;
+            Makeup.Opacity = ComplexionOpacity;
+
+            HeadOverlay SunDamage = new HeadOverlay();
+            SunDamage.Index = SundamageId;
+            SunDamage.Opacity = SundamageOpacity;
+
+            HeadOverlay Lipstick = new HeadOverlay();
+            Lipstick.Index = LipstickId;
+            Lipstick.Color = LipstickColor;
+            Lipstick.Opacity = LipstickOpacity;
+
+            HeadOverlay Freckles = new HeadOverlay();
+            Freckles.Index = FrecklesId;
+            Freckles.Opacity = FrecklesOpacity;
+
+            HeadOverlay ChestHair = new HeadOverlay();
+            ChestHair.Index = ChestHairId;
+            ChestHair.Color = ChestHairColor;
+            ChestHair.Opacity = ChestHairOpacity;
+
+            HeadOverlay BodyBlemishes1 = new HeadOverlay();
+            BodyBlemishes1.Index = BodyBlemish1Id;
+            BodyBlemishes1.Opacity = BodyBlemish1Opacity;
+
+            HeadOverlay BodyBlemishes2 = new HeadOverlay();
+            BodyBlemishes2.Index = BodyBlemish2Id;
+            BodyBlemishes2.Opacity = BodyBlemish2Opacity;
+
+            overlays.Add(0, Blemishes);
+            overlays.Add(1, FacialHair);
+            overlays.Add(2, EyeBrows);
+            overlays.Add(3, Ageing);
+            overlays.Add(4, Makeup);
+            overlays.Add(5, Blush);
+            overlays.Add(6, Complexion);
+            overlays.Add(7, SunDamage);
+            overlays.Add(8, Lipstick);
+            overlays.Add(9, Freckles);
+            overlays.Add(10, ChestHair);
+            overlays.Add(11, BodyBlemishes1);
+            overlays.Add(12, BodyBlemishes2);
+
             return overlays;
         }
 
@@ -239,7 +311,8 @@ namespace Server.Characters
         static Dictionary<int, float[]> scenes = new Dictionary<int, float[]>()
         {
             //ID, float tömb: Kamera X-Y-Z-ROT, Kezdő X-Y-Z-ROT, Vég X-Y-Z-ROT
-            {0,new float[12] {-1030.5f, -1090.2f, 1.9f, 92.7f, -1033.1f, -1096.1f, 1.94f, -30f, -1031.9f, -1090.4f, 2.1f, -99.2f } },
+            //{0,new float[12] {-1030.5f, -1090.2f, 1.9f, 92.7f, -1033.1f, -1096.1f, 1.94f, -30f, -1031.9f, -1090.4f, 2.1f, -99.2f } },
+            {0,new float[12] {-1053.5f, -1206.7f, 4.5f, -72f, -1052.9f, -1200.1f, 3.8f, -152f, -1050.6f, -1205.2f, 4f, 105.3f } },
         };
 
 

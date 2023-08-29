@@ -236,6 +236,13 @@ namespace Server.Characters
 
     internal class Selector : Script
     {
+        static Dictionary<int, float[]> scenes = new Dictionary<int, float[]>()
+        {
+            //ID, float tömb: Kamera X-Y-Z-ROT, Kezdő X-Y-Z-ROT, Vég X-Y-Z-ROT
+            {0,new float[12] {195.7f, -938.3f, 30f, 147.0f, 189.3f, -934.15f, 30.69f, -163.45f, 190.75f, -940.2f, 30.7f, -38f } },
+        };
+
+
         //CHAR:
         //-811.8078, 175.06, 76.75, 0, 0, 104.9
         //CAM:
@@ -259,15 +266,43 @@ namespace Server.Characters
                 }
                 NAPI.Task.Run(() =>
                 {
-                    player.SetSharedData("player:Frozen", false);
+
+
+                    Random r = new Random();
+                    int randomscene = r.Next(0, scenes.Count);
+
+                    float[] coords = scenes[randomscene];
+
+                    Vector3 pos = new Vector3(coords[4], coords[5], coords[6]);
+                    Vector3 rot = new Vector3(0f, 0f, coords[7]);
+                    player.Position = pos;
+                    player.Rotation = rot;
+
                     string json = NAPI.Util.ToJson(characters);
                     player.SetData("player:CharacterSelector", json);
 
-                    SetPlayerToWalkIn(player);
-                    player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
+                    player.TriggerEvent("client:SkyCam", false);
                     
+
+
+
                     HandleCharacterAppearance(player, characters[0].Id);
-                    player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
+                    NAPI.Task.Run(() =>
+                    {
+                        player.SetSharedData("player:Frozen", false);
+                        player.TriggerEvent("client:SetCamera", coords[0], coords[1], coords[2], 0f, 0f, coords[3], 48f);
+                        player.TriggerEvent("client:CharWalkIn", coords[8], coords[9], coords[10], coords[11]);
+                        NAPI.Task.Run(() =>
+                        {
+                            player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
+                        }, 1000);
+                    }, 1000);
+
+
+                    
+                    
+                    
+                    
                 });
             }
             else
@@ -384,9 +419,10 @@ namespace Server.Characters
             h.SkinMix = character   .Appearance.SkinMix;
             h.ThirdMix = character.Appearance.OverrideMix;
             float[] FaceFeatures = character.Appearance.GetFaceFeatures();
+            Dictionary<int, HeadOverlay> overlays = character.Appearance.GetHeadOverlays();
             NAPI.Task.Run(() =>
             {
-                Dictionary<int, HeadOverlay> overlays = new Dictionary<int, HeadOverlay>();
+                
                 Decoration[] decor = new Decoration[0];
                 player.SetCustomization(character.Appearance.Gender, h, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
             });
@@ -416,7 +452,6 @@ namespace Server.Characters
             player.TriggerEvent("client:ChatStopWalk");
             //itt kell majd átváltani a karit
             HandleCharacterAppearance(player, charid);
-            SetPlayerToWalkIn(player);
         }, 2000);
     }
 
@@ -471,17 +506,6 @@ namespace Server.Characters
             return false;
         }
 
-        public static void SetPlayerToWalkIn(Player player)
-    {
-        Vector3 pos = new Vector3(-813.35, 173.24f, 76.74f);
-        Vector3 rot = new Vector3(0f, 0f, -37f);
-        player.Position = pos;
-        player.Rotation = rot;
-        NAPI.Task.Run(() =>
-        {
-            player.TriggerEvent("client:CharWalkIn");
-        }, 500);
-    }
 
     public static void SetPlayerToWalkOut(Player player)
     {

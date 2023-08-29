@@ -107,12 +107,12 @@ namespace Server.Characters
         public byte BodyBlemish2Opacity { get; set; }
 
         public Appearance(int id, bool gender,
-            byte eyecolor, byte haircolor, byte hairhighlight, 
-            byte p1f, byte p2f, byte p3f, byte p1s, byte p2s, byte p3s, 
+            byte eyecolor, byte haircolor, byte hairhighlight,
+            byte p1f, byte p2f, byte p3f, byte p1s, byte p2s, byte p3s,
             byte facemix, byte skinmix, byte overridemix,
-            sbyte nosewidth, sbyte noseheight, sbyte noselength, 
-            sbyte nosebridge, sbyte nosetip, sbyte nosebroken, 
-            sbyte browheight, sbyte browwidth, sbyte cheekboneheight, 
+            sbyte nosewidth, sbyte noseheight, sbyte noselength,
+            sbyte nosebridge, sbyte nosetip, sbyte nosebroken,
+            sbyte browheight, sbyte browwidth, sbyte cheekboneheight,
             sbyte cheekbonewidth, sbyte cheekwidth, sbyte eyes, sbyte lips,
             sbyte jawwidth, sbyte jawheight, sbyte chinlength, sbyte chinposition,
             sbyte chinwidth, sbyte chinshape, sbyte neckwidth,
@@ -224,6 +224,14 @@ namespace Server.Characters
             };
             return features;
         }
+
+
+        public Dictionary<int, HeadOverlay> GetHeadOverlays()
+        {
+            Dictionary<int, HeadOverlay> overlays = new Dictionary<int, HeadOverlay>();
+            return overlays;
+        }
+
     }
 
     internal class Selector : Script
@@ -304,8 +312,8 @@ namespace Server.Characters
 
         public static async Task<Appearance> LoadCharacterAppearance(Character c)
         {
-            string query = $"SELECT id,gender,eyeColor,hairColor,hairHighlight, parent1face,parent2face,parent3face, parent1skin,parent2skin,parent3skin, faceMix,skinMix,thirdMix, noseWidth,noseHeight,noseLength,noseBridge,noseTip,noseBroken,browHeight,browWidth,cheekboneHeight,cheekboneWidth,cheekWidth,eyes,lips,jawWidth,jawHeight,chinLength,chinPosition,chinWidth,chinShape,neckWidth FROM `appearances` WHERE `id` = @appearanceID LIMIT 1";
-            Appearance app = new Appearance();
+            string query = $"SELECT * FROM `appearances` WHERE `id` = @appearanceID LIMIT 1";
+            
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -325,14 +333,28 @@ namespace Server.Characters
                                 {
                                     gender = true;
                                 }
-
-                                app.Set(Convert.ToInt32(reader["id"]), gender, Convert.ToByte(reader["eyeColor"]), Convert.ToByte(reader["hairColor"]), Convert.ToByte(reader["hairHighlight"]), Convert.ToByte(reader["parent1face"]), Convert.ToByte(reader["parent2face"]), Convert.ToByte(reader["parent3face"]),
+                                Appearance app = new Appearance(Convert.ToInt32(reader["id"]), gender, Convert.ToByte(reader["eyeColor"]), Convert.ToByte(reader["hairColor"]), Convert.ToByte(reader["hairHighlight"]), Convert.ToByte(reader["parent1face"]), Convert.ToByte(reader["parent2face"]), Convert.ToByte(reader["parent3face"]),
                                     Convert.ToByte(reader["parent1skin"]), Convert.ToByte(reader["parent2skin"]), Convert.ToByte(reader["parent3skin"]),
                                     Convert.ToByte(reader["faceMix"]), Convert.ToByte(reader["skinMix"]), Convert.ToByte(reader["thirdMix"]),
                                     Convert.ToSByte(reader["noseWidth"]), Convert.ToSByte(reader["noseHeight"]), Convert.ToSByte(reader["noseLength"]), Convert.ToSByte(reader["noseBridge"]), Convert.ToSByte(reader["noseTip"]), Convert.ToSByte(reader["noseBroken"]),
                                 Convert.ToSByte(reader["browHeight"]), Convert.ToSByte(reader["browWidth"]), Convert.ToSByte(reader["cheekboneHeight"]), Convert.ToSByte(reader["cheekboneWidth"]), Convert.ToSByte(reader["cheekWidth"]),
-                                Convert.ToSByte(reader["eyes"]), Convert.ToSByte(reader["lips"]), Convert.ToSByte(reader["jawWidth"]), Convert.ToSByte(reader["jawHeight"]), Convert.ToSByte(reader["chinLength"]), Convert.ToSByte(reader["chinPosition"]), Convert.ToSByte(reader["chinWidth"]), Convert.ToSByte(reader["chinShape"]), Convert.ToSByte(reader["neckWidth"]));
-
+                                Convert.ToSByte(reader["eyes"]), Convert.ToSByte(reader["lips"]), Convert.ToSByte(reader["jawWidth"]), Convert.ToSByte(reader["jawHeight"]), Convert.ToSByte(reader["chinLength"]), Convert.ToSByte(reader["chinPosition"]), Convert.ToSByte(reader["chinWidth"]), Convert.ToSByte(reader["chinShape"]), Convert.ToSByte(reader["neckWidth"]),
+                                Convert.ToByte(reader["blemishId"]), Convert.ToByte(reader["blemishOpacity"]),
+                                Convert.ToByte(reader["facialhairId"]), Convert.ToByte(reader["facialhairColor"]), Convert.ToByte(reader["facialhairOpacity"]),
+                                Convert.ToByte(reader["eyebrowId"]), Convert.ToByte(reader["eyebrowColor"]), Convert.ToByte(reader["eyebrowOpacity"]),
+                                Convert.ToByte(reader["ageId"]), Convert.ToByte(reader["ageOpacity"]),
+                                Convert.ToByte(reader["makeupId"]), Convert.ToByte(reader["makeupOpacity"]),
+                                Convert.ToByte(reader["blushId"]), Convert.ToByte(reader["blushColor"]), Convert.ToByte(reader["blushOpacity"]),
+                                Convert.ToByte(reader["complexionId"]), Convert.ToByte(reader["complexionOpacity"]),
+                                Convert.ToByte(reader["sundamageId"]), Convert.ToByte(reader["sundamageOpacity"]),
+                                Convert.ToByte(reader["lipstickId"]), Convert.ToByte(reader["lipstickColor"]), Convert.ToByte(reader["lipstickOpacity"]),
+                                Convert.ToByte(reader["frecklesId"]), Convert.ToByte(reader["frecklesOpacity"]),
+                                Convert.ToByte(reader["chesthairId"]), Convert.ToByte(reader["chesthairColor"]), Convert.ToByte(reader["chesthairOpacity"]),
+                                Convert.ToByte(reader["bodyblemishId"]), Convert.ToByte(reader["bodyblemishOpacity"]),
+                                Convert.ToByte(reader["bodyblemish2Id"]), Convert.ToByte(reader["bodyblemish2Opacity"]));
+                                
+                                
+                                return app;
                                 //sbyte -128 - 127
                                 //byte 0 - 255
                             }
@@ -342,9 +364,10 @@ namespace Server.Characters
                     {
                         Database.Log.Log_Server(ex.ToString());
                     }
-                    return app;
+                    
                 }
             }
+            return null;
         }
 
         public static async void HandleCharacterAppearance(Player player, uint charid)

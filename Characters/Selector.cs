@@ -70,6 +70,37 @@ namespace Server.Characters
         public sbyte ChinWidth { get; set; }
         public sbyte ChinShape { get; set; }
         public sbyte NeckWidth { get; set; }
+        public byte BlemishId { get; set; }
+        public byte BlemishOpacity { get; set; }
+        public byte FacialHairId { get; set; }
+        public byte FacialHairColor { get; set; }
+        public byte FacialHairOpacity { get; set; }
+        public byte EyeBrowId { get; set; }
+        public byte EyeBrowColor { get; set; }
+        public byte EyeBrowOpacity { get; set; }
+        public byte AgeId { get; set; }
+        public byte AgeOpacity { get; set; }
+        public byte MakeupId { get; set; }
+        public byte MakeupOpacity { get; set; }
+        public byte BlushId { get; set; }
+        public byte BlushColor { get; set; }
+        public byte BlushOpacity { get; set; }
+        public byte ComplexionId { get; set; }
+        public byte ComplexionOpacity { get; set; }
+        public byte SundamageId { get; set; }
+        public byte SundamageOpacity { get; set; }
+        public byte LipstickId { get; set; }
+        public byte LipstickColor { get; set; }
+        public byte LipstickOpacity { get; set; }
+        public byte FrecklesId { get; set; }
+        public byte FrecklesOpacity { get; set; }
+        public byte ChestHairId { get; set; }
+        public byte ChestHairColor { get; set; }
+        public byte ChestHairOpacity { get; set; }
+        public byte BodyBlemish1Id { get; set; }
+        public byte BodyBlemish1Opacity { get; set; }
+        public byte BodyBlemish2Id { get; set; }
+        public byte BodyBlemish2Opacity { get; set; }
 
         public void Set(int id, bool gender, byte eyecolor, byte haircolor, byte hairhighlight, byte p1f, byte p2f, byte p3f, byte p1s, byte p2s, byte p3s, byte facemix, byte skinmix, byte overridemix, sbyte nosewidth, sbyte noseheight, sbyte noselength, sbyte nosebridge, sbyte nosetip, sbyte nosebroken, sbyte browheight, sbyte browwidth, sbyte cheekboneheight, sbyte cheekbonewidth, sbyte cheekwidth, sbyte eyes, sbyte lips, sbyte jawwidth, sbyte jawheight, sbyte chinlength, sbyte chinposition, sbyte chinwidth, sbyte chinshape, sbyte neckwidth)
         {

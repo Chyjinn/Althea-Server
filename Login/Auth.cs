@@ -276,7 +276,7 @@ namespace Server.Auth
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
-                await con.OpenAsync();
+                await con.OpenAsync();//hiba volt itt - object reference not set to an instance of an object
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {

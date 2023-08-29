@@ -239,7 +239,7 @@ namespace Server.Characters
         static Dictionary<int, float[]> scenes = new Dictionary<int, float[]>()
         {
             //ID, float tömb: Kamera X-Y-Z-ROT, Kezdő X-Y-Z-ROT, Vég X-Y-Z-ROT
-            {0,new float[12] {195.7f, -938.3f, 30f, 147.0f, 189.3f, -934.15f, 30.69f, -163.45f, 190.75f, -940.2f, 30.7f, -38f } },
+            {0,new float[12] {-1030.5f, -1090.2f, 1.9f, 92.7f, -1033.1f, -1096.1f, 1.94f, -30f, -1031.9f, -1090.4f, 2.1f, -99.2f } },
         };
 
 
@@ -295,8 +295,8 @@ namespace Server.Characters
                         NAPI.Task.Run(() =>
                         {
                             player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
-                        }, 1000);
-                    }, 1000);
+                        }, 3000);
+                    }, 2000);
 
 
                     

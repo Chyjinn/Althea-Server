@@ -41,15 +41,18 @@ namespace Server.Characters
         public byte EyeColor { get; set; }
         public byte HairColor { get; set; }
         public byte HairHighlight { get; set; }
+        //PARENTS
         public byte Parent1Face { get; set; }
         public byte Parent2Face { get; set; }
         public byte Parent3Face { get; set; }
         public byte Parent1Skin { get; set; }
         public byte Parent2Skin { get; set; }
         public byte Parent3Skin { get; set; }
+        //MIX
         public byte FaceMix { get; set; }
         public byte SkinMix { get; set; }
         public byte OverrideMix { get; set; }
+        //FACE
         public sbyte NoseWidth { get; set; }
         public sbyte NoseHeight { get; set; }
         public sbyte NoseLength { get; set; }
@@ -70,6 +73,7 @@ namespace Server.Characters
         public sbyte ChinWidth { get; set; }
         public sbyte ChinShape { get; set; }
         public sbyte NeckWidth { get; set; }
+        //OVERLAYS - 13 db, összesen 30 v 31
         public byte BlemishId { get; set; }
         public byte BlemishOpacity { get; set; }
         public byte FacialHairId { get; set; }
@@ -102,7 +106,29 @@ namespace Server.Characters
         public byte BodyBlemish2Id { get; set; }
         public byte BodyBlemish2Opacity { get; set; }
 
-        public void Set(int id, bool gender, byte eyecolor, byte haircolor, byte hairhighlight, byte p1f, byte p2f, byte p3f, byte p1s, byte p2s, byte p3s, byte facemix, byte skinmix, byte overridemix, sbyte nosewidth, sbyte noseheight, sbyte noselength, sbyte nosebridge, sbyte nosetip, sbyte nosebroken, sbyte browheight, sbyte browwidth, sbyte cheekboneheight, sbyte cheekbonewidth, sbyte cheekwidth, sbyte eyes, sbyte lips, sbyte jawwidth, sbyte jawheight, sbyte chinlength, sbyte chinposition, sbyte chinwidth, sbyte chinshape, sbyte neckwidth)
+        public Appearance(int id, bool gender,
+            byte eyecolor, byte haircolor, byte hairhighlight, 
+            byte p1f, byte p2f, byte p3f, byte p1s, byte p2s, byte p3s, 
+            byte facemix, byte skinmix, byte overridemix,
+            sbyte nosewidth, sbyte noseheight, sbyte noselength, 
+            sbyte nosebridge, sbyte nosetip, sbyte nosebroken, 
+            sbyte browheight, sbyte browwidth, sbyte cheekboneheight, 
+            sbyte cheekbonewidth, sbyte cheekwidth, sbyte eyes, sbyte lips,
+            sbyte jawwidth, sbyte jawheight, sbyte chinlength, sbyte chinposition,
+            sbyte chinwidth, sbyte chinshape, sbyte neckwidth,
+            byte blemishid, byte blemishopacity,
+            byte facialhairid, byte facialhaircolor, byte facialhairopacity,
+            byte eyebrowid, byte eyebrowcolor, byte eyebrowopacity,
+            byte ageid, byte ageopacity,
+            byte makeupid, byte makeupopacity,
+            byte blushid, byte blushcolor, byte blushopacity,
+            byte complexionid, byte complexionopacity,
+            byte sundamageid, byte sundamageopacity,
+            byte lipstickid, byte lipstickcolor, byte lipstickopacity,
+            byte frecklesid, byte frecklesopacity,
+            byte chesthairid, byte chesthaircolor, byte chesthairopacity,
+            byte bodyblemish1id, byte bodyblemish1opacity,
+            byte bodyblemish2id, byte bodyblemish2opacity)
         {
             Id = id;//adatbázis id
             Gender = gender; // false-> female, true-> male
@@ -138,6 +164,37 @@ namespace Server.Characters
             ChinWidth = chinwidth;
             ChinShape = chinshape;
             NeckWidth = neckwidth;
+            BlemishId = blemishid;
+            BlemishOpacity = blemishopacity;
+            FacialHairId = facialhairid;
+            FacialHairColor = facialhaircolor;
+            FacialHairOpacity = facialhairopacity;
+            EyeBrowId = eyebrowid;
+            EyeBrowColor = eyebrowcolor;
+            EyeBrowOpacity = eyebrowopacity;
+            AgeId = ageid;
+            AgeOpacity = ageopacity;
+            MakeupId = makeupid;
+            MakeupOpacity = makeupopacity;
+            BlushId = blushid;
+            BlushColor = blushcolor;
+            BlushOpacity = blushopacity;
+            ComplexionId = complexionid;
+            ComplexionOpacity = complexionopacity;
+            SundamageId = sundamageid;
+            SundamageOpacity = sundamageopacity;
+            LipstickId = lipstickid;
+            LipstickColor = lipstickcolor;
+            LipstickOpacity = lipstickopacity;
+            FrecklesId = frecklesid;
+            FrecklesOpacity = frecklesopacity;
+            ChestHairId = chesthairid;
+            ChestHairColor = chesthaircolor;
+            ChestHairOpacity = chesthairopacity;
+            BodyBlemish1Id = bodyblemish1id;
+            BodyBlemish1Opacity = bodyblemish1opacity;
+            BodyBlemish2Id = bodyblemish2id;
+            BodyBlemish2Opacity = bodyblemish2opacity;
         }
 
         public float[] GetFaceFeatures()//RAGE API SetCustomization-hoz szükséges float tömböt ad vissza
@@ -166,7 +223,6 @@ namespace Server.Characters
                 NeckWidth / 100
             };
             return features;
-
         }
     }
 

@@ -16,7 +16,7 @@ namespace Server
         [ServerEvent(Event.ResourceStart)]
         public void Start()
         {
-            NAPI.Server.SetCommandErrorMessage("Parancs nem található!");
+            NAPI.Server.SetCommandErrorMessage("{#121212}Parancs nem található!");
             NAPI.Server.SetAutoSpawnOnConnect(true);
             NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);

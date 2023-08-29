@@ -26,6 +26,7 @@ namespace Server.Auth
             {
                 //player.TriggerEvent("client:")
             }
+
         }
 
 
@@ -36,6 +37,7 @@ namespace Server.Auth
             string playerSerial = player.Serial;
             ulong playerScId = player.SocialClubId;
             string playerScName = player.SocialClubName;
+            //ide be kell illeszteni egy ban ellenőrzést (username, serial és social club id alapján)
             LoginPlayer(player, username, password, playerSerial, playerScId, playerScName, remember);//eddig azért nem használtunk async-et hogy megszerezzük a játékos serial,SocialClub adatait - RAGE API hívás csak main threaden
         }
 
@@ -45,6 +47,7 @@ namespace Server.Auth
             string playerSerial = player.Serial;
             ulong playerScId = player.SocialClubId;
             string playerScName = player.SocialClubName;
+            //ide be kell illeszteni egy ban ellenőrzést (accid, serial és social club id alapján)
             LoginPlayerWithToken(player, accID, token, playerSerial, playerScId, playerScName);//eddig azért nem használtunk async-et hogy megszerezzük a játékos serial,SocialClub adatait - RAGE API hívás csak main threaden
         }
 

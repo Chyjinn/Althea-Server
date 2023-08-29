@@ -197,6 +197,143 @@ namespace Server.Auth
             return res;
         }
 
+
+        public static async Task<string[]> GetBanData(ulong scId, string serial)//account id alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
+        {
+            string query = $"SELECT playerId,adminId,reason,timestamp,expires FROM `bans` WHERE `serial` = @SERIAL OR `socialId` = @SCID AND `deactivated` = '0'";
+
+            string[] res;
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@SERIAL", serial);
+                    cmd.Parameters.AddWithValue("@SCID", scId);
+                    cmd.Prepare();
+                    try
+                    {
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                res = new string[5] { reader["playerId"].ToString(), reader["adminId"].ToString(), reader["reason"].ToString(), reader["timestamp"].ToString(), reader["expires"].ToString() };
+                                return res;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+            }
+            res = new string[0];
+            return res;
+        }
+
+        public static async Task<string[]> GetBanData(uint accountId)//account id alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
+        {
+            string query = $"SELECT playerId,adminId,reason,timestamp,expires FROM `bans` WHERE `playerId` = @AccID AND `deactivated` = '0'";
+
+            string[] res;
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@AccID", accountId);
+                    cmd.Prepare();
+                    try
+                    {
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                res = new string[5] { reader["playerId"].ToString(), reader["adminId"].ToString(), reader["reason"].ToString(), reader["timestamp"].ToString(), reader["expires"].ToString() };
+                                return res;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+            }
+            res = new string[0];
+            return res;
+        }
+
+        public static async Task<bool> IsBanned(ulong scId, string serial)//ha a serial vagy social club bannolva van
+        {
+            string query = $"SELECT COUNT(playerId) FROM `bans` WHERE `serial` = @SERIAL OR `socialId` = @SCID AND `deactivated` = '0'";
+
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@SERIAL", serial);
+                    cmd.Parameters.AddWithValue("@SCID", scId);
+                    cmd.Prepare();
+                    try
+                    {
+                            var count = await cmd.ExecuteScalarAsync();
+                            if (Convert.ToInt32(count) > 0)
+                            {
+                                con.CloseAsync();
+                                return true;
+                            }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+                con.CloseAsync();
+            }
+            return false;
+        }
+
+        public static async Task<bool> IsBanned(uint accountId)//ha az account van bannolva
+        {
+            string query = $"SELECT COUNT(playerId) FROM `bans` WHERE `playerId` = @AccID AND `deactivated` = '0'";
+
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@AccID", accountId);
+                    cmd.Prepare();
+                    try
+                    {
+                            var count = await cmd.ExecuteScalarAsync();
+                            if (Convert.ToInt32(count) > 0)
+                            {
+                                con.CloseAsync();
+                                return true;
+                            }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+                con.CloseAsync();
+            }
+            return false;
+        }
+
         public static async Task<string[]> GetLoginData(uint accountID)//account id alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
             string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `id` = @AccID LIMIT 1";

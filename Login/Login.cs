@@ -11,10 +11,24 @@ namespace Server.Auth
     internal class Login : Script
     {
         [ServerEvent(Event.PlayerConnected)]
-        public void OnPlayerConnect(Player player)
+        public async void OnPlayerConnect(Player player)
         {
             player.SetSharedData("player:Frozen", true);
+            string serial = player.Serial;
+            ulong socialID = player.SocialClubId;
+            if(await Auth.IsBanned(socialID, serial))//ha bannolva van a serial vagy social club
+            {
+                string[] banData = await Auth.GetBanData(socialID, serial);
+                player.TriggerEvent("client:BanScreen", banData[1], banData[2], banData[3], banData[4]);
+                NAPI.Chat.SendChatMessageToAll("BAN: " + banData[1] + ", " + banData[2] +  ", " + banData[3]+  ", " + banData[4]);
+            }
+            else
+            {
+                //player.TriggerEvent("client:")
+            }
         }
+
+
 
         [RemoteEvent("server:LoginAttempt")]//kliens hívja meg (login.html)
         public void LoginAttempt(Player player, string username, string password, bool remember)

@@ -21,7 +21,7 @@ namespace Server
             NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
             NAPI.Server.SetGlobalServerChat(true);
-            AutosavePlayers();
+            //AutosavePlayers();
             NAPI.Task.Run(() =>
             {
                 Database.Log.Log_Server("admin parancsok betöltésének megkezdése...");
@@ -105,12 +105,6 @@ namespace Server
             return false;
         }
 
-
-        [ServerEvent(Event.PlayerConnected)]
-        public void OnPlayerConnect(Player player)
-        {
-            
-        }
 
 
         [ServerEvent(Event.PlayerSpawn)]

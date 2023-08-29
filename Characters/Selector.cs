@@ -368,7 +368,8 @@ namespace Server.Characters
                         NAPI.Task.Run(() =>
                         {
                             player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
-                        }, 3000);
+                            player.SetSharedData("player:Frozen", true);
+                        }, 5000);
                     }, 2000);
 
 
@@ -517,15 +518,8 @@ namespace Server.Characters
     [RemoteEvent("server:CharChange")]
     public static void HandleCharacterChange(Player player, int characterid)
     {
-        player.SetSharedData("player:Frozen", false);
         uint charid = Convert.ToUInt32(characterid);
-        SetPlayerToWalkOut(player);
-        NAPI.Task.Run(() =>
-        {
-            player.TriggerEvent("client:ChatStopWalk");
-            //itt kell majd átváltani a karit
-            HandleCharacterAppearance(player, charid);
-        }, 2000);
+        HandleCharacterAppearance(player, charid);
     }
 
     [RemoteEvent("server:CharSelect")]
@@ -537,15 +531,20 @@ namespace Server.Characters
             {
                 NAPI.Task.Run(() =>
                 {
-                    player.TriggerEvent("client:ChatStopWalk");
+                    player.TriggerEvent("client:SkyCam", true);
                     player.TriggerEvent("client:DeleteCamera");
                     player.TriggerEvent("client:hideCharScreen");
-                    player.SetSharedData("player:Frozen", false);
                     player.SetData("player:charID",charid);
                     player.SetSharedData("player:CharacterName",c.Name);
                     player.SetSharedData("player:VisibleName",c.Name);
                     player.Dimension = 0;
-                    NAPI.Player.SpawnPlayer(player, new Vector3(c.posX, c.posY, c.posZ), c.Rot);
+                    NAPI.Task.Run(() =>
+                    {
+                        NAPI.Player.SpawnPlayer(player, new Vector3(c.posX, c.posY, c.posZ), c.Rot);
+                        player.TriggerEvent("client:SkyCam", false);
+                        player.SetSharedData("player:Frozen", false);
+                    }, 2000);
+                    
                 });
             }
     }

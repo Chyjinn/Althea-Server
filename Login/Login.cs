@@ -11,22 +11,39 @@ namespace Server.Auth
     internal class Login : Script
     {
         [ServerEvent(Event.PlayerConnected)]
-        public async void OnPlayerConnect(Player player)
+        public void OnPlayerConnect(Player player)
         {
             player.SetSharedData("player:Frozen", true);
             string serial = player.Serial;
             ulong socialID = player.SocialClubId;
-            if(await Auth.IsBanned(socialID, serial))//ha bannolva van a serial vagy social club
+
+
+            CheckBan(player,serial,socialID);
+
+            player.TriggerEvent("client:SkyCam", true);
+            
+            player.Dimension = 9;
+        }
+
+        public async void CheckBan(Player player, string serial, ulong scID)
+        {
+            if (await Auth.IsBanned(scID, serial))//ha bannolva van a serial vagy social club
             {
-                string[] banData = await Auth.GetBanData(socialID, serial);
-                player.TriggerEvent("client:BanScreen", banData[1], banData[2], banData[3], banData[4]);
-                NAPI.Chat.SendChatMessageToAll("BAN: " + banData[1] + ", " + banData[2] +  ", " + banData[3]+  ", " + banData[4]);
+                string[] banData = await Auth.GetBanData(scID, serial);
+                NAPI.Task.Run(() =>
+                {
+                    player.TriggerEvent("client:BanScreen", banData[1], banData[2], banData[3], banData[4]);
+                });
+                
             }
             else
             {
-                //player.TriggerEvent("client:")
+                NAPI.Task.Run(() =>
+                {
+                    player.TriggerEvent("client:LoginScreen");
+                });
+                
             }
-
         }
 
 

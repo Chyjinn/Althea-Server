@@ -17,11 +17,5 @@ namespace Server.Interior
             Checkpoint cp = NAPI.Checkpoint.CreateCheckpoint(CheckpointType.Cyclinder3, pos, new Vector3(0, 1, 0), 1f, new Color(255, 255, 255, 100));
         }
 
-
-        [Command("skycam")]
-        public void SkyCam(Player player, int state)
-        {
-            player.TriggerEvent("client:CamToAir", state);
-        }
     }
 }

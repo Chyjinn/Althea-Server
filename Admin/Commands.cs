@@ -36,6 +36,26 @@ namespace Server.Admin
             return true;
         }
 
+        [Command("makeup")]
+        public void makeup(Player player, int overlay, byte index, float opacity, byte firstcolor, byte secondcolor )
+        {
+            HeadOverlay h = new HeadOverlay();
+            h.Index = index;
+            h.Opacity = opacity;
+            h.Color = firstcolor;
+            h.SecondaryColor = secondcolor;
+            player.SetHeadOverlay(overlay, h);
+        }
+
+
+        [Command("skycam")]
+        public void SkyCam(Player player, bool state)
+        {
+            player.TriggerEvent("client:SkyCam", state);
+        }
+
+        
+
         [Command("editcurrentlyrequiredadminlevelforcommandandsaveintodatabase")]
         public void EditAdminLevel(Player player)
         {
@@ -420,7 +440,15 @@ namespace Server.Admin
         [Command("disappear", Alias = "dis")]
         public void Disappear(Player player)
         {
-            NAPI.Data.SetEntitySharedData(player, "player:Invisible", false);
+            if (player.HasSharedData("player:Invisible"))
+            {
+                bool state = player.GetSharedData<bool>("player:Invisible");
+                NAPI.Data.SetEntitySharedData(player, "player:Invisible", !state);
+            }
+            else
+            {
+                NAPI.Data.SetEntitySharedData(player, "player:Invisible", true);
+            }
         }
 
         [Command("teszt", "/teszt [x] [y] [z]")]

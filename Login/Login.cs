@@ -14,6 +14,11 @@ namespace Server.Auth
         public void OnPlayerConnect(Player player)
         {
             player.SetSharedData("player:Frozen", true);
+            player.TriggerEvent("client:SkyCam", true);
+            //insert ban lekérés
+
+            //ha nincs bannolva
+            player.TriggerEvent("client:LoginScreen");
         }
 
         [RemoteEvent("server:LoginAttempt")]//kliens hívja meg (login.html)
@@ -22,6 +27,7 @@ namespace Server.Auth
             string playerSerial = player.Serial;
             ulong playerScId = player.SocialClubId;
             string playerScName = player.SocialClubName;
+            //ide be kell illeszteni egy ban ellenőrzést (username, serial és social club id alapján)
             LoginPlayer(player, username, password, playerSerial, playerScId, playerScName, remember);//eddig azért nem használtunk async-et hogy megszerezzük a játékos serial,SocialClub adatait - RAGE API hívás csak main threaden
         }
 
@@ -31,6 +37,7 @@ namespace Server.Auth
             string playerSerial = player.Serial;
             ulong playerScId = player.SocialClubId;
             string playerScName = player.SocialClubName;
+            //ide be kell illeszteni egy ban ellenőrzést (accid, serial és social club id alapján)
             LoginPlayerWithToken(player, accID, token, playerSerial, playerScId, playerScName);//eddig azért nem használtunk async-et hogy megszerezzük a játékos serial,SocialClub adatait - RAGE API hívás csak main threaden
         }
 

@@ -69,6 +69,7 @@ namespace Server.Characters
             }
         }
 
+        [RemoteEvent("server:AttributeChange")]
         public async void EditAttribute(Player player, int attributeid, string value)
         {
             Character character = await Data.GetCharacterData(player);

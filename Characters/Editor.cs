@@ -33,7 +33,7 @@ namespace Server.Characters
             //Appearance.HandleCharacterAppearanceById(player, 0);
         }
 
-        public async void EditAttribute(Player player, byte attributeid, string value)
+        public async void EditAttribute(Player player, int attributeid, string value)
         {
             Character character = await Data.GetCharacterData(player);
             switch (attributeid)
@@ -43,71 +43,71 @@ namespace Server.Characters
                 case 0:
                     character.Appearance.Gender = Convert.ToBoolean(value);
                     break;
-                    case 1:
+                case 1:
+                    character.Appearance.EyeColor = Convert.ToByte(value);
                     break;
-                    case 2:
-                    break; case 3:
+                case 2:
+                    character.Appearance.HairColor = Convert.ToByte(value);
                     break;
-                    case 4:
+                case 3:
                     break;
-                    case 5:
-                        break;
-                    case 6:
-                        break;
-                    case 7:
+                case 4:
                     break;
-                    case 8:
+                case 5:
                     break;
-                    case 9:
+                case 6:
                     break;
-                    case 10:
+                case 7:
                     break;
-                    case 11:
-                        
+                case 8:
                     break;
-                    case 12:
+                case 9:
                     break;
-                    case 13:
+                case 10:
                     break;
-                    case 14:
-                        
-
+                case 11:   
                     break;
-                    case 15:
+                case 12:
                     break;
-                    case 16:
+                case 13:
                     break;
-                    case 17:
+                case 14:
                     break;
-                    case 18:
+                case 15:
                     break;
-                    case 19:
+                case 16:
                     break;
-                    case 20:
+                case 17:
                     break;
-                        case 21:
+                case 18:
                     break;
-                    case 22:
+                case 19:
                     break;
-                    case 23:
+                case 20:
                     break;
-                    case 24:
-                        break;
-                    case 25:
+                case 21:
                     break;
-                    case 26:
+                case 22:
                     break;
-                    case 27:
+                case 23:
                     break;
-                    case 28:
+                case 24:
                     break;
-                    case 29:
+                case 25:
                     break;
-                    case 30:
+                case 26:
                     break;
-                    case 31:
+                case 27:
                     break;
-                    case 32:
+                case 28:
+                    break;
+                case 29:
+                    break;
+                case 30:
+                    break;
+                case 31:
+                    break;
+                case 32:
                     break;
                 case 33:
                     break;
@@ -171,7 +171,12 @@ namespace Server.Characters
                     break;
                 case 63:
                     break;
-                case 64:
+                case -2: //Name
+                    character.Name = value;
+                    break;
+                case -3://Date of birth
+                    break;
+                case -4://Place of birth
                     break;
 
             }

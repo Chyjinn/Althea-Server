@@ -33,6 +33,26 @@ namespace Server.Characters
             //Appearance.HandleCharacterAppearanceById(player, 0);
         }
 
+        [Command("charedit", Alias = "chareditor")]
+        public async void EditChar(Player player)//játékos név/ID alapján bővíteni majd
+        {
+            uint accID = player.GetData<uint>("player:accID");
+            uint charID = player.GetData<uint>("player:charID");
+            Character c = await Data.LoadCharacterData(accID, charID);
+
+            string json = NAPI.Util.ToJson(c);
+            player.SetData("player:CharacterEditor", json);
+
+            Appearance.HandleCharacterAppearance(player, c);
+
+            player.SetSharedData("player:Frozen", true);
+            player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
+            player.Rotation = new Vector3(0f, 0f, 110f);
+            player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
+            player.TriggerEvent("client:CharEdit");
+
+        }
+
         public async void EditAttribute(Player player, int attributeid, string value)
         {
             Character character = await Data.GetCharacterData(player);
@@ -252,19 +272,7 @@ namespace Server.Characters
             player.SetData("player:CharacterEditor", json);
         }
 
-        [Command("charedit", Alias = "chareditor")]
-        public async void CharEdit(Player player)
-        {
-            uint accID = player.GetData<uint>("player:accID");
-            uint charID = player.GetData<uint>("player:charID");
-            Character c = await Data.LoadCharacterData(accID, charID);
-            player.SetSharedData("player:Frozen", true);
-            player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
-            player.Rotation = new Vector3(0f, 0f, 110f);
-            player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
-            player.TriggerEvent("client:CharEdit");
-            
-        }
+
 
         [RemoteEvent("server:RotateCharRight")]
         public static void RotateCharRight(Player player)

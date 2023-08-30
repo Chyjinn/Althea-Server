@@ -152,12 +152,13 @@ namespace Server.Characters
                 //todo: insert into appearances
                 //appearance id alapján beszúrni a karaktert
             
-            string query = $"INSERT INTO `characters` (accountId) VALUES (@accID)";
+            string query = $"INSERT INTO `appearances` (gender) VALUES (@accID);" +
+                    $"SELECT LAST_INSERT_ID();";
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
                 await con.OpenAsync();
-
+                    //executereader kell majd mert insert + select, kell az utolsó id
 
                 using (MySqlCommand command = new MySqlCommand(query, con))
                 {

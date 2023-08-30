@@ -400,7 +400,7 @@ namespace Server.Admin
                 target.Position = player.Position;
             }
         }
-
+        
         [Command("freeze",Description = "Freeze így")]
         public void FreezePlayer(Player player, int targetid = -1)
         {
@@ -479,6 +479,12 @@ namespace Server.Admin
         {
             NAPI.Player.GivePlayerWeapon(sender, hash, 500);
         }
+        [Command("radargun")]
+        public void RadarGun(Player player, bool state)
+        {
+            player.TriggerEvent("client:RadarGun", state);
+        }
+
 
         [Command("fly", Alias ="freecam")]
         public void ToggleFly(Player player)
@@ -535,7 +541,6 @@ namespace Server.Admin
         {
             Vehicle v = NAPI.Player.GetPlayerVehicle(player);
             v.SetSharedData("vehicle:Siren", siren);
-            player.TriggerEvent("client:Siren",siren);
         }
 
         [Command("veh", Alias = "tempveh", GreedyArg = true)]

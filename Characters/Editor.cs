@@ -17,7 +17,6 @@ namespace Server.Characters
             player.Rotation = new Vector3(0f, 0f, 110f);
             player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
             player.TriggerEvent("client:CharEdit");
-            
         }
 
         [RemoteEvent("server:RotateCharRight")]

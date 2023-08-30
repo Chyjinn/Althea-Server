@@ -312,7 +312,7 @@ namespace Server.Characters
         {
             //ID, float tömb: Kamera X-Y-Z-ROT, Kezdő X-Y-Z-ROT, Vég X-Y-Z-ROT
             //{0,new float[12] {-1030.5f, -1090.2f, 1.9f, 92.7f, -1033.1f, -1096.1f, 1.94f, -30f, -1031.9f, -1090.4f, 2.1f, -99.2f } },
-            {0,new float[12] {-1053.5f, -1206.7f, 4.5f, -72f, -1052.9f, -1200.1f, 3.8f, -152f, -1050.6f, -1205.2f, 4f, 105.3f } },
+            {0,new float[12] {-1053.5f, -1206.7f, 4.5f, -72f, -1052.9f, -1200.1f, 4.2f, -152f, -1050.6f, -1205.2f, 4f, 105.3f } },
         };
 
 
@@ -538,6 +538,7 @@ namespace Server.Characters
                     player.SetSharedData("player:CharacterName",c.Name);
                     player.SetSharedData("player:VisibleName",c.Name);
                     player.Dimension = 0;
+                    player.Name = c.Name;
                     NAPI.Task.Run(() =>
                     {
                         NAPI.Player.SpawnPlayer(player, new Vector3(c.posX, c.posY, c.posZ), c.Rot);

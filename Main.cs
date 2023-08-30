@@ -5,6 +5,7 @@ using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 
 namespace Server
 {

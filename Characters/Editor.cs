@@ -31,24 +31,42 @@ namespace Server.Characters
             player.TriggerEvent("client:CharEdit");
         }
 
+
+
+        public async void SetupCharEditor(Player player, uint accID, uint charID)
+        {
+            Character c = await Data.LoadCharacterData(accID, charID);
+            Appearance a = await Data.LoadCharacterAppearance(c);
+            c.Appearance = a;
+
+            NAPI.Task.Run(() =>
+            {
+                string json = NAPI.Util.ToJson(c);
+                player.SendChatMessage(charID.ToString() + ", " + accID + " - " + json);
+                player.SetData("player:CharacterEditor", json);
+
+                Appearance.HandleCharacterAppearance(player, c);
+
+                player.SetSharedData("player:Frozen", true);
+                player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
+                player.Rotation = new Vector3(0f, 0f, 110f);
+                player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
+                player.TriggerEvent("client:CharEdit");
+
+            });
+
+        }
+
         [Command("charedit", Alias = "chareditor")]
-        public async void EditChar(Player player)//játékos név/ID alapján bővíteni majd
+        public void EditChar(Player player)//játékos név/ID alapján bővíteni majd
         {
             uint accID = player.GetData<uint>("player:accID");
             uint charID = player.GetData<uint>("player:charID");
-            Character c = await Data.LoadCharacterData(accID, charID);
 
-            string json = NAPI.Util.ToJson(c);
-            player.SetData("player:CharacterEditor", json);
-
-            Appearance.HandleCharacterAppearance(player, c);
-
-            player.SetSharedData("player:Frozen", true);
-            player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
-            player.Rotation = new Vector3(0f, 0f, 110f);
-            player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
-            player.TriggerEvent("client:CharEdit");
-
+            if (charID != 0 && accID != 0)
+            {
+                SetupCharEditor(player,accID,charID);
+            }
         }
 
         public async void EditAttribute(Player player, int attributeid, string value)

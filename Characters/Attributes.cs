@@ -317,7 +317,7 @@ namespace Server.Characters
             return h;
         }
 
-        public static async void HandleCharacterAppearance(Player player, Character character)
+        public static void HandleCharacterAppearance(Player player, Character character)
         {
             HeadBlend HeadBlend = character.Appearance.GetHeadBlend();
             float[] FaceFeatures = character.Appearance.GetFaceFeatures();

@@ -69,7 +69,7 @@ namespace Server.Characters
             }
         }
 
-        [RemoteEvent("server:AttributeChange")]
+        [RemoteEvent("server:EditAttribute")]
         public async void EditAttribute(Player player, int attributeid, string value)
         {
             Character character = await Data.GetCharacterData(player);
@@ -207,9 +207,11 @@ namespace Server.Characters
                     character.Appearance.AgeOpacity = Convert.ToByte(value);
                     break;
                 case 43:
+                    player.SendChatMessage("makeup " + value);
                     character.Appearance.MakeupId = Convert.ToByte(value);
                     break;
                 case 44:
+                    player.SendChatMessage("makeup opacity " + value);
                     character.Appearance.MakeupOpacity = Convert.ToByte(value);
                     break;
                 case 45:
@@ -280,7 +282,6 @@ namespace Server.Characters
                     break;
 
             }
-
             //átírtuk a megváltoztatott értéket, beállítjuk a karakter kinézetét az új értékre
             Appearance.HandleCharacterAppearance(player, character);
 

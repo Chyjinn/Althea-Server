@@ -257,7 +257,7 @@ namespace Server.Characters
 
             HeadOverlay Complexion = new HeadOverlay();
             Complexion.Index = ComplexionId;
-            Makeup.Opacity = ComplexionOpacity;
+            Complexion.Opacity = ComplexionOpacity;
 
             HeadOverlay SunDamage = new HeadOverlay();
             SunDamage.Index = SundamageId;
@@ -311,9 +311,9 @@ namespace Server.Characters
             h.SkinFirst = Parent1Skin;
             h.SkinSecond = Parent2Skin;
             h.SkinThird = Parent3Skin;
-            h.ShapeMix = FaceMix;
-            h.SkinMix = SkinMix;
-            h.ThirdMix = OverrideMix;
+            h.ShapeMix = Convert.ToSingle(FaceMix)/100f;//-100 és +100 között tároljuk, de -1f és +1f közöttit vár
+            h.SkinMix = Convert.ToSingle(SkinMix)/100f;
+            h.ThirdMix = Convert.ToSingle(OverrideMix)/100f;
             return h;
         }
 
@@ -322,11 +322,12 @@ namespace Server.Characters
             HeadBlend HeadBlend = character.Appearance.GetHeadBlend();
             float[] FaceFeatures = character.Appearance.GetFaceFeatures();
             Dictionary<int, HeadOverlay> overlays = character.Appearance.GetHeadOverlays();
-            NAPI.Task.Run(() =>
+            Decoration[] decor = new Decoration[0];
+            player.SetCustomization(character.Appearance.Gender, HeadBlend, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
+            for (int i = 0; i < 19; i++)
             {
-                Decoration[] decor = new Decoration[0];
-                player.SetCustomization(character.Appearance.Gender, HeadBlend, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
-            });
+                player.SetFaceFeature(i, FaceFeatures[i]);
+            }
         }
 
         public static async void HandleCharacterAppearanceById(Player player, uint charid)
@@ -342,6 +343,10 @@ namespace Server.Characters
                 d.Overlay = NAPI.Util.GetHashKey("");
                 Decoration[] decor = new Decoration[0];
                 player.SetCustomization(character.Appearance.Gender, HeadBlend, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
+                for (int i = 0; i < 19; i++)
+                {
+                    player.SetFaceFeature(i, FaceFeatures[i]);
+                }
             });
         }
 

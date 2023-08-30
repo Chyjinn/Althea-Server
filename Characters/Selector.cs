@@ -86,9 +86,14 @@ namespace Server.Characters
     [RemoteEvent("server:CharChange")]
     public static void HandleCharacterChange(Player player, int characterid)
     {
+        player.SetSharedData("player:Invisible", true);
         uint charid = Convert.ToUInt32(characterid);
         Appearance.HandleCharacterAppearanceById(player, charid);
-    }
+            NAPI.Task.Run(() =>
+            {
+                player.SetSharedData("player:Invisible", false);
+            }, 150);
+        }
 
     [RemoteEvent("server:CharSelect")]
     public async void SetPlayerCharacter(Player player, uint charid)//kiválasztotta a karakterét és be szeretne lépni

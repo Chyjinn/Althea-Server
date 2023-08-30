@@ -1,5 +1,6 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Bcpg;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -136,8 +137,21 @@ namespace Server.Characters
             return null;
         }
 
-        /*public static async Task<uint> CreateNewCharacter(Player player, uint accountID)//létrehozunk egy új karaktert az adatbázisban, visszaadjuk az ID-jét.
+        public static async Task<bool> CreateNewCharacter(Player player)//létrehozunk egy új karaktert az adatbázisban, visszaadjuk az ID-jét.
         {
+            uint accID = 0;
+            Character chardata = null;
+            chardata = await GetCharacterData(player);
+            NAPI.Task.Run(() =>
+            {
+                accID = player.GetData<uint>("player:accID");
+            });
+
+            if (accID != 0 && chardata != null)//ha 0 akkor nincs még belépve a player
+            {
+                //todo: insert into appearances
+                //appearance id alapján beszúrni a karaktert
+            
             string query = $"INSERT INTO `characters` (accountId) VALUES (@accID)";
             using (MySqlConnection con = new MySqlConnection())
             {
@@ -147,7 +161,7 @@ namespace Server.Characters
 
                 using (MySqlCommand command = new MySqlCommand(query, con))
                 {
-                    command.Parameters.AddWithValue("@Username", username);
+                    //command.Parameters.AddWithValue("@Username", username);
                     command.Prepare();
                     try
                     {
@@ -163,8 +177,14 @@ namespace Server.Characters
                     }
                 }
             }
+                return false;
+        }
+            else
+        {
             return false;
-        }*/
+        }
+            
+        }
 
         public static async Task<Character> GetCharacterData(Player player)//karakter ID alapján egy karaktert ad vissza
         {

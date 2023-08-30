@@ -302,46 +302,46 @@ namespace Server.Characters
             return overlays;
         }
 
-        public static async void HandleCharacterAppearance(Player player, Character character)
+        public HeadBlend GetHeadBlend()
         {
             HeadBlend h = new HeadBlend();
-            h.ShapeFirst = character.Appearance.Parent1Face;
-            h.ShapeSecond = character.Appearance.Parent2Face;
-            h.ShapeThird = character.Appearance.Parent3Face;
-            h.SkinFirst = character.Appearance.Parent1Skin;
-            h.SkinSecond = character.Appearance.Parent2Skin;
-            h.SkinThird = character.Appearance.Parent3Skin;
-            h.ShapeMix = character.Appearance.FaceMix;
-            h.SkinMix = character.Appearance.SkinMix;
-            h.ThirdMix = character.Appearance.OverrideMix;
+            h.ShapeFirst = Parent1Face;
+            h.ShapeSecond = Parent2Face;
+            h.ShapeThird = Parent3Face;
+            h.SkinFirst = Parent1Skin;
+            h.SkinSecond = Parent2Skin;
+            h.SkinThird = Parent3Skin;
+            h.ShapeMix = FaceMix;
+            h.SkinMix = SkinMix;
+            h.ThirdMix = OverrideMix;
+            return h;
+        }
+
+        public static async void HandleCharacterAppearance(Player player, Character character)
+        {
+            HeadBlend HeadBlend = character.Appearance.GetHeadBlend();
             float[] FaceFeatures = character.Appearance.GetFaceFeatures();
             Dictionary<int, HeadOverlay> overlays = character.Appearance.GetHeadOverlays();
             NAPI.Task.Run(() =>
             {
                 Decoration[] decor = new Decoration[0];
-                player.SetCustomization(character.Appearance.Gender, h, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
+                player.SetCustomization(character.Appearance.Gender, HeadBlend, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
             });
         }
 
         public static async void HandleCharacterAppearanceById(Player player, uint charid)
         {
             Character character = await Data.GetCharacterDataByID(player, charid);
-            HeadBlend h = new HeadBlend();
-            h.ShapeFirst = character.Appearance.Parent1Face;
-            h.ShapeSecond = character.Appearance.Parent2Face;
-            h.ShapeThird = character.Appearance.Parent3Face;
-            h.SkinFirst = character.Appearance.Parent1Skin;
-            h.SkinSecond = character.Appearance.Parent2Skin;
-            h.SkinThird = character.Appearance.Parent3Skin;
-            h.ShapeMix = character.Appearance.FaceMix;
-            h.SkinMix = character.Appearance.SkinMix;
-            h.ThirdMix = character.Appearance.OverrideMix;
+            HeadBlend HeadBlend = character.Appearance.GetHeadBlend();
             float[] FaceFeatures = character.Appearance.GetFaceFeatures();
             Dictionary<int, HeadOverlay> overlays = character.Appearance.GetHeadOverlays();
             NAPI.Task.Run(() =>
             {
+                Decoration d = new Decoration();
+                d.Collection = NAPI.Util.GetHashKey("");
+                d.Overlay = NAPI.Util.GetHashKey("");
                 Decoration[] decor = new Decoration[0];
-                player.SetCustomization(character.Appearance.Gender, h, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
+                player.SetCustomization(character.Appearance.Gender, HeadBlend, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
             });
         }
 

@@ -156,7 +156,7 @@ namespace Server.Auth
 
         public static async Task<string[]> GetLoginData(string username)//felhasználónév alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
-            string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `userName` = @Username LIMIT 1";
+            string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc,characterSlots FROM `accounts` WHERE `userName` = @Username LIMIT 1";
             string[] res;
             using (MySqlConnection con = new MySqlConnection())
             {
@@ -174,8 +174,8 @@ namespace Server.Auth
                             {
                                 if (await reader.ReadAsync())
                                 {
-                                    res = new string[7] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString() };
-                                    return res;
+                                    res = new string[8] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString(), reader["characterSlots"].ToString() };
+                                    return res; 
                                 }
                             }
                         }
@@ -336,7 +336,7 @@ namespace Server.Auth
 
         public static async Task<string[]> GetLoginData(uint accountID)//account id alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
-            string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc FROM `accounts` WHERE `id` = @AccID LIMIT 1";
+            string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc,characterSlots FROM `accounts` WHERE `id` = @AccID LIMIT 1";
             
             string[] res;
             using (MySqlConnection con = new MySqlConnection())
@@ -354,7 +354,7 @@ namespace Server.Auth
                         {
                             if (await reader.ReadAsync())
                             {
-                                res = new string[7] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString() };
+                                res = new string[8] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString(), reader["characterSlots"].ToString() };
                                 return res;
                             }
                         }

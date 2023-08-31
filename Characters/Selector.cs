@@ -73,6 +73,11 @@ namespace Server.Characters
             }
             else
             {
+                NAPI.Task.Run(() =>
+                {
+                    Editor.StartNewCharEdit(player);
+                }, 1500);
+
                 //TODO: nincs karaktere, bedobni karakter készítőbe
             }
 

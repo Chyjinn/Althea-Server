@@ -6,34 +6,44 @@ using System.Text;
 
 namespace Server.Characters
 {
-    internal class Editor : Script
+    public class Editor : Script
     {
         //CHAR: -811.68, 175.2, 76.74, 0, 0, 109.73
         //CAM: -813.95, 174.2, 76.78, 0, 0, -69
 
-        public void NewChar(Player player)
+        public static void NewChar(Player player)
         {
             Character c = new Character(0, "", DateTime.MinValue, "", -1, 0f, 0f, 0f, 0f);
             Appearance a = new Appearance(-1, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0,0,0);
             c.Appearance = a;
 
-            string json = NAPI.Util.ToJson(c);
-            player.SetData("player:CharacterEditor", json);
+            NAPI.Task.Run(() =>
+            {
+                string json = NAPI.Util.ToJson(c);
+                player.SetData("player:CharacterEditor", json);
 
-            Appearance.HandleCharacterAppearance(player, c);
-            //bedobjuk a játékost szerkesztőbe
-            //létrehozunk egy alap karaktert mivel nincs még neki
-            //a karaktert beállítjuk és átküldjük
-            player.SetSharedData("player:Frozen", true);
-            player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
-            player.Rotation = new Vector3(0f, 0f, 110f);
-            //player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
-            player.TriggerEvent("client:CharEdit", true);
+                Appearance.HandleCharacterAppearance(player, c);
+
+
+                player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
+                player.Rotation = new Vector3(0f, 0f, 110f);
+                //player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
+
+                player.SetSharedData("player:Frozen", true);
+                player.TriggerEvent("client:SkyCam", false);
+
+                NAPI.Task.Run(() =>
+                {
+                    player.TriggerEvent("client:CharEditWithArgs", true, c);
+
+                }, 4500);
+
+            }, 3000);
         }
 
 
 
-        public async void SetupCharEditor(Player player, uint accID, uint charID)
+        public async static void SetupCharEditor(Player player, uint accID, uint charID)
         {
             Character c = await Data.LoadCharacterData(accID, charID);
             Appearance a = await Data.LoadCharacterAppearance(c);
@@ -42,47 +52,80 @@ namespace Server.Characters
             NAPI.Task.Run(() =>
             {
                 string json = NAPI.Util.ToJson(c);
-                player.SendChatMessage(charID.ToString() + ", " + accID + " - " + json);
                 player.SetData("player:CharacterEditor", json);
 
                 Appearance.HandleCharacterAppearance(player, c);
 
-                
+
                 player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
                 player.Rotation = new Vector3(0f, 0f, 110f);
                 //player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
-                
+
                 player.SetSharedData("player:Frozen", true);
                 player.TriggerEvent("client:SkyCam", false);
 
                 NAPI.Task.Run(() =>
-                { 
-                player.TriggerEvent("client:CharEdit", true);
+                {
+                    player.TriggerEvent("client:CharEdit", true);
 
                 }, 4500);
 
             }, 3000);
         }
 
-        [Command("charedit", Alias = "chareditor")]
-        public void EditChar(Player player)//játékos név/ID alapján bővíteni majd
+        public static void StartNewCharEdit(Player player)//játékos név/ID alapján bővíteni majd
         {
-            uint accID = player.GetData<uint>("player:accID");
-            uint charID = player.GetData<uint>("player:charID");
-
-            if (charID != 0 && accID != 0)
+            if (player.HasData("player:accID"))
             {
                 player.TriggerEvent("client:SkyCam", true);
-                SetupCharEditor(player,accID,charID);
+                NewChar(player);
             }
         }
+
+
+        [RemoteEvent("server:CharEdit")]
+        public static void EditChar(Player player, uint charID)//játékos név/ID alapján bővíteni majd
+        {
+            if (player.HasData("player:accID"))
+            {
+                uint accID = player.GetData<uint>("player:accID");
+                player.TriggerEvent("client:SkyCam", true);
+                SetupCharEditor(player, accID, charID);
+            }
+        }
+
+
 
         [RemoteEvent("server:FinishEditing")]
         public void FinishEditing(Player player)
         {
             uint accID = player.GetData<uint>("player:accID");
-            //Data.UpdateEditedCharacter(player, accID);
-            player.TriggerEvent("client:CharEdit", false);
+            if (player.HasData("player:charID"))
+            {
+                player.SendChatMessage("karakter szerkesztése");
+                //meglévő karaktert szerkeszt
+            }
+            else
+            {
+                //új karaktert hoz létre
+                player.TriggerEvent("client:CharEdit", false);
+                player.TriggerEvent("client:SkyCam", true);
+                CreateNewCharacter(player, accID);
+            }
+        }
+
+        public async void CreateNewCharacter(Player player, uint accountID)
+        {
+            if (await Data.AddNewCharacterToDatabase(player, accountID))
+            {
+                NAPI.Task.Run(() =>
+                {
+                    player.SetData<string>("player:CharacterEditor", null);
+                    Selector.ProcessCharScreen(player);
+                }, 5000);
+
+            }
+            
         }
 
 
@@ -303,11 +346,11 @@ namespace Server.Characters
 
             }
             //átírtuk a megváltoztatott értéket, beállítjuk a karakter kinézetét az új értékre
-            Appearance.HandleCharacterAppearance(player, character);
 
             //lementjük a változtatásokat a következőig
             string json = NAPI.Util.ToJson(character);
             player.SetData("player:CharacterEditor", json);
+            Appearance.HandleCharacterAppearance(player, character);
         }
 
 

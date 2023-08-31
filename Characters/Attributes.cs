@@ -50,7 +50,6 @@ namespace Server.Characters
         public byte FaceMix { get; set; }//10
         public byte SkinMix { get; set; }//11
         public byte OverrideMix { get; set; }//12
-
         public int HairStyle { get; set; } //-12
         //FACE
         public sbyte NoseWidth { get; set; }//13
@@ -107,9 +106,9 @@ namespace Server.Characters
         public byte BodyBlemish2Opacity { get; set; }//63
 
         public Appearance(int id, bool gender,
-            byte eyecolor, byte haircolor, byte hairhighlight,
+            byte eyecolor, int hairstyle, byte haircolor, byte hairhighlight,
             byte p1f, byte p2f, byte p3f, byte p1s, byte p2s, byte p3s,
-            byte facemix, byte skinmix, byte overridemix, int hairstyle,
+            byte facemix, byte skinmix, byte overridemix, 
             sbyte nosewidth, sbyte noseheight, sbyte noselength,
             sbyte nosebridge, sbyte nosetip, sbyte nosebroken,
             sbyte browheight, sbyte browwidth, sbyte cheekboneheight,
@@ -133,6 +132,7 @@ namespace Server.Characters
             Id = id;//adatbázis id
             Gender = gender; // false-> female, true-> male
             EyeColor = eyecolor;
+            HairStyle = hairstyle;
             HairColor = haircolor;
             HairHighlight = hairhighlight;
             Parent1Face = p1f;
@@ -144,7 +144,6 @@ namespace Server.Characters
             FaceMix = facemix;
             SkinMix = skinmix;
             OverrideMix = overridemix;
-            HairStyle = hairstyle;
             NoseWidth = nosewidth;
             NoseHeight = noseheight;
             NoseLength = noselength;
@@ -233,60 +232,60 @@ namespace Server.Characters
 
             HeadOverlay Blemishes = new HeadOverlay();
             Blemishes.Index = BlemishId;
-            Blemishes.Opacity = BlemishOpacity;
+            Blemishes.Opacity = (float)BlemishOpacity / 100f;
 
             HeadOverlay FacialHair = new HeadOverlay();
             FacialHair.Index = FacialHairId;
             FacialHair.Color = FacialHairColor;
-            FacialHair.Opacity = FacialHairOpacity;
+            FacialHair.Opacity = (float)FacialHairOpacity / 100f;
 
             HeadOverlay EyeBrows = new HeadOverlay();
             EyeBrows.Index = EyeBrowId;
             EyeBrows.Color = EyeBrowColor;
-            EyeBrows.Opacity = EyeBrowOpacity;
+            EyeBrows.Opacity = (float)EyeBrowOpacity / 100f;
 
             HeadOverlay Ageing = new HeadOverlay();
             Ageing.Index = AgeId;
-            Ageing.Opacity = AgeOpacity;
+            Ageing.Opacity = (float)AgeOpacity / 100f;
 
             HeadOverlay Makeup = new HeadOverlay();
             Makeup.Index = MakeupId;
-            Makeup.Opacity = MakeupOpacity;
+            Makeup.Opacity = (float)MakeupOpacity / 100f;
 
             HeadOverlay Blush = new HeadOverlay();
             Blush.Index = BlushId;
             Blush.Color = BlushColor;
-            Blush.Opacity = BlushOpacity;
+            Blush.Opacity = (float)BlushOpacity / 100f;
 
             HeadOverlay Complexion = new HeadOverlay();
             Complexion.Index = ComplexionId;
-            Complexion.Opacity = ComplexionOpacity;
+            Complexion.Opacity = (float)ComplexionOpacity / 100f;
 
             HeadOverlay SunDamage = new HeadOverlay();
             SunDamage.Index = SundamageId;
-            SunDamage.Opacity = SundamageOpacity;
+            SunDamage.Opacity = (float)SundamageOpacity / 100f;
 
             HeadOverlay Lipstick = new HeadOverlay();
             Lipstick.Index = LipstickId;
             Lipstick.Color = LipstickColor;
-            Lipstick.Opacity = LipstickOpacity;
+            Lipstick.Opacity = (float)LipstickOpacity / 100f;
 
             HeadOverlay Freckles = new HeadOverlay();
             Freckles.Index = FrecklesId;
-            Freckles.Opacity = FrecklesOpacity;
+            Freckles.Opacity = (float)FrecklesOpacity / 100f;
 
             HeadOverlay ChestHair = new HeadOverlay();
             ChestHair.Index = ChestHairId;
             ChestHair.Color = ChestHairColor;
-            ChestHair.Opacity = ChestHairOpacity;
+            ChestHair.Opacity = (float)ChestHairOpacity / 100f;
 
             HeadOverlay BodyBlemishes1 = new HeadOverlay();
             BodyBlemishes1.Index = BodyBlemish1Id;
-            BodyBlemishes1.Opacity = BodyBlemish1Opacity;
+            BodyBlemishes1.Opacity = (float)BodyBlemish1Opacity / 100f;
 
             HeadOverlay BodyBlemishes2 = new HeadOverlay();
             BodyBlemishes2.Index = BodyBlemish2Id;
-            BodyBlemishes2.Opacity = BodyBlemish2Opacity;
+            BodyBlemishes2.Opacity = (float)BodyBlemish2Opacity / 100f;
 
             overlays.Add(0, Blemishes);
             overlays.Add(1, FacialHair);
@@ -341,20 +340,14 @@ namespace Server.Characters
             HeadBlend HeadBlend = character.Appearance.GetHeadBlend();
             float[] FaceFeatures = character.Appearance.GetFaceFeatures();
             Dictionary<int, HeadOverlay> overlays = character.Appearance.GetHeadOverlays();
-            NAPI.Task.Run(() =>
+            Decoration[] decor = new Decoration[0];
+            player.SetCustomization(character.Appearance.Gender, HeadBlend, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
+            for (int i = 0; i < 19; i++)
             {
-                Decoration d = new Decoration();
-                d.Collection = NAPI.Util.GetHashKey("");
-                d.Overlay = NAPI.Util.GetHashKey("");
-                Decoration[] decor = new Decoration[0];
-                player.SetCustomization(character.Appearance.Gender, HeadBlend, character.Appearance.EyeColor, character.Appearance.HairColor, character.Appearance.HairHighlight, FaceFeatures, overlays, decor);
-                for (int i = 0; i < 19; i++)
-                {
-                    player.SetFaceFeature(i, FaceFeatures[i]);
-                }
+                player.SetFaceFeature(i, FaceFeatures[i]);
+            }
 
-                
-            });
+            player.SetClothes(2, character.Appearance.HairStyle, 0);
         }
 
     }

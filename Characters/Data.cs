@@ -34,9 +34,9 @@ namespace Server.Characters
                                 {
                                     gender = true;
                                 }
-                                Appearance app = new Appearance(Convert.ToInt32(reader["id"]), gender, Convert.ToByte(reader["eyeColor"]), Convert.ToByte(reader["hairColor"]), Convert.ToByte(reader["hairHighlight"]), Convert.ToByte(reader["parent1face"]), Convert.ToByte(reader["parent2face"]), Convert.ToByte(reader["parent3face"]),
+                                Appearance app = new Appearance(Convert.ToInt32(reader["id"]), gender, Convert.ToByte(reader["eyeColor"]), Convert.ToInt32(reader["hairStyle"]), Convert.ToByte(reader["hairColor"]), Convert.ToByte(reader["hairHighlight"]), Convert.ToByte(reader["parent1face"]), Convert.ToByte(reader["parent2face"]), Convert.ToByte(reader["parent3face"]),
                                     Convert.ToByte(reader["parent1skin"]), Convert.ToByte(reader["parent2skin"]), Convert.ToByte(reader["parent3skin"]),
-                                    Convert.ToByte(reader["faceMix"]), Convert.ToByte(reader["skinMix"]), Convert.ToByte(reader["thirdMix"]), Convert.ToInt32(reader["hairStyle"]),
+                                    Convert.ToByte(reader["faceMix"]), Convert.ToByte(reader["skinMix"]), Convert.ToByte(reader["thirdMix"]), 
                                     Convert.ToSByte(reader["noseWidth"]), Convert.ToSByte(reader["noseHeight"]), Convert.ToSByte(reader["noseLength"]), Convert.ToSByte(reader["noseBridge"]), Convert.ToSByte(reader["noseTip"]), Convert.ToSByte(reader["noseBroken"]),
                                 Convert.ToSByte(reader["browHeight"]), Convert.ToSByte(reader["browWidth"]), Convert.ToSByte(reader["cheekboneHeight"]), Convert.ToSByte(reader["cheekboneWidth"]), Convert.ToSByte(reader["cheekWidth"]),
                                 Convert.ToSByte(reader["eyes"]), Convert.ToSByte(reader["lips"]), Convert.ToSByte(reader["jawWidth"]), Convert.ToSByte(reader["jawHeight"]), Convert.ToSByte(reader["chinLength"]), Convert.ToSByte(reader["chinPosition"]), Convert.ToSByte(reader["chinWidth"]), Convert.ToSByte(reader["chinShape"]), Convert.ToSByte(reader["neckWidth"]),
@@ -137,7 +137,7 @@ namespace Server.Characters
             return null;
         }
 
-        public async static Task<bool> CreateNewCharacter(Player player, uint accID)//létrehozunk egy új karaktert az adatbázisban, visszaadjuk az ID-jét.
+        public async static Task<bool> AddNewCharacterToDatabase(Player player, uint accID)//létrehozunk egy új karaktert az adatbázisban, visszaadjuk az ID-jét.
         {
             Character chardata = await GetCharacterData(player);
             //INSERT INTO `appearances` (`id`, `gender`, `eyeColor`, `hairStyle`, `hairColor`, `hairHighlight`, `parent1face`, `parent2face`, `parent3face`, `parent1skin`, `parent2skin`, `parent3skin`, `faceMix`, `skinMix`, `thirdMix`, `noseWidth`, `noseHeight`, `noseLength`, `noseBridge`, `noseTip`, `noseBroken`, `browHeight`, `browWidth`, `cheekboneHeight`, `cheekboneWidth`, `cheekWidth`, `eyes`, `lips`, `jawWidth`, `jawHeight`, `chinLength`, `chinPosition`, `chinWidth`, `chinShape`, `neckWidth`, `blemishId`, `blemishOpacity`, `facialhairId`, `facialhairColor`, `facialhairOpacity`, `eyebrowId`, `eyebrowColor`, `eyebrowOpacity`, `ageId`, `ageOpacity`, `makeupId`, `makeupOpacity`, `blushId`, `blushColor`, `blushOpacity`, `complexionId`, `complexionOpacity`, `sundamageId`, `sundamageOpacity`, `lipstickId`, `lipstickColor`, `lipstickOpacity`, `frecklesId`, `frecklesOpacity`, `chesthairId`, `chesthairColor`, `chesthairOpacity`, `bodyblemishId`, `bodyblemishOpacity`, `bodyblemish2Id`, `bodyblemish2Opacity`, `tattoos`) VALUES (NULL, '0', '', '0', '', '', '', '', '', '', '', '', '', '', '', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '255', '0', '255', '0', '0', '255', '0', '0', '255', '0', '255', '0', '255', '0', '0', '255', '0', '255', '0', '255', '0', '0', '255', '0', '255', '0', '0', '255', '0', '255', '0', NULL);
@@ -152,23 +152,22 @@ namespace Server.Characters
                 $"`sundamageId`, `sundamageOpacity`, `lipstickId`, `lipstickColor`, `lipstickOpacity`, `frecklesId`, `frecklesOpacity`, `chesthairId`, `chesthairColor`, `chesthairOpacity`," +
                 $" `bodyblemishId`, `bodyblemishOpacity`, `bodyblemish2Id`, `bodyblemish2Opacity`, `tattoos`)" +
                 $" VALUES " +
-                $"(NULL, '@Gender', '@EyeColor', '@HairStyle', '@HairColor', '@HairHightlight'," +
-                $" '@P1F', '@P2F', 'P3F', '@P1S', '@P2S', '@P3S', '@FaceMix', '@SkinMix', '@ThirdMix'," +
-                $" '@NoseWidth', '@NoseHeight', '@NoseLength', '@NoseBridge', '@NoseTip', '@NoseBroken', '@BrowHeight', '@BrowWidth', '@CheekboneHeight', '@CheekboneWidth', '@CheekWidth'," +
-                $" '@Eyes', '@Lips', '@JawWidth', '@JawHeight', '@ChinLength', '@ChinPosition', '@ChinWidth', '@ChinShape', '@NeckWidth'," +
-                $" '@BlemishId', '@BlemishOpacity', '@FacialhairId', '@FacialhairColor', '@FacialhairOpacity', '@EyebrowId', '@EyebrowColor', '@EyebrowOpacity'," +
-                $" '@AgeId', '@AgeOpacity', '@MakeupId', '@MakeupOpacity', '@BlushId', '@BlushColor', '@BlushOpacity', '@ComplexionId', '@ComplexionOpacity'," +
-                $" '@SundamageId', '@SundamageOpacity', '@LipstickId', '@LipstickColor', '@LipstickOpacity', '@FrecklesId', '@FrecklesOpacity', '@ChesthairId', '@ChesthairColor', '@ChesthairOpacity'," +
-                $" '@Bodyblemish1Id', '@Bodyblemish1Opacity', '@Bodyblemish2Id', '@Bodyblemish2Opacity', NULL);" +
-                $"SELECT LAST_INSERT_ID() AS 'lastid';";
+                $"(NULL, @Gender, @EyeColor, @HairStyle, @HairColor, @HairHighlight," +
+                $" @P1F, @P2F, @P3F, @P1S, @P2S, @P3S, @FaceMix, @SkinMix, @ThirdMix," +
+                $" @NoseWidth, @NoseHeight, @NoseLength, @NoseBridge, @NoseTip, @NoseBroken, @BrowHeight, @BrowWidth, @CheekboneHeight, @CheekboneWidth, @CheekWidth," +
+                $" @Eyes, @Lips, @JawWidth, @JawHeight, @ChinLength, @ChinPosition, @ChinWidth, @ChinShape, @NeckWidth," +
+                $" @BlemishId, @BlemishOpacity, @FacialhairId, @FacialhairColor, @FacialhairOpacity, @EyebrowId, @EyebrowColor, @EyebrowOpacity," +
+                $" @AgeId, @AgeOpacity, @MakeupId, @MakeupOpacity, @BlushId, @BlushColor, @BlushOpacity, @ComplexionId, @ComplexionOpacity," +
+                $" @SundamageId, @SundamageOpacity, @LipstickId, @LipstickColor, @LipstickOpacity, @FrecklesId, @FrecklesOpacity, @ChesthairId, @ChesthairColor, @ChesthairOpacity," +
+                $" @Bodyblemish1Id, @Bodyblemish1Opacity, @Bodyblemish2Id, @Bodyblemish2Opacity, NULL);";
                 using (MySqlConnection con = new MySqlConnection())
                 {
                     con.ConnectionString = Database.DBCon.GetConString();
                     await con.OpenAsync();
-                    //executereader kell majd mert insert + select, kell az utolsó id
 
                     using (MySqlCommand command = new MySqlCommand(query, con))
                     {
+                        
                         command.Parameters.AddWithValue("@Gender", chardata.Appearance.Gender);
                         command.Parameters.AddWithValue("@EyeColor", chardata.Appearance.EyeColor);
                         command.Parameters.AddWithValue("@HairStyle", chardata.Appearance.HairStyle);
@@ -237,83 +236,56 @@ namespace Server.Characters
                         command.Parameters.AddWithValue("@Bodyblemish2Opacity", chardata.Appearance.BodyBlemish2Opacity);
 
                     command.Prepare();
-                        try
-                        {
-                        using (var reader = await command.ExecuteReaderAsync())
-                        {
-                            if (await reader.ReadAsync())//ha végbement a művelet
-                            {
-                                //itt frissíteni kell szúrni a karakter adatait, szóval chardata-t...
-                                uint appearanceid = Convert.ToUInt32(reader["lastid"]);
-                                string query2 = $"INSERT INTO `characters` (`id`, `accountId`, `characterName`, `creationDate`, `dob`, `pob`, `appearanceId`, `posX`, `posY`, `posZ`, `rot`) VALUES (NULL, NULL, '', CURRENT_TIMESTAMP, '', '', '', '', '', '', '');";
-                                
-
-
-
-                            }
-                        }
-
-                        }
-                        catch (Exception ex)
-                        {
-                            Database.Log.Log_Server(ex.ToString());
-                        }
-                    }
-                }
-                return false;
-            }
-
-        
-
-        public static async Task<bool> CreateNewCharacter(Player player)//létrehozunk egy új karaktert az adatbázisban, visszaadjuk az ID-jét.
-        {
-            uint accID = 0;
-            Character chardata = null;
-            chardata = await GetCharacterData(player);
-            NAPI.Task.Run(() =>
-            {
-                accID = player.GetData<uint>("player:accID");
-            });
-
-            if (accID != 0 && chardata != null)//ha 0 akkor nincs még belépve a player
-            {
-                //todo: insert into appearances
-                //appearance id alapján beszúrni a karaktert
-            
-            string query = $"INSERT INTO `appearances` (gender) VALUES (@accID);" +
-                    $"SELECT LAST_INSERT_ID();";
-            using (MySqlConnection con = new MySqlConnection())
-            {
-                con.ConnectionString = Database.DBCon.GetConString();
-                await con.OpenAsync();
-                    //executereader kell majd mert insert + select, kell az utolsó id
-
-                using (MySqlCommand command = new MySqlCommand(query, con))
-                {
-                    //command.Parameters.AddWithValue("@Username", username);
-                    command.Prepare();
                     try
                     {
                         int rows = await command.ExecuteNonQueryAsync();
                         if (rows > 0)
                         {
-                            return true;
+                            long appearanceid = command.LastInsertedId;
+                            string query2 = $"INSERT INTO `characters` (`id`, `accountId`, `characterName`, `creationDate`, `dob`, `pob`, `appearanceId`, `posX`, `posY`, `posZ`, `rot`) VALUES" +
+                                $" (NULL, @AccountID, @CharacterName, CURRENT_TIMESTAMP, @DOB, @POB, @AppearanceID, '-1037', '-2738', '21', '-30');";
+
+                            using (MySqlConnection con2 = new MySqlConnection())
+                            {
+                                con2.ConnectionString = Database.DBCon.GetConString();
+                                await con2.OpenAsync();
+                                //executereader kell majd mert insert + select, kell az utolsó id
+
+                                using (MySqlCommand command2 = new MySqlCommand(query2, con2))
+                                {
+                                    command2.Parameters.AddWithValue("@AccountID", accID);
+                                    command2.Parameters.AddWithValue("@CharacterName", chardata.Name);
+                                    command2.Parameters.AddWithValue("@DOB", chardata.DOB);
+                                    command2.Parameters.AddWithValue("@POB", chardata.POB);
+                                    command2.Parameters.AddWithValue("@AppearanceID", appearanceid);
+
+                                    try
+                                    {
+                                        int rows2 = await command2.ExecuteNonQueryAsync();
+                                        if (rows2 > 0)
+                                        {
+                                            return true;
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Database.Log.Log_Server(ex.ToString());
+                                    }
+
+                                }
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
                         Database.Log.Log_Server(ex.ToString());
                     }
+
+                    }
                 }
-            }
-                return false;
-        }
-            else
-        {
             return false;
-        }
-            
-        }
+            }
+
 
         public static async Task<Character> GetCharacterData(Player player)//karakter ID alapján egy karaktert ad vissza
         {

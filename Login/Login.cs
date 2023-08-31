@@ -80,6 +80,7 @@ namespace Server.Auth
                 string serial = playerData[4];
                 ulong scID = Convert.ToUInt32(playerData[5]);
                 string scName = playerData[6];
+                uint characterSlots = Convert.ToUInt32(playerData[7]);
                 if (await Auth.VerifyToken(id, token))//Token ellenőrzés
                 {
                     if (playerSerial == serial)//Serial egyezik
@@ -101,7 +102,7 @@ namespace Server.Auth
                                     {
                                         player.TriggerEvent("client:SaveToken", id, newtoken, expiration.ToString());
                                         player.SetData("player:accID", id);
-                                        
+                                        player.SetData("player:charSlots", characterSlots);
                                         player.TriggerEvent("client:DestroyAuthForm");
                                         Selector.ProcessCharScreen(player);
 
@@ -170,6 +171,7 @@ namespace Server.Auth
                 string serial = playerData[4];
                 ulong scID = Convert.ToUInt32(playerData[5]);
                 string scName = playerData[6];
+                uint characterSlots = Convert.ToUInt32(playerData[7]);
                 if (playerSerial == serial)//Serial egyezik
                 {
                     if (playerScId == scID && playerScName == scName)//Social Club egyezik

@@ -15,9 +15,9 @@ namespace Server.Characters
         public float posY { get; set; }//-6
         public float posZ { get; set; }//-7
         public float Rot { get; set; }//-8
-        public int AppearanceID { get; set; }//-9
+        public uint AppearanceID { get; set; }//-9
         public Appearance Appearance { get; set; }//-10
-        public Character(uint Id, string Name, DateTime DOB, string POB, int AppearanceID, float posX, float posY, float posZ, float rot)
+        public Character(uint Id, string Name, DateTime DOB, string POB, uint AppearanceID, float posX, float posY, float posZ, float rot)
         {
             this.DOB = DOB;
             this.POB = POB;

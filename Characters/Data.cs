@@ -1,6 +1,7 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Bcpg;
+using Server.Auth;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -90,7 +91,7 @@ namespace Server.Characters
                         {
                             while (await reader.ReadAsync())
                             {
-                                Character c = new Character(Convert.ToUInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]), Convert.ToSingle(reader["rot"]));
+                                Character c = new Character(Convert.ToUInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToUInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]), Convert.ToSingle(reader["rot"]));
                                 characters.Add(c);
                             }
                         }
@@ -123,7 +124,7 @@ namespace Server.Characters
                         {
                             while (await reader.ReadAsync())
                             {
-                                Character c = new Character(Convert.ToUInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]), Convert.ToSingle(reader["rot"]));
+                                Character c = new Character(Convert.ToUInt32(reader["id"]), reader["characterName"].ToString(), Convert.ToDateTime(reader["dob"]), reader["pob"].ToString(), Convert.ToUInt32(reader["appearanceId"]), Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]), Convert.ToSingle(reader["rot"]));
                                 return c;
                             }
                         }
@@ -285,6 +286,115 @@ namespace Server.Characters
                 }
             return false;
             }
+
+        public async static Task<bool> EditExistingCharacterInDatabase(Player player, uint appearanceID)//létrehozunk egy új karaktert az adatbázisban, visszaadjuk az ID-jét.
+        {
+            Character chardata = await GetCharacterData(player);
+            //INSERT INTO `appearances` (`id`, `gender`, `eyeColor`, `hairStyle`, `hairColor`, `hairHighlight`, `parent1face`, `parent2face`, `parent3face`, `parent1skin`, `parent2skin`, `parent3skin`, `faceMix`, `skinMix`, `thirdMix`, `noseWidth`, `noseHeight`, `noseLength`, `noseBridge`, `noseTip`, `noseBroken`, `browHeight`, `browWidth`, `cheekboneHeight`, `cheekboneWidth`, `cheekWidth`, `eyes`, `lips`, `jawWidth`, `jawHeight`, `chinLength`, `chinPosition`, `chinWidth`, `chinShape`, `neckWidth`, `blemishId`, `blemishOpacity`, `facialhairId`, `facialhairColor`, `facialhairOpacity`, `eyebrowId`, `eyebrowColor`, `eyebrowOpacity`, `ageId`, `ageOpacity`, `makeupId`, `makeupOpacity`, `blushId`, `blushColor`, `blushOpacity`, `complexionId`, `complexionOpacity`, `sundamageId`, `sundamageOpacity`, `lipstickId`, `lipstickColor`, `lipstickOpacity`, `frecklesId`, `frecklesOpacity`, `chesthairId`, `chesthairColor`, `chesthairOpacity`, `bodyblemishId`, `bodyblemishOpacity`, `bodyblemish2Id`, `bodyblemish2Opacity`, `tattoos`) VALUES (NULL, '0', '', '0', '', '', '', '', '', '', '', '', '', '', '', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '255', '0', '255', '0', '0', '255', '0', '0', '255', '0', '255', '0', '255', '0', '0', '255', '0', '255', '0', '255', '0', '0', '255', '0', '255', '0', '0', '255', '0', '255', '0', NULL);
+            //SELECT LAST_INSERT_ID();
+            string query = $"UPDATE `appearances` SET " +
+                $"`gender` = @Gender, `eyeColor` = @EyeColor, `hairStyle` = @HairStyle, `hairColor` = @HairColor, `hairHighlight` = @HairHighlight, " +
+                $"`parent1face` = @P1F, `parent2face` = @P2F, `parent3face` = @P3F, `parent1skin` = @P1S, `parent2skin` = @P2S, `parent3skin` = @P3S, `faceMix` = @FaceMix, `skinMix` = @SkinMix, `thirdMix` = @ThirdMix, " +
+                $"`noseWidth` = @NoseWidth, `noseHeight` = @NoseHeight, `noseLength` = @NoseLength, `noseBridge` = @NoseBridge, `noseTip` = @NoseTip, `noseBroken` = @NoseBroken, " +
+                $"`browHeight` = @BrowHeight, `browWidth` = @BrowWidth, `cheekboneHeight` = @CheekboneHeight, `cheekboneWidth` = @CheekboneWidth, `cheekWidth` = @CheekWidth, " +
+                $"`eyes` = @Eyes, `lips` = @Lips, `jawWidth` = @JawWidth, `jawHeight` = @JawHeight, `chinLength` = @ChinLength, `chinPosition` = @ChinPosition, `chinWidth` = @ChinWidth, `chinShape` = @ChinShape, `neckWidth` = @NeckWidth, " +
+                $"`blemishId` = @BlemishId, `blemishOpacity` = @BlemishOpacity, `facialhairId` = @FacialhairId, `facialhairColor` = @FacialhairColor, `facialhairOpacity` = @FacialhairOpacity, `eyebrowId` = @EyebrowId, `eyebrowColor` = @EyebrowColor, `eyebrowOpacity` = @EyebrowOpacity, " +
+                $"`ageId` = @AgeId, `ageOpacity` = @AgeOpacity, `makeupId` = @MakeupId, `makeupOpacity` = @MakeupOpacity, `blushId` = @BlushId, `blushColor` = @BlushColor, `blushOpacity` = @BlushOpacity, `complexionId` = @ComplexionId, `complexionOpacity` = @ComplexionOpacity, " +
+                $"`sundamageId` = @SundamageId, `sundamageOpacity` = @SundamageOpacity, `lipstickId` = @LipstickId, `lipstickColor` = @LipstickColor, `lipstickOpacity` = @LipstickOpacity, `frecklesId` = @FrecklesId, `frecklesOpacity` = @FrecklesOpacity, `chesthairId` = @ChesthairId, `chesthairColor` = @ChesthairColor, `chesthairOpacity` = @ChesthairOpacity," +
+                $" `bodyblemishId` = @Bodyblemish1Id, `bodyblemishOpacity`= @Bodyblemish1Opacity, `bodyblemish2Id`= @Bodyblemish2Id, `bodyblemish2Opacity`= @Bodyblemish2Opacity WHERE `appearances`.`id` = @AppearanceID";
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
+                {
+
+                    command.Parameters.AddWithValue("@Gender", chardata.Appearance.Gender);
+                    command.Parameters.AddWithValue("@EyeColor", chardata.Appearance.EyeColor);
+                    command.Parameters.AddWithValue("@HairStyle", chardata.Appearance.HairStyle);
+                    command.Parameters.AddWithValue("@HairColor", chardata.Appearance.HairColor);
+                    command.Parameters.AddWithValue("@HairHighlight", chardata.Appearance.HairHighlight);
+                    command.Parameters.AddWithValue("@P1F", chardata.Appearance.Parent1Face);
+                    command.Parameters.AddWithValue("@P2F", chardata.Appearance.Parent2Face);
+                    command.Parameters.AddWithValue("@P3F", chardata.Appearance.Parent3Face);
+                    command.Parameters.AddWithValue("@P1S", chardata.Appearance.Parent1Skin);
+                    command.Parameters.AddWithValue("@P2S", chardata.Appearance.Parent2Skin);
+                    command.Parameters.AddWithValue("@P3S", chardata.Appearance.Parent3Skin);
+                    command.Parameters.AddWithValue("@FaceMix", chardata.Appearance.FaceMix);
+                    command.Parameters.AddWithValue("@SkinMix", chardata.Appearance.SkinMix);
+                    command.Parameters.AddWithValue("@ThirdMix", chardata.Appearance.OverrideMix);
+                    command.Parameters.AddWithValue("@NoseWidth", chardata.Appearance.NoseWidth);
+                    command.Parameters.AddWithValue("@NoseHeight", chardata.Appearance.NoseHeight);
+                    command.Parameters.AddWithValue("@NoseLength", chardata.Appearance.NoseLength);
+                    command.Parameters.AddWithValue("@NoseBridge", chardata.Appearance.NoseBridge);
+                    command.Parameters.AddWithValue("@NoseTip", chardata.Appearance.NoseTip);
+                    command.Parameters.AddWithValue("@NoseBroken", chardata.Appearance.NoseBroken);
+                    command.Parameters.AddWithValue("@BrowHeight", chardata.Appearance.BrowHeight);
+                    command.Parameters.AddWithValue("@BrowWidth", chardata.Appearance.BrowWidth);
+                    command.Parameters.AddWithValue("@CheekboneHeight", chardata.Appearance.CheekboneHeight);
+                    command.Parameters.AddWithValue("@CheekboneWidth", chardata.Appearance.CheekboneWidth);
+                    command.Parameters.AddWithValue("@CheekWidth", chardata.Appearance.CheekWidth);
+                    command.Parameters.AddWithValue("@Eyes", chardata.Appearance.Eyes);
+                    command.Parameters.AddWithValue("@Lips", chardata.Appearance.Lips);
+                    command.Parameters.AddWithValue("@JawWidth", chardata.Appearance.JawWidth);
+                    command.Parameters.AddWithValue("@JawHeight", chardata.Appearance.JawHeight);
+                    command.Parameters.AddWithValue("@ChinLength", chardata.Appearance.ChinLength);
+                    command.Parameters.AddWithValue("@ChinPosition", chardata.Appearance.ChinPosition);
+                    command.Parameters.AddWithValue("@ChinWidth", chardata.Appearance.ChinWidth);
+                    command.Parameters.AddWithValue("@ChinShape", chardata.Appearance.ChinShape);
+                    command.Parameters.AddWithValue("@NeckWidth", chardata.Appearance.NeckWidth);
+                    //OVERLAYS
+                    command.Parameters.AddWithValue("@BlemishId", chardata.Appearance.BlemishId);
+                    command.Parameters.AddWithValue("@BlemishOpacity", chardata.Appearance.BlemishOpacity);
+                    command.Parameters.AddWithValue("@FacialhairId", chardata.Appearance.FacialHairId);
+                    command.Parameters.AddWithValue("@FacialhairColor", chardata.Appearance.FacialHairColor);
+                    command.Parameters.AddWithValue("@FacialhairOpacity", chardata.Appearance.FacialHairOpacity);
+                    command.Parameters.AddWithValue("@EyebrowId", chardata.Appearance.EyeBrowId);
+                    command.Parameters.AddWithValue("@EyebrowColor", chardata.Appearance.EyeBrowColor);
+                    command.Parameters.AddWithValue("@EyebrowOpacity", chardata.Appearance.EyeBrowOpacity);
+                    command.Parameters.AddWithValue("@AgeId", chardata.Appearance.AgeId);
+                    command.Parameters.AddWithValue("@AgeOpacity", chardata.Appearance.AgeOpacity);
+                    command.Parameters.AddWithValue("@MakeupId", chardata.Appearance.MakeupId);
+                    command.Parameters.AddWithValue("@MakeupOpacity", chardata.Appearance.MakeupOpacity);
+                    command.Parameters.AddWithValue("@BlushId", chardata.Appearance.BlushId);
+                    command.Parameters.AddWithValue("@BlushColor", chardata.Appearance.BlushColor);
+                    command.Parameters.AddWithValue("@BlushOpacity", chardata.Appearance.BlushOpacity);
+                    command.Parameters.AddWithValue("@ComplexionId", chardata.Appearance.ComplexionId);
+                    command.Parameters.AddWithValue("@ComplexionOpacity", chardata.Appearance.ComplexionOpacity);
+                    command.Parameters.AddWithValue("@SundamageId", chardata.Appearance.SundamageId);
+                    command.Parameters.AddWithValue("@SundamageOpacity", chardata.Appearance.SundamageOpacity);
+                    command.Parameters.AddWithValue("@LipstickId", chardata.Appearance.LipstickId);
+                    command.Parameters.AddWithValue("@LipstickColor", chardata.Appearance.LipstickColor);
+                    command.Parameters.AddWithValue("@LipstickOpacity", chardata.Appearance.LipstickOpacity);
+                    command.Parameters.AddWithValue("@FrecklesId", chardata.Appearance.FrecklesId);
+                    command.Parameters.AddWithValue("@FrecklesOpacity", chardata.Appearance.FrecklesOpacity);
+                    command.Parameters.AddWithValue("@ChesthairId", chardata.Appearance.ChestHairId);
+                    command.Parameters.AddWithValue("@ChesthairColor", chardata.Appearance.ChestHairColor);
+                    command.Parameters.AddWithValue("@ChesthairOpacity", chardata.Appearance.ChestHairOpacity);
+                    command.Parameters.AddWithValue("@Bodyblemish1Id", chardata.Appearance.BodyBlemish1Id);
+                    command.Parameters.AddWithValue("@Bodyblemish1Opacity", chardata.Appearance.BodyBlemish1Opacity);
+                    command.Parameters.AddWithValue("@Bodyblemish2Id", chardata.Appearance.BodyBlemish2Id);
+                    command.Parameters.AddWithValue("@Bodyblemish2Opacity", chardata.Appearance.BodyBlemish2Opacity);
+                    command.Parameters.AddWithValue("@AppearanceID", appearanceID);
+                    command.Prepare();
+                    try
+                    {
+                        int rows = await command.ExecuteNonQueryAsync();
+                        if (rows > 0)
+                        {
+                            return true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+
+                }
+            }
+            return false;
+        }
 
 
         public static async Task<Character> GetCharacterData(Player player)//karakter ID alapján egy karaktert ad vissza

@@ -22,10 +22,12 @@ namespace Server.Characters
         //-811.8078, 175.06, 76.75, 0, 0, 104.9
         //CAM:
         //-814,07, 174.25, 76.74, 0, 0, -73
+        [Command("changechar", Alias = "changecharacter")]
         public static void ProcessCharScreen(Player player)//bejelentkezés után ezt hívjuk meg, a logika itt lesz megvalósítva (van-e már karaktere, ha igen akkor betölteni)
         {
             uint accID = player.GetData<uint>("player:accID");
             player.Dimension = Convert.ToUInt32(accID);
+            player.TriggerEvent("client:SkyCam", true);
             SetCharacterDataForPlayer(player, accID);
         }
 
@@ -66,17 +68,17 @@ namespace Server.Characters
                         {
                             player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
                             player.SetSharedData("player:Frozen", true);
-                        }, 6000);
-                    }, 1500);
+                        }, 5000);
+                    }, 300);
                     
-                });
+                }, 2000);
             }
             else
             {
                 NAPI.Task.Run(() =>
                 {
                     Editor.StartNewCharEdit(player);
-                }, 1500);
+                }, 500);
 
                 //TODO: nincs karaktere, bedobni karakter készítőbe
             }

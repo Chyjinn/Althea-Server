@@ -288,7 +288,7 @@ namespace Server.Auth
                             var count = await cmd.ExecuteScalarAsync();
                             if (Convert.ToInt32(count) > 0)
                             {
-                                con.CloseAsync();
+                                await con.CloseAsync();
                                 return true;
                             }
                     }
@@ -297,7 +297,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                con.CloseAsync();
+                await con.CloseAsync();
             }
             return false;
         }
@@ -320,7 +320,7 @@ namespace Server.Auth
                             var count = await cmd.ExecuteScalarAsync();
                             if (Convert.ToInt32(count) > 0)
                             {
-                                con.CloseAsync();
+                                await con.CloseAsync();
                                 return true;
                             }
                     }
@@ -329,7 +329,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                con.CloseAsync();
+                await con.CloseAsync();
             }
             return false;
         }

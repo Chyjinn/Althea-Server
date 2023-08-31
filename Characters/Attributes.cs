@@ -50,6 +50,8 @@ namespace Server.Characters
         public byte FaceMix { get; set; }//10
         public byte SkinMix { get; set; }//11
         public byte OverrideMix { get; set; }//12
+
+        public int HairStyle { get; set; } //-12
         //FACE
         public sbyte NoseWidth { get; set; }//13
         public sbyte NoseHeight { get; set; }//14
@@ -107,7 +109,7 @@ namespace Server.Characters
         public Appearance(int id, bool gender,
             byte eyecolor, byte haircolor, byte hairhighlight,
             byte p1f, byte p2f, byte p3f, byte p1s, byte p2s, byte p3s,
-            byte facemix, byte skinmix, byte overridemix,
+            byte facemix, byte skinmix, byte overridemix, int hairstyle,
             sbyte nosewidth, sbyte noseheight, sbyte noselength,
             sbyte nosebridge, sbyte nosetip, sbyte nosebroken,
             sbyte browheight, sbyte browwidth, sbyte cheekboneheight,
@@ -142,6 +144,7 @@ namespace Server.Characters
             FaceMix = facemix;
             SkinMix = skinmix;
             OverrideMix = overridemix;
+            HairStyle = hairstyle;
             NoseWidth = nosewidth;
             NoseHeight = noseheight;
             NoseLength = noselength;
@@ -199,26 +202,26 @@ namespace Server.Characters
         {
             float[] features = new float[20]
             {
-                NoseWidth/100,
-                NoseHeight/100,
-                NoseLength/100,
-                NoseBridge/100,
-                NoseTip/100,
-                NoseBroken/100,
-                BrowHeight/100,
-                BrowWidth/100,
-                CheekboneHeight/100,
-                CheekboneWidth/100,
-                CheekWidth/100,
-                Eyes/100,
-                Lips/100,
-                JawWidth / 100,
-                JawHeight / 100,
-                ChinLength / 100,
-                ChinPosition / 100,
-                ChinWidth / 100,
-                ChinShape / 100,
-                NeckWidth / 100
+                (float)NoseWidth/100f,
+                (float)NoseHeight/100f,
+                (float)NoseLength/100f,
+                (float)NoseBridge/100f,
+                (float)NoseTip/100f,
+                (float)NoseBroken/100f,
+                (float)BrowHeight/100f,
+                (float)BrowWidth/100f,
+                (float)CheekboneHeight/100f,
+                (float)CheekboneWidth/100f,
+                (float)CheekWidth/100f,
+                (float)Eyes/100f,
+                (float)Lips/100f,
+                (float)JawWidth / 100f,
+                (float)JawHeight / 100f,
+                (float)ChinLength / 100f,
+                (float)ChinPosition / 100f,
+                (float)ChinWidth / 100f,
+                (float)ChinShape / 100f,
+                (float)NeckWidth / 100f
             };
             return features;
         }
@@ -328,6 +331,8 @@ namespace Server.Characters
             {
                 player.SetFaceFeature(i, FaceFeatures[i]);
             }
+
+            player.SetClothes(2, character.Appearance.HairStyle, 0);
         }
 
         public static async void HandleCharacterAppearanceById(Player player, uint charid)
@@ -347,6 +352,8 @@ namespace Server.Characters
                 {
                     player.SetFaceFeature(i, FaceFeatures[i]);
                 }
+
+                
             });
         }
 

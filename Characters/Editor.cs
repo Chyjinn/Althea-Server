@@ -14,7 +14,7 @@ namespace Server.Characters
         public void NewChar(Player player)
         {
             Character c = new Character(0, "", DateTime.MinValue, "", -1, 0f, 0f, 0f, 0f);
-            Appearance a = new Appearance(-1, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0,0,0);
+            Appearance a = new Appearance(-1, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,0,0,0,0,0,0);
             c.Appearance = a;
 
             string json = NAPI.Util.ToJson(c);
@@ -51,10 +51,17 @@ namespace Server.Characters
                 player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
                 player.Rotation = new Vector3(0f, 0f, 110f);
                 //player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
-                player.TriggerEvent("client:CharEdit", true);
+                
                 player.SetSharedData("player:Frozen", true);
                 player.TriggerEvent("client:SkyCam", false);
-            }, 2000);
+
+                NAPI.Task.Run(() =>
+                { 
+                player.TriggerEvent("client:CharEdit", true);
+
+                }, 4500);
+
+            }, 3000);
         }
 
         [Command("charedit", Alias = "chareditor")]
@@ -70,6 +77,15 @@ namespace Server.Characters
             }
         }
 
+        [RemoteEvent("server:FinishEditing")]
+        public void FinishEditing(Player player)
+        {
+            uint accID = player.GetData<uint>("player:accID");
+            Data.UpdateEditedCharacter(player, accID);
+            player.TriggerEvent("client:CharEdit", false);
+        }
+
+
         [RemoteEvent("server:EditAttribute")]
         public async void EditAttribute(Player player, int attributeid, string value)
         {
@@ -77,6 +93,18 @@ namespace Server.Characters
             switch (attributeid)
             {
                 default:
+                    break;
+                case -2://Name
+                    character.Name = value;
+                    break;
+                case -3://POB
+                    character.POB = value;
+                    break;
+                case -4://DOB
+                    character.DOB = Convert.ToDateTime(value);
+                    break;
+                case -12:
+                    character.Appearance.HairStyle = Convert.ToInt32(value);
                     break;
                 case 0:
                     character.Appearance.Gender = Convert.ToBoolean(value);
@@ -272,15 +300,6 @@ namespace Server.Characters
                 case 63:
                     character.Appearance.BodyBlemish2Opacity = Convert.ToByte(value);
                     break;
-                case -2: //Name
-                    character.Name = value;
-                    break;
-                case -3://Date of birth
-                    character.DOB = Convert.ToDateTime(value);
-                    break;
-                case -4://Place of birth
-                    character.POB = value;
-                    break;
 
             }
             //átírtuk a megváltoztatott értéket, beállítjuk a karakter kinézetét az új értékre
@@ -297,7 +316,7 @@ namespace Server.Characters
         public static void RotateCharRight(Player player)
         {
             Vector3 rot = player.Rotation;
-            rot.Z += 0.5f;
+            rot.Z += 1f;
             player.Rotation = rot;
         }
 
@@ -305,7 +324,7 @@ namespace Server.Characters
         public static void RotateCharLeft(Player player)
         {
             Vector3 rot = player.Rotation;
-            rot.Z -= 0.5f;
+            rot.Z -= 1f;
             player.Rotation = rot;
         }
 

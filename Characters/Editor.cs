@@ -27,8 +27,8 @@ namespace Server.Characters
             player.SetSharedData("player:Frozen", true);
             player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
             player.Rotation = new Vector3(0f, 0f, 110f);
-            player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
-            player.TriggerEvent("client:CharEdit");
+            //player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
+            player.TriggerEvent("client:CharEdit", true);
         }
 
 
@@ -47,14 +47,14 @@ namespace Server.Characters
 
                 Appearance.HandleCharacterAppearance(player, c);
 
-                player.SetSharedData("player:Frozen", true);
+                
                 player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
                 player.Rotation = new Vector3(0f, 0f, 110f);
-                player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
-                player.TriggerEvent("client:CharEdit");
-
-            });
-
+                //player.TriggerEvent("client:SetCamera", -814.3f, 174.1f, 77f, -10f, 0f, -72f, 48f);
+                player.TriggerEvent("client:CharEdit", true);
+                player.SetSharedData("player:Frozen", true);
+                player.TriggerEvent("client:SkyCam", false);
+            }, 2000);
         }
 
         [Command("charedit", Alias = "chareditor")]
@@ -65,6 +65,7 @@ namespace Server.Characters
 
             if (charID != 0 && accID != 0)
             {
+                player.TriggerEvent("client:SkyCam", true);
                 SetupCharEditor(player,accID,charID);
             }
         }

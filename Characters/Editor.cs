@@ -81,7 +81,7 @@ namespace Server.Characters
         public void FinishEditing(Player player)
         {
             uint accID = player.GetData<uint>("player:accID");
-            Data.UpdateEditedCharacter(player, accID);
+            //Data.UpdateEditedCharacter(player, accID);
             player.TriggerEvent("client:CharEdit", false);
         }
 

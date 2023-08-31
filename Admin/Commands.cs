@@ -522,6 +522,38 @@ namespace Server.Admin
             }
 
         }
+        [RemoteEvent("server:VehicleIndicator")]
+        public void VehicleIndicator(Player player, bool side)
+        {
+            Vehicle v = player.Vehicle;
+            if (side)//jobb 
+            {
+                if (v.HasSharedData("vehicle:IndicatorRight"))
+                {
+                    bool state = v.GetSharedData<bool>("vehicle:IndicatorRight");
+                    v.SetSharedData("vehicle:IndicatorRight", !state);
+                }
+                else
+                {
+                    v.SetSharedData("vehicle:IndicatorRight", true);
+                }
+                
+            }
+            else//bal
+            {
+                if (v.HasSharedData("vehicle:IndicatorLeft"))
+                {
+                    bool state = v.GetSharedData<bool>("vehicle:IndicatorLeft");
+                    v.SetSharedData("vehicle:IndicatorLeft", !state);
+                }
+                else
+                {
+                    v.SetSharedData("vehicle:IndicatorLeft", true);
+                }
+            }
+        }
+
+
 
         [Command("serial")]
         public void ShowSerial(Player player)

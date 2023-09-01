@@ -42,7 +42,7 @@ namespace Server.Characters
                 NAPI.Task.Run(() =>
                 {
                     player.TriggerEvent("client:CharEdit", true);
-
+                    player.TriggerEvent("client:EditorCamera");
                 }, 4000);
 
             }, 500);
@@ -100,7 +100,7 @@ namespace Server.Characters
                 NAPI.Task.Run(() =>
                 {
                     player.TriggerEvent("client:CharEdit", true);
-
+                    player.TriggerEvent("client:EditorCamera");
                 }, 4500);
 
             }, 3000);
@@ -112,17 +112,16 @@ namespace Server.Characters
             Character c = await Data.GetCharacterData(player);
             uint accID = player.GetData<uint>("player:accID");
             player.TriggerEvent("client:CharEdit", false);
+            player.TriggerEvent("client:DeleteCamera");
+            player.TriggerEvent("client:SkyCam", true);
             if (c.Id != 0)//ha nem 0 akkor meglévő karakterről van szó
             {
                 EditExistingCharacter(player, c.AppearanceID);
-                player.TriggerEvent("client:CharEdit", false);
-                player.TriggerEvent("client:SkyCam", true);
+                
             }
             else//0 a karakter ID, szóval újat kell létrehoznunk.
             {
                 //új karaktert hoz létre
-                player.TriggerEvent("client:CharEdit", false);
-                player.TriggerEvent("client:SkyCam", true);
                 CreateNewCharacter(player, accID);
             }
         }

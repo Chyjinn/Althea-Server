@@ -12,9 +12,8 @@ namespace Server.Interior
         [Command("interior")]
         public void InteriorTest(Player player)
         {
-            Vector3 pos = player.Position;
-            pos.Z = pos.Z - 1f;
-            Checkpoint cp = NAPI.Checkpoint.CreateCheckpoint(CheckpointType.Cyclinder3, pos, new Vector3(0, 1, 0), 1f, new Color(255, 255, 255, 100));
+
+            Checkpoint cp = NAPI.Checkpoint.CreateCheckpoint(CheckpointType.Cyclinder3, new Vector3(428f,-800f,29f), new Vector3(0, 1f, 0), 0.5f, new Color(255, 255, 255, 100));
         }
 
     }

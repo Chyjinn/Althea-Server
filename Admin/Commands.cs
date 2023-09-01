@@ -712,7 +712,7 @@ namespace Server.Admin
         }*/
 
 
-        [Command("setclothes", Alias = "clothes", GreedyArg = true)]
+        [Command("setclothes", GreedyArg = true)]
         public void SetPlayerClothes(GTANetworkAPI.Player player,string slot, string drawable, string texture)
         {
 

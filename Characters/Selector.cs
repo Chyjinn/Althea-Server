@@ -125,6 +125,7 @@ namespace Server.Characters
                         player.TriggerEvent("client:SkyCam", false);
                         player.SetSharedData("player:Frozen", false);
                         player.SetData<string>("player:CharacterSelector", null);
+
                     }, 2000);
                     
                 });

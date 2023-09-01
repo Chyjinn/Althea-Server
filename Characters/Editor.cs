@@ -54,7 +54,7 @@ namespace Server.Characters
             {
                 NAPI.Task.Run(() =>
                 {
-                    player.SetData<string>("player:CharacterEditor", null);
+                    player.SetData<string>("player:CharacterEditor", "");
                     Selector.ProcessCharScreen(player);
                 }, 5000);
 
@@ -88,8 +88,11 @@ namespace Server.Characters
                 Appearance.HandleCharacterAppearance(player, c);
 
 
-                player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
-                player.Rotation = new Vector3(0f, 0f, 110f);
+                //player.Position = new Vector3(-811.68f, 175.2f, 76.74f);
+                //player.Rotation = new Vector3(0f, 0f, 110f);
+                player.Position = new Vector3(167f, -979f, 30f);
+                player.Rotation = new Vector3(0f, 0f, 130f);
+
 
                 player.SetSharedData("player:Frozen", true);
                 player.TriggerEvent("client:SkyCam", false);
@@ -133,7 +136,7 @@ namespace Server.Characters
             {
                 NAPI.Task.Run(() =>
                 {
-                    player.SetData<string>("player:CharacterEditor", null);
+                    player.SetData<string>("player:CharacterEditor", "");
                     player.SetSharedData("player:Frozen", false);
                     Selector.ProcessCharScreen(player);
                 }, 5000);

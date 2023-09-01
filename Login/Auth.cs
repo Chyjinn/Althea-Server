@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics.SymbolStore;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using GTANetworkAPI;
@@ -57,7 +59,8 @@ namespace Server.Auth
         
         public static async Task<bool> SaveGeneratedToken(uint AccountID, string token, DateTime expiration)//token mentése amit GenerateNewToken-el szereztünk
         {
-                string query = $"INSERT INTO `tokens` (accountId,token,expiration) VALUES (@accID,@Token,@Expiration)";
+            string query = $"INSERT INTO `tokens` (accountId,token,expiration) VALUES (@accID,@Token,@Expiration)";
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -74,7 +77,7 @@ namespace Server.Auth
                             int rows = await command.ExecuteNonQueryAsync();
                             if (rows > 0)
                             {
-                                return true;
+                                state = true;
                             }
                         }
                         catch (Exception ex)
@@ -82,13 +85,16 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                         }
                     }
-                }
-            return false;
+                await con.CloseAsync();
+                return state;
+            }
+            
         }
 
         public static async Task<bool> DeleteUsedToken(string token)//felhasznált token törlése
         {
             string query = $"DELETE FROM `tokens` WHERE `tokens`.`token` LIKE @Token";
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -104,7 +110,8 @@ namespace Server.Auth
                         int rows = await command.ExecuteNonQueryAsync();
                         if (rows > 0)
                         {
-                            return true;
+                            
+                            state = true;
                         }
                     }
                     catch (Exception ex)
@@ -112,14 +119,17 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return state;
             }
-            return false;
+            
         }
 
 
         public static async Task<bool> VerifyToken(uint AccountID, string token)//account id alapján token ellenőrzés
         {
             string query = $"SELECT accountId,token,expiration FROM `tokens` WHERE `token` = @Token LIMIT 1";
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -139,7 +149,8 @@ namespace Server.Auth
                                 DateTime expiration = Convert.ToDateTime(reader["expiration"]);
                                 if (expiration > DateTime.Now && acc == AccountID && dbToken == token)//lejárati dátumot ellenőrizzük, illetve hogy a megfelelő account ID és token van-e használva
                                 {
-                                    return true;
+                                    
+                                    state = true;
                                 }
                             }
                         }
@@ -149,15 +160,16 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                con.CloseAsync();
+                return state;
             }
-            return false;
         }
 
 
         public static async Task<string[]> GetLoginData(string username)//felhasználónév alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
             string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc,characterSlots FROM `accounts` WHERE `userName` = @Username LIMIT 1";
-            string[] res;
+            string[] res = new string[0];
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -175,7 +187,7 @@ namespace Server.Auth
                                 if (await reader.ReadAsync())
                                 {
                                     res = new string[8] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString(), reader["characterSlots"].ToString() };
-                                    return res; 
+                                    
                                 }
                             }
                         }
@@ -189,12 +201,11 @@ namespace Server.Auth
                 {
                     Database.Log.Log_Server(ex.ToString());
                 }
-                
-
-
+                await con.CloseAsync();
+                return res;
             }
-            res = new string[0];
-            return res;
+            
+            
         }
 
 
@@ -202,7 +213,7 @@ namespace Server.Auth
         {
             string query = $"SELECT playerId,adminId,reason,timestamp,expires FROM `bans` WHERE `serial` = @SERIAL OR `socialId` = @SCID AND `deactivated` = '0'";
 
-            string[] res;
+            string[] res = new string[0];
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -220,7 +231,7 @@ namespace Server.Auth
                             if (await reader.ReadAsync())
                             {
                                 res = new string[5] { reader["playerId"].ToString(), reader["adminId"].ToString(), reader["reason"].ToString(), reader["timestamp"].ToString(), reader["expires"].ToString() };
-                                return res;
+                                
                             }
                         }
                     }
@@ -229,16 +240,16 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return res;
             }
-            res = new string[0];
-            return res;
         }
 
         public static async Task<string[]> GetBanData(uint accountId)//account id alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
             string query = $"SELECT playerId,adminId,reason,timestamp,expires FROM `bans` WHERE `playerId` = @AccID AND `deactivated` = '0'";
 
-            string[] res;
+            string[] res = new string[0];
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -255,7 +266,7 @@ namespace Server.Auth
                             if (await reader.ReadAsync())
                             {
                                 res = new string[5] { reader["playerId"].ToString(), reader["adminId"].ToString(), reader["reason"].ToString(), reader["timestamp"].ToString(), reader["expires"].ToString() };
-                                return res;
+                                
                             }
                         }
                     }
@@ -264,15 +275,15 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return res;
             }
-            res = new string[0];
-            return res;
         }
 
         public static async Task<bool> IsBanned(ulong scId, string serial)//ha a serial vagy social club bannolva van
         {
             string query = $"SELECT COUNT(playerId) FROM `bans` WHERE `serial` = @SERIAL OR `socialId` = @SCID AND `deactivated` = '0'";
-
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -288,8 +299,7 @@ namespace Server.Auth
                             var count = await cmd.ExecuteScalarAsync();
                             if (Convert.ToInt32(count) > 0)
                             {
-                                await con.CloseAsync();
-                                return true;
+                                state = true;
                             }
                     }
                     catch (Exception ex)
@@ -298,14 +308,14 @@ namespace Server.Auth
                     }
                 }
                 await con.CloseAsync();
+                return state;
             }
-            return false;
         }
 
         public static async Task<bool> IsBanned(uint accountId)//ha az account van bannolva
         {
             string query = $"SELECT COUNT(playerId) FROM `bans` WHERE `playerId` = @AccID AND `deactivated` = '0'";
-
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -320,8 +330,8 @@ namespace Server.Auth
                             var count = await cmd.ExecuteScalarAsync();
                             if (Convert.ToInt32(count) > 0)
                             {
-                                await con.CloseAsync();
-                                return true;
+                                state = true;
+                                
                             }
                     }
                     catch (Exception ex)
@@ -330,15 +340,15 @@ namespace Server.Auth
                     }
                 }
                 await con.CloseAsync();
+                return state;
             }
-            return false;
         }
 
         public static async Task<string[]> GetLoginData(uint accountID)//account id alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
             string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc,characterSlots FROM `accounts` WHERE `id` = @AccID LIMIT 1";
-            
-            string[] res;
+
+            string[] res = new string[0];
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -355,7 +365,7 @@ namespace Server.Auth
                             if (await reader.ReadAsync())
                             {
                                 res = new string[8] { reader["id"].ToString(), reader["userName"].ToString(), reader["passwordHash"].ToString(), reader["passwordSalt"].ToString(), reader["serial"].ToString(), reader["scId"].ToString(), reader["sc"].ToString(), reader["characterSlots"].ToString() };
-                                return res;
+                                
                             }
                         }
                     }
@@ -364,9 +374,11 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return res;
             }
-            res = new string[0];
-            return res;
+            
+            
         }
 
 
@@ -374,6 +386,7 @@ namespace Server.Auth
         public static async Task<bool> TokenInUse(string token)//ha létezik a token akkor return true
         {
             string query = $"SELECT COUNT(id) FROM `tokens` WHERE `token` = @TokenString";
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -387,7 +400,7 @@ namespace Server.Auth
                         var count = await cmd.ExecuteScalarAsync();
                         if (Convert.ToInt32(count) > 0)
                         {
-                            return true;
+                            state = true;
                         }
                     }
                     catch (Exception ex)
@@ -395,13 +408,16 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return state;
             }
-            return false;
+            
         }
 
         public static async Task<string> GetPasswordSalt(string username)//return salt
         {
             string query = $"SELECT passwordSalt AS pwSalt FROM `accounts` WHERE `userName` = @Username LIMIT 1";
+            string res = "";
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -417,8 +433,8 @@ namespace Server.Auth
                         {
                             if (await reader.ReadAsync())
                             {
- 
-                                return reader["pwSalt"].ToString();
+                                res = reader["pwSalt"].ToString();
+                                
                             }
                         }
                     }
@@ -427,13 +443,15 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return res;
             }
-            return "";
         }
 
         public static async Task<string> GetPasswordHash(string username)//return hash
         {
             string query = $"SELECT passwordHash AS pwHash FROM `accounts` WHERE `userName` = @Username LIMIT 1";
+            string res = "";
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -449,7 +467,7 @@ namespace Server.Auth
                         {
                             if (await reader.ReadAsync())
                             {
-                                return reader["pwHash"].ToString();
+                                res = reader["pwHash"].ToString();
                             }
                         }
                     }
@@ -458,13 +476,15 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return res;
             }
-            return "";
         }
 
         public static async Task<bool> AccountExists(string username)//felhasználónév alapján
         {
             string query = $"SELECT userName FROM `accounts` WHERE `userName` = @Username LIMIT 1";
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -482,7 +502,8 @@ namespace Server.Auth
                             {
                                 if ((string)reader["userName"] == username)
                                 {
-                                    return true;
+                                    state = true;
+                                    
                                 }
                             }
                         }
@@ -492,13 +513,15 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return state;
             }
-            return false;
         }
 
         public static async Task<bool> AccountExists(uint accountID)//account id alapján
         {
             string query = $"SELECT id FROM `accounts` WHERE `id` = @AccID LIMIT 1";
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -515,7 +538,8 @@ namespace Server.Auth
                             {
                                 if (Convert.ToUInt16(reader["id"]) == accountID)
                                 {
-                                    return true;
+                                    state = true;
+                                    
                                 }
                             }
                         }
@@ -525,13 +549,15 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return state;
             }
-            return false;
         }
 
         public static async Task<bool> EmailInUse(string email)//használatban van-e az email
         {
             string query = $"SELECT email AS Email FROM `accounts` WHERE `email` = @Email LIMIT 1";
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -548,7 +574,8 @@ namespace Server.Auth
                             {
                                 if ((string)reader["Email"] == email)
                                 {
-                                    return true;
+                                    state = true;
+                                    
                                 }
                             }
                         }
@@ -558,13 +585,15 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return state;
             }
-            return false;
         }
 
         public static async Task<Tuple<int, string>> GetAdminData(uint accID)//admin szint és név
         {
             string query = $"SELECT adminLevel, adminNick FROM `accounts` WHERE `id` = @AccID LIMIT 1";
+            Tuple<int, string> res = Tuple.Create(0, "Admin");
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -579,7 +608,8 @@ namespace Server.Auth
                         {
                             if (await reader.ReadAsync())
                             {
-                                return Tuple.Create(Convert.ToInt32(reader["adminLevel"]), Convert.ToString(reader["adminNick"]));
+                                res = Tuple.Create(Convert.ToInt32(reader["adminLevel"]), Convert.ToString(reader["adminNick"]));
+                                
                             }
                         }
                     }
@@ -588,13 +618,15 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return res;
             }
-            return Tuple.Create(0,""); ;
         }
 
         public static async Task<bool> SocialClubInUse(ulong socialclubid)//social club ellenőrzés
         {
             string query = $"SELECT scId AS SocialClubId FROM `accounts` WHERE `scId` = @ScId LIMIT 1";
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -611,7 +643,7 @@ namespace Server.Auth
                             {
                                 if (Convert.ToUInt32(reader["SocialClubId"]) == socialclubid)
                                 {
-                                    return true;
+                                    state = true;
                                 }
                             }
                         }
@@ -621,13 +653,15 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return state;
             }
-            return false;
         }
 
         public static async Task<bool> SerialInUse(string serial)//serial ellenőrzés
         {
             string query = $"SELECT serial AS Serial FROM `accounts` WHERE `serial` = @SerialNumber LIMIT 1";
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -644,8 +678,8 @@ namespace Server.Auth
                             {
                                 if ((string)reader["Serial"] == serial)
                                 {
-   
-                                    return true;
+
+                                    state = true;
                                 }
                             }
                         }
@@ -655,13 +689,15 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return state;
             }
-            return false;
         }
 
         public static async Task<bool> RegisterPlayer(Player player, string username, string email, string passwordHash, string salt, string serial, ulong scID, string scName)//minden adatot vár ami egy accounthoz tartozik
         {
             string query = $"INSERT INTO `accounts` (userName,email,passwordHash,passwordSalt,serial,scId,sc) VALUES (@Username,@Email,@pwHash,@Salt,@Serial,@SCID,@SCNAME)";
+            bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -683,7 +719,7 @@ namespace Server.Auth
                         int rows = await command.ExecuteNonQueryAsync();
                         if (rows > 0)
                         {
-                            return true;
+                            state = true;
                         }
                     }
                     catch (Exception ex)
@@ -691,8 +727,9 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
+                return state;
             }
-            return false;
         }
 
 

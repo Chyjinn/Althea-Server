@@ -331,6 +331,43 @@ namespace Server.Characters
                 player.SetFaceFeature(i, FaceFeatures[i]);
             }
 
+            if (character.Appearance.Gender)//férfi
+            {
+                for (int i = 0; i < 19; i++)
+                {
+                    if (i != 2)
+                    {
+                        player.SetClothes(i, 0, 0);
+                    }
+
+
+                }
+                //beállítjuk az alap ruhákat neki
+                player.SetClothes(3, 15, 0);//test
+                player.SetClothes(4, 61, 0);//nadrág
+                player.SetClothes(6, 34, 0);//cipő
+                player.SetClothes(8, 15, 0);//undershirt
+                player.SetClothes(11, 15, 0);//nadrág
+
+            }
+            else//nő
+            {
+                for (int i = 0; i < 19; i++)
+                {
+                    if (i != 2)
+                    {
+                        player.SetClothes(i, 0, 0);
+                    }
+
+                }
+                //beállítjuk az alap ruhákat neki
+                player.SetClothes(3, 15, 0);//test
+                player.SetClothes(4, 15, 0);//nadrág
+                player.SetClothes(6, 35, 0);//cipő
+                player.SetClothes(8, 2, 0);//undershirt
+                player.SetClothes(11, 15, 0);//felső
+            }
+
             player.SetClothes(2, character.Appearance.HairStyle, 0);
         }
 

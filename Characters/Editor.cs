@@ -42,6 +42,7 @@ namespace Server.Characters
                 NAPI.Task.Run(() =>
                 {
                     player.TriggerEvent("client:CharEdit", true);
+
                     player.TriggerEvent("client:EditorCamera");
                 }, 4000);
 
@@ -294,11 +295,9 @@ namespace Server.Characters
                     character.Appearance.AgeOpacity = Convert.ToByte(value);
                     break;
                 case 43:
-                    player.SendChatMessage("makeup " + value);
                     character.Appearance.MakeupId = Convert.ToByte(value);
                     break;
                 case 44:
-                    player.SendChatMessage("makeup opacity " + value);
                     character.Appearance.MakeupOpacity = Convert.ToByte(value);
                     break;
                 case 45:

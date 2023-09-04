@@ -40,7 +40,8 @@ namespace Server.Characters
         {
             if (player.HasData("player:accID"))
             {
-                if (player.GetData<uint>("player:charSlots") > await Data.GetNumberOfCharacters(accID))
+                uint characternum = await Data.GetNumberOfCharacters(accID);
+                if (player.GetData<uint>("player:charSlots") > characternum)
                 {
                     Character c = new Character(0, "", DateTime.Now, "", 0, 0f, 0f, 0f, 0f);
                     Appearance a = new Appearance(0, true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -49,12 +50,11 @@ namespace Server.Characters
 
                     NAPI.Task.Run(() =>
                     {
-                        //Appearance.HandleCharacterAppearance(player, c);
-                        player.Position = new Vector3(167f, -979f, 30f);
-                        player.Rotation = new Vector3(0f, 0f, 130f);
+                        Appearance.HandleCharacterAppearance(player, c);
+                        player.Position = new Vector3(-811.5f, 175.2f, 76.75f);
+                        player.Rotation = new Vector3(0f, 0f, 107f);
 
-
-                        player.SetSharedData("player:Frozen", true);
+                        
                         player.TriggerEvent("client:SkyCam", false);
 
                         NAPI.Task.Run(() =>
@@ -65,14 +65,12 @@ namespace Server.Characters
                         }, 4500);
 
                     }, 3000);
-
-
                 }
                 else
                 {
                     NAPI.Task.Run(() =>
                     {
-                        player.SendChatMessage("Betelt a karakter slotod.");
+                        player.SendChatMessage("AccID: "+accID+" - Betelt a karakter slotod. "+ player.GetData<uint>("player:charSlots").ToString() + " < " + characternum.ToString());
                         player.TriggerEvent("client:CharEdit", false);
                         player.TriggerEvent("client:DeleteCamera");
                         player.TriggerEvent("client:SkyCam", false);
@@ -95,11 +93,10 @@ namespace Server.Characters
 
                 NAPI.Task.Run(() =>
                 {
-                    player.Position = new Vector3(167f, -979f, 30f);
-                    player.Rotation = new Vector3(0f, 0f, 130f);
+                    player.Position = new Vector3(-811.5f, 175.2f, 76.75f);
+                    player.Rotation = new Vector3(0f, 0f, 107f);
 
 
-                    player.SetSharedData("player:Frozen", true);
                     player.TriggerEvent("client:SkyCam", false);
 
                     NAPI.Task.Run(() =>

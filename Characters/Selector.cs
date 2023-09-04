@@ -10,11 +10,12 @@ namespace Server.Characters
 {
     internal class Selector : Script
     {
-        static Dictionary<int, float[]> scenes = new Dictionary<int, float[]>()
+        static Dictionary<int, Vector3[]> scenes = new Dictionary<int, Vector3[]>()
         {
-            //ID, float tömb: Kamera X-Y-Z-ROT, Kezdő X-Y-Z-ROT, Vég X-Y-Z-ROT
-            //{0,new float[12] {-1030.5f, -1090.2f, 1.9f, 92.7f, -1033.1f, -1096.1f, 1.94f, -30f, -1031.9f, -1090.4f, 2.1f, -99.2f } },
-            {0,new float[12] {-1053.5f, -1206.7f, 4.5f, -72f, -1052.9f, -1200.1f, 4.2f, -152f, -1050.6f, -1205.2f, 4f, 105.3f } },
+            //ID, POS, ROT
+            {0, new Vector3[2] {new Vector3(-1051f,-1204f,3.9f), new Vector3(0f,0f,100f) } },
+            {1, new Vector3[2] {new Vector3(393f,-355.7f,48f), new Vector3(0f,0f,-80f) } },
+            {2, new Vector3[2] {new Vector3(-1351.8f,-1435.2f,4.3f), new Vector3(0f,0f,-71f) } },
         };
 
 
@@ -28,6 +29,7 @@ namespace Server.Characters
             uint accID = player.GetData<uint>("player:accID");
             player.Dimension = Convert.ToUInt32(accID);
             player.TriggerEvent("client:SkyCam", true);
+            player.SetSharedData("player:Frozen", false);
             SetCharacterDataForPlayer(player, accID);
         }
 
@@ -46,12 +48,9 @@ namespace Server.Characters
                     Random r = new Random();
                     int randomscene = r.Next(0, scenes.Count);
 
-                    float[] coords = scenes[randomscene];
+                    Vector3[] coords = scenes[randomscene];
 
-                    Vector3 pos = new Vector3(coords[4], coords[5], coords[6]);
-                    Vector3 rot = new Vector3(0f, 0f, coords[7]);
-                    player.Position = pos;
-                    player.Rotation = rot;
+                    NAPI.Player.SpawnPlayer(player, coords[0], coords[1].Z);
 
                     string json = NAPI.Util.ToJson(characters);
                     player.SetData("player:CharacterSelector", json);
@@ -61,14 +60,9 @@ namespace Server.Characters
                     Appearance.HandleCharacterAppearanceById(player, characters[0].Id);
                     NAPI.Task.Run(() =>
                     {
-                        player.SetSharedData("player:Frozen", false);
-                        player.TriggerEvent("client:SetCamera", coords[0], coords[1], coords[2], 0f, 0f, coords[3], 48f);
-                        player.TriggerEvent("client:CharWalkIn", coords[8], coords[9], coords[10], coords[11]);
-                        NAPI.Task.Run(() =>
-                        {
-                            player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
-                            player.SetSharedData("player:Frozen", true);
-                        }, 5000);
+                        player.TriggerEvent("client:InfrontCamera");
+                        player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
+                        player.SetSharedData("player:Frozen", true);
                     }, 300);
                     
                 }, 2000);
@@ -125,16 +119,6 @@ namespace Server.Characters
                     
                 });
             }
-    }
-
-
-
-        public static void SetPlayerToWalkOut(Player player)
-    {
-        NAPI.Task.Run(() =>
-        {
-            player.TriggerEvent("client:CharWalkOut");
-        }, 100);
     }
 
     

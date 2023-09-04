@@ -168,7 +168,7 @@ namespace Server.Auth
 
         public static async Task<string[]> GetLoginData(string username)//felhasználónév alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
-            string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc,characterSlots FROM `accounts` WHERE `userName` = @Username LIMIT 1";
+            string query = $"SELECT * FROM `accounts` WHERE `userName` = @Username LIMIT 1";
             string[] res = new string[0];
             using (MySqlConnection con = new MySqlConnection())
             {
@@ -346,7 +346,7 @@ namespace Server.Auth
 
         public static async Task<string[]> GetLoginData(uint accountID)//account id alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
-            string query = $"SELECT id,userName,passwordHash,passwordSalt,serial,scId,sc,characterSlots FROM `accounts` WHERE `id` = @AccID LIMIT 1";
+            string query = $"SELECT * FROM `accounts` WHERE `id` = @AccID LIMIT 1";
 
             string[] res = new string[0];
             using (MySqlConnection con = new MySqlConnection())

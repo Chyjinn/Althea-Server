@@ -37,6 +37,7 @@ namespace Server.Characters
         public int Id { get; set; }//-11
         public bool Gender { get;  set; }//0
         public byte EyeColor { get; set; }//1
+        public int HairStyle { get; set; } //-12
         public byte HairColor { get; set; }//2
         public byte HairHighlight { get; set; }//3
         //PARENTS
@@ -50,7 +51,7 @@ namespace Server.Characters
         public byte FaceMix { get; set; }//10
         public byte SkinMix { get; set; }//11
         public byte OverrideMix { get; set; }//12
-        public int HairStyle { get; set; } //-12
+        
         //FACE
         public sbyte NoseWidth { get; set; }//13
         public sbyte NoseHeight { get; set; }//14

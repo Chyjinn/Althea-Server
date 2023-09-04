@@ -43,7 +43,7 @@ namespace Server.Characters
                 if (player.GetData<uint>("player:charSlots") > await Data.GetNumberOfCharacters(accID))
                 {
                     Character c = new Character(0, "", DateTime.Now, "", 0, 0f, 0f, 0f, 0f);
-                    Appearance a = new Appearance(0, true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    Appearance a = new Appearance(0, true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
                     c.Appearance = a;
                     
 
@@ -59,10 +59,9 @@ namespace Server.Characters
 
                         NAPI.Task.Run(() =>
                         {
-                            player.TriggerEvent("client:LoadCharacterAppearance", c);
                             player.TriggerEvent("client:CharEdit", true);
                             player.TriggerEvent("client:EditorCamera");
-                            
+                            player.TriggerEvent("client:LoadCharacterAppearance", c);
                         }, 4500);
 
                     }, 3000);
@@ -77,6 +76,7 @@ namespace Server.Characters
                         player.TriggerEvent("client:CharEdit", false);
                         player.TriggerEvent("client:DeleteCamera");
                         player.TriggerEvent("client:SkyCam", false);
+                        Selector.ProcessCharScreen(player);
                     }, 1000);
                     
                 }

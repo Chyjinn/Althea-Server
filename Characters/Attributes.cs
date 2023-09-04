@@ -339,8 +339,6 @@ namespace Server.Characters
                     {
                         player.SetClothes(i, 0, 0);
                     }
-
-
                 }
                 //beállítjuk az alap ruhákat neki
                 player.SetClothes(3, 15, 0);//test
@@ -348,7 +346,6 @@ namespace Server.Characters
                 player.SetClothes(6, 34, 0);//cipő
                 player.SetClothes(8, 15, 0);//undershirt
                 player.SetClothes(11, 15, 0);//nadrág
-
             }
             else//nő
             {

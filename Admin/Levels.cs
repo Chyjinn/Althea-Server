@@ -20,8 +20,16 @@ namespace Server.Admin
         public static async void LoadAcmds()
         {
             acmds.Clear();
+            DateTime timestamp1 = DateTime.Now;
+            
             await LoadAdminCommands();
-            NAPI.Util.ConsoleOutput("Admin parancsok betöltve.");
+
+            DateTime timestamp2 = DateTime.Now;
+
+            TimeSpan LoadTime = timestamp2 - timestamp1;
+
+            NAPI.Util.ConsoleOutput("Admin parancsok betöltve " + LoadTime.Milliseconds + " ms alatt.");
+
         }
 
         public static async Task LoadAdminCommands()

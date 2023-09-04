@@ -25,7 +25,6 @@ namespace Server
             //AutosavePlayers();
             NAPI.Task.Run(() =>
             {
-                Database.Log.Log_Server("admin parancsok betöltésének megkezdése...");
                 Admin.Levels.LoadAcmds();
             },10000);
             

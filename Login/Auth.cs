@@ -160,7 +160,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                con.CloseAsync();
+                await con.CloseAsync();
                 return state;
             }
         }

@@ -75,12 +75,7 @@ namespace Server.Characters
             }
             else
             {
-                NAPI.Task.Run(() =>
-                {
-                    Editor.StartNewCharEdit(player);
-                }, 500);
-
-                //TODO: nincs karaktere, bedobni karakter készítőbe
+                    Editor.SetupCharEditor(player, accID);//nincs karaktere, bedobni karakter készítőbe
             }
 
         }
@@ -107,7 +102,7 @@ namespace Server.Characters
     {
             uint accID = player.GetData<uint>("player:accID");
             Character c = await Data.GetCharacterDataByID(player, charid);
-            if (await IsCharacterOwner(accID, charid))
+            if (await Data.IsCharacterOwner(accID, charid))
             {
                 NAPI.Task.Run(() =>
                 {
@@ -132,37 +127,9 @@ namespace Server.Characters
             }
     }
 
-        public static async Task<bool> IsCharacterOwner(uint accid, uint charid)//ha az adott account-hoz tartozik a karakter akkor true, különben false
-        {
-            string query = $"SELECT COUNT(id) FROM `characters` WHERE `accountId` = @AccID AND `id` = @CharID";
-            using (MySqlConnection con = new MySqlConnection())
-            {
-                con.ConnectionString = Database.DBCon.GetConString();
-                await con.OpenAsync();
-
-                using (MySqlCommand cmd = new MySqlCommand(query, con))
-                {
-                    cmd.Parameters.AddWithValue("@AccID", accid);
-                    cmd.Parameters.AddWithValue("@CharID", charid);
-                    try
-                    {
-                        var count = await cmd.ExecuteScalarAsync();
-                        if (Convert.ToInt32(count) > 0)
-                        {
-                            return true;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        //Log.Log_Server(ex.ToString());
-                    }
-                }
-            }
-            return false;
-        }
 
 
-    public static void SetPlayerToWalkOut(Player player)
+        public static void SetPlayerToWalkOut(Player player)
     {
         NAPI.Task.Run(() =>
         {

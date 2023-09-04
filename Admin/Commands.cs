@@ -25,11 +25,6 @@ namespace Server.Admin
     class Commands : Script
     {
         List<AdminCommand> acmds = new List<AdminCommand>();
-        public void onResourceStart()
-        {
-            acmds.Add(new AdminCommand("fly", 1, "repülés"));
-            
-        }
 
         private bool checkAdmin()
         {

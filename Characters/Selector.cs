@@ -13,9 +13,9 @@ namespace Server.Characters
         static Dictionary<int, Vector3[]> scenes = new Dictionary<int, Vector3[]>()
         {
             //ID, POS, ROT
-            {0, new Vector3[2] {new Vector3(-1051f,-1204f,3.9f), new Vector3(0f,0f,100f) } },
-            {1, new Vector3[2] {new Vector3(393f,-355.7f,48f), new Vector3(0f,0f,-80f) } },
-            {2, new Vector3[2] {new Vector3(-1351.8f,-1435.2f,4.3f), new Vector3(0f,0f,-71f) } },
+            {0, new Vector3[2] {new Vector3(-849,-66.8f,37f), new Vector3(0f,0f,-157.3f) } },
+            {1, new Vector3[2] {new Vector3(392.5f,-355.7f,47.2f), new Vector3(0f,0f,-80f) } },
+            {2, new Vector3[2] {new Vector3(-1351.8f,-1435.2f,3.8f), new Vector3(0f,0f,-71f) } },
         };
 
 
@@ -26,6 +26,9 @@ namespace Server.Characters
         [Command("changechar", Alias = "changecharacter")]
         public static void ProcessCharScreen(Player player)//bejelentkezés után ezt hívjuk meg, a logika itt lesz megvalósítva (van-e már karaktere, ha igen akkor betölteni)
         {
+            player.TriggerEvent("client:Chat", false);
+            player.TriggerEvent("client:BindKeys", false);
+
             uint accID = player.GetData<uint>("player:accID");
             player.Dimension = Convert.ToUInt32(accID);
             player.TriggerEvent("client:SkyCam", true);
@@ -49,7 +52,7 @@ namespace Server.Characters
                     int randomscene = r.Next(0, scenes.Count);
 
                     Vector3[] coords = scenes[randomscene];
-
+                    player.SetSharedData("player:Frozen", true);
                     NAPI.Player.SpawnPlayer(player, coords[0], coords[1].Z);
 
                     string json = NAPI.Util.ToJson(characters);
@@ -60,10 +63,9 @@ namespace Server.Characters
                     Appearance.HandleCharacterAppearanceById(player, characters[0].Id);
                     NAPI.Task.Run(() =>
                     {
-                        player.TriggerEvent("client:InfrontCamera");
                         player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
-                        player.SetSharedData("player:Frozen", true);
-                    }, 300);
+                        player.TriggerEvent("client:InfrontCamera");
+                    }, 2000);
                     
                 }, 2000);
             }
@@ -114,7 +116,8 @@ namespace Server.Characters
                         player.TriggerEvent("client:SkyCam", false);
                         player.SetSharedData("player:Frozen", false);
                         player.SetData<string>("player:CharacterSelector", null);
-
+                        player.TriggerEvent("client:Chat", true);
+                        player.TriggerEvent("client:BindKeys", true);
                     }, 2000);
                     
                 });

@@ -16,6 +16,7 @@ namespace Server.Characters
             Checkpoint cp = NAPI.Checkpoint.CreateCheckpoint(CheckpointType.Cyclinder3, new Vector3(428f, -800f, 28.5f), new Vector3(0, 1f, 0), 1f, new Color(255, 0, 0, 100), 0);
             clothingCpList.Add(cp);
             NAPI.Blip.CreateBlip(73, new Vector3(428f, -800f, 150f), 1f, 0, "Ruhabolt", 255, 0, true, 0, 0);
+            NAPI.Blip.CreateBlip(149, new Vector3(103.7f, -1939.2f, 50f), 1f, 85, "N?", 255, 0, true, 0, 0);
         }
 
 

@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace Server.Inventory
 {
-    internal class ItemList
+    public class ItemList : Script
     {
-        static List<Item> itemList = new List<Item>();
+        static List<Entry> itemList = new List<Entry>();
         //betöltjük adatbázisból az itemlistát
         [ServerEvent(Event.ResourceStart)]
         public async void InitiateLoading()
@@ -28,7 +28,7 @@ namespace Server.Inventory
 
         public static async Task LoadItemList()
         {
-            string query = $"SELECT * FROM `items`";
+            string query = $"SELECT * FROM `itemlist`";
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = Database.DBCon.GetConString();
@@ -42,8 +42,7 @@ namespace Server.Inventory
                         {
                             while (await reader.ReadAsync())
                             {
-
-                                Item entry = new Item(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), (Item.ItemType)Convert.ToUInt32(reader["itemType"]), Convert.ToString(reader["itemImage"]), Convert.ToInt32(reader["itemStack"]));
+                                Entry entry = new Entry(Convert.ToInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), (Entry.ItemType)Convert.ToUInt32(reader["itemType"]), Convert.ToString(reader["itemImage"]), Convert.ToInt32(reader["itemStack"]));
                                 itemList.Add(entry);
                             }
                         }
@@ -57,11 +56,11 @@ namespace Server.Inventory
             }
         }
 
-        public Item GetItemById(uint id)
+        public Entry GetItemById(uint id)
         {
             foreach (var item in itemList)
             {
-                if (item.ID == id)
+                if (item.ItemID == id)
                 {
                     return item;
                 }

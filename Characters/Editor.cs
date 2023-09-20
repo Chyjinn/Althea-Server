@@ -62,6 +62,7 @@ namespace Server.Characters
                             player.TriggerEvent("client:CharEdit", true);
                             player.TriggerEvent("client:EditorCamera");
                             player.TriggerEvent("client:LoadCharacterAppearance", c);
+                            player.PlayAnimation("nm@hands", "hands_up", 1);
                         }, 4500);
 
                     }, 3000);
@@ -104,6 +105,7 @@ namespace Server.Characters
                         player.TriggerEvent("client:LoadCharacterAppearance", c);
                         player.TriggerEvent("client:CharEdit", true);
                         player.TriggerEvent("client:EditorCamera");
+                        player.PlayAnimation("nm@hands", "hands_up", 1);
                     }, 4500);
 
                 }, 3000);
@@ -142,6 +144,7 @@ namespace Server.Characters
                     NAPI.Task.Run(() =>
                     {
                         player.SetSharedData("player:Frozen", false);
+                        player.StopAnimation();
                         Selector.ProcessCharScreen(player);
                     }, 5000);
                 }

@@ -13,9 +13,9 @@ namespace Server.Characters
         static Dictionary<int, Vector3[]> scenes = new Dictionary<int, Vector3[]>()
         {
             //ID, POS, ROT
-            {0, new Vector3[2] {new Vector3(-849,-66.8f,37f), new Vector3(0f,0f,-157.3f) } },
-            {1, new Vector3[2] {new Vector3(392.5f,-355.7f,47.2f), new Vector3(0f,0f,-80f) } },
-            {2, new Vector3[2] {new Vector3(-1351.8f,-1435.2f,3.8f), new Vector3(0f,0f,-71f) } },
+            {0, new Vector3[2] {new Vector3(-849,-66.8f,36.7f), new Vector3(0f,0f,-157.3f) } },
+            {1, new Vector3[2] {new Vector3(392.5f,-355.7f,47f), new Vector3(0f,0f,-80f) } },
+            {2, new Vector3[2] {new Vector3(-1351.8f,-1435.2f,3.6f), new Vector3(0f,0f,-71f) } },
         };
 
 
@@ -100,6 +100,7 @@ namespace Server.Characters
             Character c = await Data.GetCharacterDataByID(player, charid);
             if (await Data.IsCharacterOwner(accID, charid))
             {
+                
                 NAPI.Task.Run(() =>
                 {
                     player.TriggerEvent("client:SkyCam", true);
@@ -118,6 +119,7 @@ namespace Server.Characters
                         player.SetData<string>("player:CharacterSelector", null);
                         player.TriggerEvent("client:Chat", true);
                         player.TriggerEvent("client:BindKeys", true);
+                        Inventory.Inventory.LoadPlayerInventory(player);
                     }, 2000);
                     
                 });

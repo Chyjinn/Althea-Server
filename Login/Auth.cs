@@ -204,8 +204,6 @@ namespace Server.Auth
                 await con.CloseAsync();
                 return res;
             }
-            
-            
         }
 
 

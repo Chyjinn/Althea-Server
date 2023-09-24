@@ -244,6 +244,14 @@ namespace Server.Admin
             }
         }
 
+        [Command("engine", Alias = "end")]
+        public void StartStopEngine(Player player)
+        {
+            if (player.Vehicle != null)
+            {
+                player.Vehicle.EngineStatus = !player.Vehicle.EngineStatus;
+            }
+        }
 
         [Command("setarmor", Alias = "setarmour")]
         public void SetArmor(Player player, int targetid = -1, int armor = 100)

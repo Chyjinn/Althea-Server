@@ -118,6 +118,7 @@ namespace Server.Characters
                         player.SetSharedData("player:Frozen", false);
                         player.SetData<string>("player:CharacterSelector", null);
                         player.TriggerEvent("client:Chat", true);
+                        player.TriggerEvent("client:HUD", true);
                         player.TriggerEvent("client:BindKeys", true);
                         Inventory.Inventory.LoadPlayerInventory(player);
                     }, 2000);

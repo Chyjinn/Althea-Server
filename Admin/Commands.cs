@@ -196,6 +196,8 @@ namespace Server.Admin
             
         }
 
+
+
         [Command("sethp")]
         public void SetHP(Player player, int targetid = -1, int hp = 100)
         {
@@ -242,6 +244,33 @@ namespace Server.Admin
             }
         }
 
+
+        [Command("setarmor", Alias = "setarmour")]
+        public void SetArmor(Player player, int targetid = -1, int armor = 100)
+        {
+            if (targetid == -1)
+            {
+                    NAPI.Player.SetPlayerArmor(player, armor);
+                    player.SendChatMessage("Armor sikeresen átállítva. (" + armor + ")");
+            }
+            else
+            {
+                Player target = GetPlayerById(targetid);
+                if (target != null)
+                {
+                        NAPI.Player.SetPlayerArmor(target, armor);
+                        player.SendChatMessage(target.Name + " armor-ja átállítva. (" + armor + ")");
+                        target.SendChatMessage(player.Name + " átállította az armor-od. (" + armor + ")");
+
+                }
+                else
+                {
+                    player.SendChatMessage("Nincs ilyen játékos");
+                }
+
+
+            }
+        }
 
         public static Player GetPlayerById(int id)
         {

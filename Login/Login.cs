@@ -33,6 +33,7 @@ namespace Server.Auth
                 NAPI.Task.Run(() =>
                 {
                     player.TriggerEvent("client:BanScreen", banData[1], banData[2], banData[3], banData[4]);
+                    player.TriggerEvent("client:HUD", false);
                 });
                 
             }
@@ -41,6 +42,7 @@ namespace Server.Auth
                 NAPI.Task.Run(() =>
                 {
                     player.TriggerEvent("client:LoginScreen");
+                    player.TriggerEvent("client:HUD",false);
                 });
                 
             }

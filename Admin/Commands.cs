@@ -207,6 +207,7 @@ namespace Server.Admin
                 {
                     Vector3 pos = player.Position;
                     NAPI.Player.SpawnPlayer(player, pos);
+                    player.Health = hp;
                     player.SendChatMessage("HP-d sikeresen átállítva. (" + hp + ")");
                 }
                 else
@@ -224,6 +225,7 @@ namespace Server.Admin
                     {
                         Vector3 pos = target.Position;
                         NAPI.Player.SpawnPlayer(target, pos);
+                        player.Health = hp;
                         player.SendChatMessage(target.Name + " HP-ja átállítva. (" + hp + ")");
                         target.SendChatMessage(player.Name + " átállította a HP-d. (" + hp + ")");
                     }

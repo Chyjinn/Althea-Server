@@ -89,7 +89,7 @@ namespace Server.Inventory
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    Item loadedItem = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["itemID"]),Convert.ToInt32(reader["itemSection"]),reader["itemValue"].ToString(),Convert.ToInt32(reader["itemAmount"]),Convert.ToBoolean(reader["duty"]),Convert.ToInt32(reader["itemSlot"]));
+                                    Item loadedItem = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["itemID"]),reader["itemValue"].ToString(),Convert.ToInt32(reader["itemAmount"]),Convert.ToBoolean(reader["duty"]),Convert.ToInt32(reader["itemSlot"]));
                                     items.Add(loadedItem);
 
                                 }
@@ -126,7 +126,7 @@ namespace Server.Inventory
         {
             foreach (var item in ServerItems)
             {
-                if (item.OwnerID == ownerid && item.ItemSection == section && item.ItemSlot == slot)
+                if (item.OwnerID == ownerid && ItemList.GetItemSection(item.ItemID) == section && item.ItemSlot == slot)
                 {
                     return item;
                 }
@@ -151,6 +151,51 @@ namespace Server.Inventory
         }
 
 
+        [RemoteEvent("server:MoveItemInInventory")]
+        public void MoveItemInInventory(Player player, int section, int startslot, int endslot)
+        {
+            uint charid = player.GetData<UInt32>("player:charID");
+            player.SendChatMessage("item move " + startslot + "->" + endslot);
+            Item i = GetItemByData(charid, section, startslot);
+            if (i != null)
+            {
+                player.SendChatMessage("item not null");
+                if (TryItemMove(player,section,startslot,endslot))
+                {
+                    //adatbázis kezelés
+                    player.SendChatMessage(ItemList.GetItemName(i.ItemID) + " áthelyezve, kezdő slot: " + startslot + " cél slot: " + endslot);
+                }
+                else
+                {
+
+                    player.SendChatMessage("item destination not empty");
+                }
+            }
+            else//hiba van, frissítjük a player inventoryját
+            {
+                player.SendChatMessage("refresh inv");
+                RefreshInventory(player, charid);
+            }
+        }
+
+
+        public bool TryItemMove(Player player,int section, int startslot, int endslot)
+        {
+            uint charid = player.GetData<UInt32>("player:charID");
+
+            if (GetItemByData(charid, section, endslot) == null)
+            {
+                Item i = GetItemByData(charid, section, startslot);
+                i.ItemSlot = endslot;
+                return true;
+            }
+
+            return false;
+
+        }
+
+
+
         public void HandleItemUse(Player player, Item i)
         {
             if (i.InUse)//használatban van, el akarjuk tenni
@@ -158,9 +203,9 @@ namespace Server.Inventory
                 switch (ItemList.GetItemType(i.ItemID))
                 {
                     case 1://fegyver
-                        player.RemoveAllWeapons();
+                        player.RemoveWeapon(WeaponHash.Pistol);
                         i.InUse = false;
-                        player.TriggerEvent("client:ItemUseToCEF", i.ItemSection, i.ItemSlot, 0);
+                        player.TriggerEvent("client:ItemUseToCEF", ItemList.GetItemSection(i.ItemID), i.ItemSlot, 0);
                         break;
                     case 2:
                         break;
@@ -175,7 +220,7 @@ namespace Server.Inventory
                     case 1://fegyver
                         player.GiveWeapon(WeaponHash.Pistol, 50);
                         i.InUse = true;
-                        player.TriggerEvent("client:ItemUseToCEF",i.ItemSection,i.ItemSlot, 1);
+                        player.TriggerEvent("client:ItemUseToCEF",ItemList.GetItemSection(i.ItemID),i.ItemSlot, 1);
                         break;
                     case 2:
                         break;

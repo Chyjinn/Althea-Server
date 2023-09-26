@@ -120,7 +120,7 @@ namespace Server.Characters
                         player.TriggerEvent("client:Chat", true);
                         player.TriggerEvent("client:HUD", true);
                         player.TriggerEvent("client:BindKeys", true);
-                        Inventory.Inventory.LoadPlayerInventory(player);
+                        Inventory.Items.LoadInventory(player);
                     }, 2000);
                     
                 });

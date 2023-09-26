@@ -752,8 +752,14 @@ namespace Server.Admin
 
             player.SendChatMessage($"Ruha sikeresen beállítva! S:{slot}D:{drawable}T:{texture}");
             NAPI.Player.SetPlayerClothes(player, Convert.ToInt32(slot), Convert.ToInt32(drawable), Convert.ToInt32(texture));
-            
         }
+        [Command("setprop", GreedyArg = true)]
+        public void SetPlayerProps(GTANetworkAPI.Player player, string slot, string drawable, string texture)
+        {
+            player.SendChatMessage($"Prop sikeresen beállítva! S:{slot}D:{drawable}T:{texture}");
+            NAPI.Player.SetPlayerAccessory(player, Convert.ToInt32(slot), Convert.ToInt32(drawable), Convert.ToInt32(texture));
+        }
+
 
 
         [Command("testclothes")]

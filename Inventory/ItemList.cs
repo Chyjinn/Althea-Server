@@ -23,6 +23,8 @@ namespace Server.Inventory
             TimeSpan LoadTime = timestamp2 - timestamp1;
             
             NAPI.Util.ConsoleOutput("Itemlista betöltve " + LoadTime.Milliseconds + " ms alatt.");
+
+
         }
 
 
@@ -54,6 +56,13 @@ namespace Server.Inventory
                 }
                 await con.CloseAsync();
             }
+        }
+
+        [RemoteEvent("server:RefreshItemList")]
+        public async static void SendItemListToPlayer(Player player)
+        {
+            string json = NAPI.Util.ToJson(itemList);
+            player.TriggerEvent("client:ItemListFromServer", json);
         }
 
         public Entry GetItemById(uint id)

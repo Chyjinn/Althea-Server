@@ -9,34 +9,57 @@ using Server.Characters;
 
 namespace Server.Inventory
 {
-    public class Inventory : Script
+    public class Items : Script
     {
-        static Dictionary<int, List<Item>> playerInventories = new Dictionary<int, List<Item>>();//character id, list of items
-        Dictionary<int, List<Item>> vehicleInventories = new Dictionary<int, List<Item>>();
+        static List<Item> ServerItems = new List<Item>();
 
-        public List<Item> GetPlayerItemsByCharacterId(int characterId)
+        public static Item[] GetPlayerItemsByCharacterId(int characterId)
         {
-            return playerInventories[characterId];
+            List<Item> playerItems = new List<Item>();
+            foreach (var item in ServerItems)
+            {
+                if (item.OwnerType == 0 && item.OwnerID == characterId)
+                {
+                    playerItems.Add(item);
+                }
+            }
+            return playerItems.ToArray();
         }
 
 
-        public static void LoadPlayerInventory(Player player)
+        public static void LoadInventory(Player player)
         {
             int charid = player.GetData<int>("Player:CharID");
-            LoadInventory(player,charid);
+            RefreshInventory(player, charid);
         }
 
-        public async static void LoadInventory(Player player,int charid)
+        [Command("giveitem")]
+        public void GiveItem(Player player, int itemid, int amount)
         {
-            Item[] items = await GetPlayerInventory(charid);
-            playerInventories[charid] = items.ToList();
-            SendInventoryToPlayer(player, items);
+           
+        }
+
+
+        public async static void RefreshInventory(Player player,int charid)
+        {
+            Item[] playerItems = await GetPlayerInventory(charid);
+            player.SendChatMessage("ITEMID: " + playerItems[0].ItemID.ToString());
+            foreach (var item in playerItems)
+            {
+                if (!ServerItems.Contains(item))
+                {
+                    ServerItems.Add(item);
+                }
+            }
+            Inventory.ItemList.SendItemListToPlayer(player);
+            SendInventoryToPlayer(player, playerItems);
         }
 
 
         public async static void SendInventoryToPlayer(Player player, Item[] items)
         {
-
+            string json = NAPI.Util.ToJson(items);
+            player.TriggerEvent("client:InventoryFromServer", items);
         }
 
 
@@ -84,13 +107,13 @@ namespace Server.Inventory
 
         public void CleanUpInventory(int characterID)
         {
-            playerInventories[characterID].Clear();
+            //playerInventories[characterID].Clear();
         }
 
 
         public void AddItemToCharacter(int characterId, Item item)
         {
-            playerInventories[characterId].Add(item);
+            //playerInventories[characterId].Add(item);
         }
     }
 }

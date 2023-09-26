@@ -1,5 +1,6 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,8 +24,6 @@ namespace Server.Inventory
             TimeSpan LoadTime = timestamp2 - timestamp1;
             
             NAPI.Util.ConsoleOutput("Itemlista betöltve " + LoadTime.Milliseconds + " ms alatt.");
-
-
         }
 
 
@@ -44,7 +43,7 @@ namespace Server.Inventory
                         {
                             while (await reader.ReadAsync())
                             {
-                                Entry entry = new Entry(Convert.ToInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), (Entry.ItemType)Convert.ToUInt32(reader["itemType"]), Convert.ToString(reader["itemImage"]), Convert.ToInt32(reader["itemStack"]));
+                                Entry entry = new Entry(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), Convert.ToInt32(reader["itemType"]), Convert.ToString(reader["itemImage"]), Convert.ToInt32(reader["itemStack"]));
                                 itemList.Add(entry);
                             }
                         }
@@ -61,11 +60,16 @@ namespace Server.Inventory
         [RemoteEvent("server:RefreshItemList")]
         public async static void SendItemListToPlayer(Player player)
         {
-            string json = NAPI.Util.ToJson(itemList);
-            player.TriggerEvent("client:ItemListFromServer", json);
+            NAPI.Task.Run(() =>
+            {
+                string json = NAPI.Util.ToJson(itemList);
+                player.TriggerEvent("client:ItemListFromServer", json);
+            }, 500);
+
+
         }
 
-        public Entry GetItemById(uint id)
+        public static Entry GetItemById(uint id)
         {
             foreach (var item in itemList)
             {
@@ -76,6 +80,18 @@ namespace Server.Inventory
             }
 
             return null;
+        }
+
+        public static int GetItemType(uint itemid)
+        {
+            foreach (var item in itemList)
+            {
+                if (item.ItemID == itemid)
+                {
+                    return item.ItemType;
+                }
+            }
+            return 0;
         }
 
     }

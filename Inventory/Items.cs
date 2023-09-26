@@ -29,7 +29,7 @@ namespace Server.Inventory
 
         public static void LoadInventory(Player player)
         {
-            int charid = player.GetData<int>("Player:CharID");
+            uint charid = player.GetData<UInt32>("player:charID");
             RefreshInventory(player, charid);
         }
 
@@ -40,10 +40,10 @@ namespace Server.Inventory
         }
 
 
-        public async static void RefreshInventory(Player player,int charid)
+        public async static void RefreshInventory(Player player,uint charid)
         {
             Item[] playerItems = await GetPlayerInventory(charid);
-            player.SendChatMessage("ITEMID: " + playerItems[0].ItemID.ToString());
+            
             foreach (var item in playerItems)
             {
                 if (!ServerItems.Contains(item))
@@ -58,12 +58,18 @@ namespace Server.Inventory
 
         public async static void SendInventoryToPlayer(Player player, Item[] items)
         {
-            string json = NAPI.Util.ToJson(items);
-            player.TriggerEvent("client:InventoryFromServer", items);
+            NAPI.Task.Run(() =>
+            {
+                string json = NAPI.Util.ToJson(items);
+                player.TriggerEvent("client:InventoryFromServer", json);
+                Database.Log.Log_Server(json);
+            }, 500);
+
+
         }
 
 
-        public static async Task<Item[]> GetPlayerInventory(int charid)//felhasználónév alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
+        public static async Task<Item[]> GetPlayerInventory(uint charid)//felhasználónév alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
             string query = $"SELECT * FROM `items` WHERE `ownerType` = 0 AND `ownerID` = @CharacterID";
             List<Item> items = new List<Item>();
@@ -81,9 +87,9 @@ namespace Server.Inventory
                         {
                             using (var reader = await cmd.ExecuteReaderAsync())
                             {
-                                if (await reader.ReadAsync())
+                                while (await reader.ReadAsync())
                                 {
-                                    Item loadedItem = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToInt32(reader["itemID"]),reader["itemValue"].ToString(),Convert.ToInt32(reader["itemAmount"]),Convert.ToBoolean(reader["duty"]),Convert.ToInt32(reader["itemSlot"]));
+                                    Item loadedItem = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["itemID"]),Convert.ToInt32(reader["itemSection"]),reader["itemValue"].ToString(),Convert.ToInt32(reader["itemAmount"]),Convert.ToBoolean(reader["duty"]),Convert.ToInt32(reader["itemSlot"]));
                                     items.Add(loadedItem);
 
                                 }
@@ -114,6 +120,72 @@ namespace Server.Inventory
         public void AddItemToCharacter(int characterId, Item item)
         {
             //playerInventories[characterId].Add(item);
+        }
+
+        public Item GetItemByData(uint ownerid, int section, int slot)
+        {
+            foreach (var item in ServerItems)
+            {
+                if (item.OwnerID == ownerid && item.ItemSection == section && item.ItemSlot == slot)
+                {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+
+        [RemoteEvent("server:UseItem")]
+        public void ItemUse(Player player, int section, int slot)
+        {
+            uint charid = player.GetData<UInt32>("player:charID");
+            Item i = GetItemByData(charid, section, slot);
+            if (i != null)
+            {
+                HandleItemUse(player,i);
+            }
+            else//hiba van, frissítjük a player inventoryját
+            {
+                RefreshInventory(player, charid);
+            }
+        }
+
+
+        public void HandleItemUse(Player player, Item i)
+        {
+            if (i.InUse)//használatban van, el akarjuk tenni
+            {
+                switch (ItemList.GetItemType(i.ItemID))
+                {
+                    case 1://fegyver
+                        player.RemoveAllWeapons();
+                        i.InUse = false;
+                        player.TriggerEvent("client:ItemUseToCEF", i.ItemSection, i.ItemSlot, 0);
+                        break;
+                    case 2:
+                        break;
+                    default:
+                        break;
+                }
+            }
+            else
+            {
+                switch (ItemList.GetItemType(i.ItemID))
+                {
+                    case 1://fegyver
+                        player.GiveWeapon(WeaponHash.Pistol, 50);
+                        i.InUse = true;
+                        player.TriggerEvent("client:ItemUseToCEF",i.ItemSection,i.ItemSlot, 1);
+                        break;
+                    case 2:
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+
+            
         }
     }
 }

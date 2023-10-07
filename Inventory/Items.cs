@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using GTANetworkAPI;
 using MySql.Data.MySqlClient;
+using Server.Admin;
 using Server.Characters;
 
 namespace Server.Inventory
@@ -26,17 +27,31 @@ namespace Server.Inventory
             return playerItems.ToArray();
         }
 
+        [Command("giveitem")]
+        public void GiveItem(Player player, uint itemid, string itemvalue, int amount)
+        {
+            uint charid = player.GetData<UInt32>("player:charID");
+            Item newitem = new Item(0, charid, 0, itemid, itemvalue, amount, false, -1);
+
+        }
+
+
+        public int GetFirstAvailableSlot(Player player)
+        {
+            uint charid = player.GetData<UInt32>("player:charID");
+            foreach (var item in ServerItems)
+            {
+
+            }
+
+            return -1;
+        }
+
 
         public static void LoadInventory(Player player)
         {
             uint charid = player.GetData<UInt32>("player:charID");
             RefreshInventory(player, charid);
-        }
-
-        [Command("giveitem")]
-        public void GiveItem(Player player, int itemid, int amount)
-        {
-           
         }
 
 
@@ -89,7 +104,7 @@ namespace Server.Inventory
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    Item loadedItem = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["itemID"]),reader["itemValue"].ToString(),Convert.ToInt32(reader["itemAmount"]),Convert.ToBoolean(reader["duty"]),Convert.ToInt32(reader["itemSlot"]));
+                                    Item loadedItem = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToUInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["itemID"]),reader["itemValue"].ToString(),Convert.ToInt32(reader["itemAmount"]),Convert.ToBoolean(reader["duty"]),Convert.ToInt32(reader["itemSlot"]));
                                     items.Add(loadedItem);
 
                                 }

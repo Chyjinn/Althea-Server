@@ -8,7 +8,7 @@ namespace Server.Inventory
     public class Item
     {
         public uint DBID { get; set; }
-        public int OwnerID { get; set; }
+        public uint OwnerID { get; set; }
         public int OwnerType { get; set; }
         public uint ItemID { get; set; }
         public string ItemValue { get; set; }//itemvalue, json
@@ -16,7 +16,7 @@ namespace Server.Inventory
         public bool Duty { get; set; }
         public int ItemSlot { get; set; }
         public bool InUse { get; set; }
-        public Item(uint dbid, int ownerid, int ownertype, uint itemid, string itemvalue, int itemamount, bool duty, int itemslot)
+        public Item(uint dbid, uint ownerid, int ownertype, uint itemid, string itemvalue, int itemamount, bool duty, int itemslot)
         {
             DBID = dbid;
             OwnerID = ownerid;

@@ -43,7 +43,7 @@ namespace Server.Inventory
                         {
                             while (await reader.ReadAsync())
                             {
-                                Entry entry = new Entry(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), Convert.ToInt32(reader["itemType"]), Convert.ToInt32(reader["itemSection"]), Convert.ToString(reader["itemImage"]), Convert.ToInt32(reader["itemStack"]));
+                                Entry entry = new Entry(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), Convert.ToInt32(reader["itemType"]), Convert.ToUInt32(reader["itemWeight"]), Convert.ToString(reader["itemImage"]), Convert.ToBoolean(reader["stackable"]));
                                 itemList.Add(entry);
                             }
                         }

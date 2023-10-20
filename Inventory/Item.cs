@@ -14,9 +14,9 @@ namespace Server.Inventory
         public string ItemValue { get; set; }//itemvalue, json
         public int ItemAmount { get; set; }
         public bool Duty { get; set; }
-        public int ItemSlot { get; set; }
+        public int Priority { get; set; }
         public bool InUse { get; set; }
-        public Item(uint dbid, uint ownerid, int ownertype, uint itemid, string itemvalue, int itemamount, bool duty, int itemslot)
+        public Item(uint dbid, uint ownerid, int ownertype, uint itemid, string itemvalue, int itemamount, bool duty, int priority)
         {
             DBID = dbid;
             OwnerID = ownerid;
@@ -25,7 +25,7 @@ namespace Server.Inventory
             ItemValue = itemvalue;
             ItemAmount = itemamount;
             Duty = duty;
-            ItemSlot = itemslot;
+            Priority = priority;
             InUse = false;
         }
     }
@@ -39,16 +39,17 @@ namespace Server.Inventory
         public int ItemType { get; set; }//felhasználás kezeléséhez kell majd, pl Weapon akkor úgy kezeljük
         public int ItemSection { get; set; }
         public string ItemImage { get; set; }//lehet local, pl. src/img.png, vagy url
-        public int MaxStack { get; set; }
-        public Entry(uint id, string name, string desc, int type, int section, string itemimage, int stack) 
+        public uint ItemWeight { get; set; }
+        public bool Stackable { get; set; }
+        public Entry(uint id, string name, string desc, int type, uint weight, string itemimage, bool stack)
         {
             ItemID = id;
             Name = name;
             Description = desc;
             ItemType = type;
-            ItemSection  = section;
+            ItemWeight = weight;
             ItemImage = itemimage;
-            MaxStack = stack;
+            Stackable = stack;
         }
 
     }

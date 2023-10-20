@@ -7,6 +7,7 @@ using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using Server.Admin;
 using Server.Characters;
+using static System.Collections.Specialized.BitVector32;
 
 namespace Server.Inventory
 {
@@ -36,16 +37,7 @@ namespace Server.Inventory
         }
 
 
-        public int GetFirstAvailableSlot(Player player)
-        {
-            uint charid = player.GetData<UInt32>("player:charID");
-            foreach (var item in ServerItems)
-            {
-
-            }
-
-            return -1;
-        }
+       
 
 
         public static void LoadInventory(Player player)
@@ -75,18 +67,17 @@ namespace Server.Inventory
         {
             NAPI.Task.Run(() =>
             {
+                player.SendChatMessage("INVENTORY");
                 string json = NAPI.Util.ToJson(items);
                 player.TriggerEvent("client:InventoryFromServer", json);
                 Database.Log.Log_Server(json);
             }, 500);
-
-
         }
 
 
         public static async Task<Item[]> GetPlayerInventory(uint charid)//felhasználónév alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
-            string query = $"SELECT * FROM `items` WHERE `ownerType` = 0 AND `ownerID` = @CharacterID";
+            string query = $"SELECT * FROM `items` WHERE `ownerType` = 0 AND `ownerID` = @CharacterID ORDER BY Priority";
             List<Item> items = new List<Item>();
             using (MySqlConnection con = new MySqlConnection())
             {
@@ -104,7 +95,7 @@ namespace Server.Inventory
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    Item loadedItem = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToUInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["itemID"]),reader["itemValue"].ToString(),Convert.ToInt32(reader["itemAmount"]),Convert.ToBoolean(reader["duty"]),Convert.ToInt32(reader["itemSlot"]));
+                                    Item loadedItem = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToUInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["itemID"]),reader["itemValue"].ToString(),Convert.ToInt32(reader["itemAmount"]),Convert.ToBoolean(reader["duty"]),Convert.ToInt32(reader["priority"]));
                                     items.Add(loadedItem);
 
                                 }
@@ -137,11 +128,12 @@ namespace Server.Inventory
             //playerInventories[characterId].Add(item);
         }
 
-        public Item GetItemByData(uint ownerid, int section, int slot)
+
+        public Item GetItemByDbId(uint dbid)
         {
             foreach (var item in ServerItems)
             {
-                if (item.OwnerID == ownerid && ItemList.GetItemSection(item.ItemID) == section && item.ItemSlot == slot)
+                if (item.DBID == dbid)
                 {
                     return item;
                 }
@@ -149,7 +141,7 @@ namespace Server.Inventory
             return null;
         }
 
-
+        /*
         [RemoteEvent("server:UseItem")]
         public void ItemUse(Player player, int section, int slot)
         {
@@ -164,14 +156,39 @@ namespace Server.Inventory
                 RefreshInventory(player, charid);
             }
         }
-
+        */
 
         [RemoteEvent("server:MoveItemInInventory")]
-        public void MoveItemInInventory(Player player, int section, int startslot, int endslot)
+        public void MoveItemInInventory(Player player, uint source_dbid, uint target_dbid)
         {
             uint charid = player.GetData<UInt32>("player:charID");
-            player.SendChatMessage("item move " + startslot + "->" + endslot);
-            Item i = GetItemByData(charid, section, startslot);
+
+            Item i1 = GetItemByDbId(source_dbid);
+            Item i2 = GetItemByDbId(target_dbid);
+
+            if (i1 != null && i2 != null)
+            {
+                if (i1.ItemID == i2.ItemID)//ugyan az a két item
+                {
+
+                }
+                else
+                {
+
+                }
+
+
+            }
+            else//hiba, az egész inventory-t újratöltjük a playernek
+            {
+                player.SendChatMessage("refresh inv");
+                RefreshInventory(player, charid);
+            }
+
+
+            /*
+
+
             if (i != null)
             {
                 player.SendChatMessage("item not null");
@@ -188,12 +205,11 @@ namespace Server.Inventory
             }
             else//hiba van, frissítjük a player inventoryját
             {
-                player.SendChatMessage("refresh inv");
-                RefreshInventory(player, charid);
-            }
+
+            */
         }
 
-
+        /*
         public bool TryItemMove(Player player,int section, int startslot, int endslot)
         {
             uint charid = player.GetData<UInt32>("player:charID");
@@ -210,7 +226,7 @@ namespace Server.Inventory
         }
 
 
-
+        
         public void HandleItemUse(Player player, Item i)
         {
             if (i.InUse)//használatban van, el akarjuk tenni
@@ -241,11 +257,11 @@ namespace Server.Inventory
                         break;
                     default:
                         break;
-                }
-            }
-
-
-            
-        }
+                }*/
     }
+
+
+
+
+    
 }

@@ -26,6 +26,32 @@ namespace Server.Inventory
             NAPI.Util.ConsoleOutput("Itemlista betöltve " + LoadTime.Milliseconds + " ms alatt.");
         }
 
+        [Command("refreshitemlist")]
+        public async void RefreshItemList(Player player)
+        {
+            DateTime timestamp1 = DateTime.Now;
+
+            await LoadItemList();
+
+            DateTime timestamp2 = DateTime.Now;
+
+            TimeSpan LoadTime = timestamp2 - timestamp1;
+            NAPI.Task.Run(() =>
+            {
+                player.SendChatMessage("Itemlista újratöltve " + LoadTime.Milliseconds + " ms alatt.");
+                NAPI.Util.ConsoleOutput("Itemlista betöltve " + LoadTime.Milliseconds + " ms alatt.");
+
+                foreach (var item in NAPI.Pools.GetAllPlayers())
+                {
+                    string json = NAPI.Util.ToJson(itemList);
+                    item.TriggerEvent("client:ItemListFromServer", json);
+                    Items.LoadInventory(item);
+                }
+                
+            }, 500);
+
+        }
+
 
         public static async Task LoadItemList()
         {
@@ -89,18 +115,6 @@ namespace Server.Inventory
                 if (item.ItemID == itemid)
                 {
                     return item.ItemType;
-                }
-            }
-            return 0;
-        }
-
-        public static int GetItemSection(uint itemid)
-        {
-            foreach (var item in itemList)
-            {
-                if (item.ItemID == itemid)
-                {
-                    return item.ItemSection;
                 }
             }
             return 0;

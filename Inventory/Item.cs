@@ -13,10 +13,10 @@ namespace Server.Inventory
         public uint ItemID { get; set; }
         public string ItemValue { get; set; }//itemvalue, json
         public int ItemAmount { get; set; }
+        public bool InUse { get; set; }
         public bool Duty { get; set; }
         public int Priority { get; set; }
-        public bool InUse { get; set; }
-        public Item(uint dbid, uint ownerid, int ownertype, uint itemid, string itemvalue, int itemamount, bool duty, int priority)
+        public Item(uint dbid, uint ownerid, int ownertype, uint itemid, string itemvalue, int itemamount, bool inuse, bool duty, int priority)
         {
             DBID = dbid;
             OwnerID = ownerid;
@@ -26,7 +26,32 @@ namespace Server.Inventory
             ItemAmount = itemamount;
             Duty = duty;
             Priority = priority;
-            InUse = false;
+            InUse = inuse;
+        }
+    }
+
+    public class Clothing
+    {
+        public int Drawable { get; set; }
+        public int Texture { get; set; }
+        public Clothing(int drawable, int texture)
+        {
+            this.Drawable = drawable;
+            this.Texture = texture;
+        }
+    }
+
+    public class Top : Clothing
+    {
+        public int UndershirtDrawable { get; set; }
+        public int UndershirtTexture { get; set; }
+        public int Torso { get; set; }
+
+        public Top(int drawable, int texture, int undershirtdraw, int undershirttext, int torso) : base(drawable, texture)
+        {
+            this.UndershirtDrawable = undershirtdraw;
+            this.UndershirtTexture = undershirttext;
+            this.Torso = torso;
         }
     }
 
@@ -37,7 +62,6 @@ namespace Server.Inventory
         public string Name { get; set; }//item neve
         public string Description { get; set; }//leírás, ha van megjelenítjük
         public int ItemType { get; set; }//felhasználás kezeléséhez kell majd, pl Weapon akkor úgy kezeljük
-        public int ItemSection { get; set; }
         public string ItemImage { get; set; }//lehet local, pl. src/img.png, vagy url
         public uint ItemWeight { get; set; }
         public bool Stackable { get; set; }

@@ -108,6 +108,7 @@ namespace Server.Characters
                     player.TriggerEvent("client:DeleteCamera");
                     player.TriggerEvent("client:hideCharScreen");
                     player.SetData("player:charID",charid);
+                    player.SetData("player:gender", c.Appearance.Gender);
                     player.SetSharedData("player:CharacterName",c.Name);
                     player.SetSharedData("player:VisibleName",c.Name);
                     player.Dimension = 0;

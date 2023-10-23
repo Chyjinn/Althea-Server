@@ -57,7 +57,7 @@ namespace Server.Jobs
             player.TriggerEvent("client:TaxiLight");
         }
 
-        [Command("fos")]
+        [Command("calltaxi")]
         public void TempTaxi(Player player)
         {
             player.TriggerEvent("client:CallTaxi");

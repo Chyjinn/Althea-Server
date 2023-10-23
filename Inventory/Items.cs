@@ -229,7 +229,6 @@ namespace Server.Inventory
                             player.SetClothes(11, clothing[0], clothing[1]);
                             player.SetClothes(3, clothing[2], 0);
                             player.SetClothes(8, clothing[3], clothing[4]);
-                            player.SendChatMessage("PÓLÓ: " + clothing[0] + "," + clothing[1] + "," + clothing[2] + "," + clothing[3] + "," + clothing[4]);
                         }
                         //player.SetClothes(slot.Item2,)
                     }
@@ -358,7 +357,7 @@ namespace Server.Inventory
                         res = new int[2] { -1, 0 };
                         break;
                     case 7://nadrág
-                        res = new int[2] { 14, 2 };
+                        res = new int[2] { 14, 12 };
                         break;
                     case 8://karkötő
                         res = new int[2] { -1, 0 };
@@ -415,7 +414,7 @@ namespace Server.Inventory
                     res = Tuple.Create(true, 6);
                     break;
                 case 10://óra
-                    res = Tuple.Create(false, 7);
+                    res = Tuple.Create(false, 6);
                     break;
                 case 11://táska
                     res = Tuple.Create(true, 5);
@@ -974,7 +973,6 @@ namespace Server.Inventory
 
                         }
                     }
-                    player.SendChatMessage("ITEM " + i.DBID + " inuse");
 
                 }
             }

@@ -11,6 +11,7 @@ namespace Server.Inventory
     public class ItemList : Script
     {
         static List<Entry> itemList = new List<Entry>();
+       
         //betöltjük adatbázisból az itemlistát
         [ServerEvent(Event.ResourceStart)]
         public async void InitiateLoading()

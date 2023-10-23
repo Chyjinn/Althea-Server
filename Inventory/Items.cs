@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using GTANetworkAPI;
@@ -11,19 +12,13 @@ namespace Server.Inventory
 {
     public class Items : Script
     {
-        static List<Item> ServerItems = new List<Item>();
 
-        public static Item[] GetPlayerItemsByCharacterId(int characterId)
+        static Dictionary<Entity, List<Item>> Inventories = new Dictionary<Entity, List<Item>>();
+
+
+        public static List<Item> GetEntityInventory(Entity ent)
         {
-            List<Item> playerItems = new List<Item>();
-            foreach (var item in ServerItems)
-            {
-                if (item.OwnerType == 0 && item.OwnerID == characterId)
-                {
-                    playerItems.Add(item);
-                }
-            }
-            return playerItems.ToArray();
+            return Inventories[ent];
         }
 
         [Command("giveitem")]
@@ -44,7 +39,7 @@ namespace Server.Inventory
             if (dbid != 0)
             {
                 i.DBID = dbid;
-                ServerItems.Add(i);//hozzáadjuk a szerver itemjeihez
+                Inventories[player].Add(i);//hozzáadjuk a szerver itemjeihez
                 NAPI.Task.Run(() =>
                 {
                     string json = NAPI.Util.ToJson(i);
@@ -118,14 +113,7 @@ namespace Server.Inventory
         public async static void RefreshInventory(Player player,uint charid)
         {
             Item[] playerItems = await GetPlayerInventory(charid);
-            
-            foreach (var item in playerItems)
-            {
-                if (!ServerItems.Contains(item))
-                {
-                    ServerItems.Add(item);
-                }
-            }
+            Inventories[player] = playerItems.ToList();
             Inventory.ItemList.SendItemListToPlayer(player);
             SendInventoryToPlayer(player, playerItems);
         }
@@ -182,32 +170,12 @@ namespace Server.Inventory
             }
         }
 
-        public Item GetItemValueById(uint dbid)
-        {
-            foreach (var item in ServerItems)
-            {
-                if (item.DBID == dbid)
-                {
-                    return item;
-                }
-            }
-            return null;
-        }
-        public void CleanUpInventory(int characterID)
-        {
-            //playerInventories[characterID].Clear();
-        }
 
 
-        public void AddItemToCharacter(int characterId, Item item)
-        {
-            //playerInventories[characterId].Add(item);
-        }
 
-
-        public Item GetItemByDbId(uint dbid)
+        public Item GetItemByDbId(Entity entity, uint dbid)
         {
-            foreach (var item in ServerItems)
+            foreach (var item in Inventories[entity])
             {
                 if (item.DBID == dbid)
                 {
@@ -233,64 +201,252 @@ namespace Server.Inventory
             }
         }
         */
+        [RemoteEvent("server:MoveItem")]
+        public void MoveItem(Player player, uint item1_dbid,uint owner_type, uint owner_id)
+        {
+            if (owner_type != null && owner_id != null)//nincs nyitva tároló tehát a játékoson belülre mozgatjuk
+            {
+                player.SendChatMessage("inv mozgatás");
+                Item i1 = GetItemByDbId(player, item1_dbid);
+                i1.InUse = false;
+                player.TriggerEvent("client:RemoveItem", i1.DBID);
+
+                string json = NAPI.Util.ToJson(i1);
+                player.TriggerEvent("client:AddItemToInventory", json);
+                if (i1.InUse)//használatban van (viseli) + ruha itemid-nek megfelel -> le kell venni róla
+                {
+                    Tuple<bool, int> slot = GetClothingSlotFromItemId(i1.ItemID);
+                    if (slot.Item1)//ruha
+                    {
+                        int[] clothing = GetDefaultClothes(, i1.ItemID);
+                        if (clothing.Length == 2)
+                        {
+
+                        }
+                        else
+                        {
+
+                        }
+                        //player.SetClothes(slot.Item2,)
+                    }
+                    else//prop
+                    {
+
+                    }
+                }
+            }
+            else//van nyitott tároló, tehát a tárolóhoz adjuk
+            {
+                
+            }
+        }
+
+        /*
+        [RemoteEvent("server:SwapItem")]
+        public void SwapItem(Player player, uint item1_dbid, uint item2_dbid, int owner_type, uint owner_id)
+        {
+            Item i1 = GetItemByDbId(player, item1_dbid);
+            Item i2 = GetItemByDbId(player, item2_dbid);
+
+            if (i1.InUse && 1 <= i2.ItemID && i2.ItemID <= 12)//használatban van (viseli) + ruha itemid-nek megfelel -> le kell venni róla
+            {
+
+            }
+            else//nem ruha item
+            {
+                Item temp = new Item(i1.DBID, i1.OwnerID, i1.OwnerType, i1.ItemID, i1.ItemValue, i1.ItemAmount, i1.InUse,i1.Duty, i1.Priority);
+                player.TriggerEvent("client:RemoveItem", i1.DBID);
+                player.TriggerEvent("client:RemoveItem", i2.DBID);
+
+                    i1.InUse = false;
+                    i2.InUse = false;
+
+                    string json = NAPI.Util.ToJson(i2);
+                    player.TriggerEvent("client:AddItemToInventory", json2);
+
+
+
+
+                }
+        }
+        */
+
+        public Item GetItemInUse(Player player, uint itemID)
+        {
+            foreach (var item in Inventories[player])
+            {
+                if (item.ItemID == itemID && item.InUse)
+                {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+        public int[] GetDefaultClothes(bool gender, uint itemid)
+        {
+            int[] res = new int[0];
+            if (!gender)//nő
+            {
+                switch (itemid)//megfeleltetjük a slot-ot (0-11) a RAGEMP ruha slottal (Clothes vagy Prop slot)
+                {//true = ruha, false = prop
+                    case 1://kalap
+                        res = new int[2] { -1, 0 };
+                        break;
+                    case 2://maszk
+                        res = new int[2] { 0, 0 };
+                        break;
+                    case 3://nyaklánc - accessories
+                        res = new int[2] { 0, 0 };
+                        break;
+                    case 4://szemüveg
+                        res = new int[2] { -1, 0 };
+                        break;
+                    case 5://póló
+                        res = new int[5] { 15, 0, 15, 2, 0 };
+                        break;
+                    case 6://fülbevaló
+                        res = new int[2] { -1, 0 };
+                        break;
+                    case 7://nadrág
+                        res = new int[2] { 15, 0 };
+                        break;
+                    case 8://karkötő
+                        res = new int[2] { -1, 0 };
+                        break;
+                    case 9://cipő
+                        res = new int[2] { 35, 0 };
+                        break;
+                    case 10://óra
+                        res = new int[2] { -1, 0 };
+                        break;
+                    case 11://táska
+                        res = new int[2] { 0, 0 };
+                        break;
+                    case 12://páncél
+                        res = new int[2] { 0, 0 };
+                        break;
+                }
+            }
+            else
+            {
+                switch (itemid)//megfeleltetjük a slot-ot (0-11) a RAGEMP ruha slottal (Clothes vagy Prop slot)
+                {//true = ruha, false = prop
+                    case 1://kalap
+                        res = new int[2] { -1, 0 };
+                        break;
+                    case 2://maszk
+                        res = new int[2] { 0, 0 };
+                        break;
+                    case 3://nyaklánc - accessories
+                        res = new int[2] { 0, 0 };
+                        break;
+                    case 4://szemüveg
+                        res = new int[2] { -1, 0 };
+                        break;
+                    case 5://póló
+                        res = new int[5] { 5, 0, 5, 5, 0 };
+                        break;
+                    case 6://fülbevaló
+                        res = new int[2] { -1, 0 };
+                        break;
+                    case 7://nadrág
+                        res = new int[2] { 14, 2 };
+                        break;
+                    case 8://karkötő
+                        res = new int[2] { -1, 0 };
+                        break;
+                    case 9://cipő
+                        res = new int[2] { 34, 0 };
+                        break;
+                    case 10://óra
+                        res = new int[2] { -1, 0 };
+                        break;
+                    case 11://táska
+                        res = new int[2] { 0, 0 };
+                        break;
+                    case 12://páncél
+                        res = new int[2] { 0, 0 };
+                        break;
+                }
+            }
+
+
+            return res;
+        }
+
+        public Tuple<bool,int> GetClothingSlotFromItemId(uint itemid)
+        {
+            Tuple<bool, int> res = Tuple.Create(false, -1);
+            switch (itemid)//megfeleltetjük a slot-ot (0-11) a RAGEMP ruha slottal (Clothes vagy Prop slot)
+            {//true = ruha, false = prop
+                case 1://kalap
+                    res = Tuple.Create(false, 0);
+                    break;
+                case 2://maszk
+                    res = Tuple.Create(true, 1);
+                    break;
+                case 3://nyaklánc - accessories
+                    res = Tuple.Create(true, 7);
+                    break;
+                case 4://szemüveg
+                    res = Tuple.Create(false,1);
+                    break;
+                case 5://póló
+                    res = Tuple.Create(true, 11);
+                    break;
+                case 6://fülbevaló
+                    res = Tuple.Create(false, 2);
+                    break;
+                case 7://nadrág
+                    res = Tuple.Create(true, 4);
+                    break;
+                case 8://karkötő
+                    res = Tuple.Create(false, 7);
+                    break;
+                case 9://cipő
+                    res = Tuple.Create(true, 6);
+                    break;
+                case 10://óra
+                    res = Tuple.Create(false, 7);
+                    break;
+                case 11://táska
+                    res = Tuple.Create(true, 5);
+                    break;
+                case 12://páncél
+                    res = Tuple.Create(true, 9);
+                    break;
+                default:
+                    return res;
+                    break;
+            }
+            return res;
+        }
 
         [RemoteEvent("server:MoveItemToClothing")]
-        public void MoveItemToclothing(Player player, uint db_id, uint target_slot)
+        public void MoveItemToClothing(Player player, uint db_id, uint target_slot)
         {
             //slotokat kezelni, a megfelelő ruhát ráadni a playerre, törölni az inventory-jából vagy container-ből az itemet nála és hozzáadni a slothoz
-            Item i = GetItemValueById(db_id);
+            Item i = GetItemByDbId(player, db_id);
             if (ItemList.GetItemType(i.ItemID) == 1 && i.InUse == false)//1-es típus: ruha
             {
                 int clothing_id = -1;
-
-                switch (target_slot)//megfeleltetjük a slot-ot (0-11) a RAGEMP ruha slottal (Clothes vagy Prop slot)
+                Tuple<bool, int> slot = GetClothingSlotFromItemId(i.ItemID);
+                if (slot.Item1)//ruha
                 {
-                    case 0:
-                        clothing_id = 0;
-                        break;
-                    case 1:
-                        clothing_id = 7;
-                        break;
-                    case 2:
-                        clothing_id = 11;
-                        break;
-                    case 3:
-                        clothing_id = 4;
-                        break;
-                    case 4:
-                        clothing_id = 6;
-                        break;
-                    case 5:
-                        clothing_id = 5;
-                        break;
-                    case 6:
-                        clothing_id = 1;
-                        break;
-                    case 7:
-                        clothing_id = 1;
-                        break;
-                    case 8:
-                        clothing_id = 2;
-                        break;
-                    case 9:
-                        clothing_id = 7;
-                        break;
-                    case 10:
-                        clothing_id = 6;
-                        break;
-                    case 11:
-                        clothing_id = 9;
-                        break;
 
-                    default:
-                        break;
                 }
+                else//prop
+                {
+
+                }
+
+
                 if (clothing_id != -1)//nem -1, tehát találtunk valamit
                 {
                     //az ItemID-től és a slot-tól függően ha jó itemet húzott a player a jó slotra
                     //ruha vagy prop beállítása, itemvalue konvertálásával
                    
-
 
 
                     if (i.ItemID == 1 && target_slot == 0)//kalap itemid és kalap target_slot
@@ -314,7 +470,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -331,7 +487,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -361,7 +517,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -378,7 +534,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -404,7 +560,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -421,7 +577,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -447,7 +603,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -464,7 +620,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -492,7 +648,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -511,15 +667,10 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
-
-
-
-
-
 
                     }
                     else if (i.ItemID == 6 && target_slot == 8)//fülbevaló
@@ -543,7 +694,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -560,7 +711,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -586,7 +737,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -603,7 +754,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -629,7 +780,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -646,7 +797,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -672,7 +823,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -689,7 +840,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -715,7 +866,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -732,7 +883,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -758,7 +909,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -775,7 +926,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -801,7 +952,7 @@ namespace Server.Inventory
                                 }
                                 catch (Exception ex)
                                 {
-
+                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                                 }
 
                             }
@@ -818,7 +969,7 @@ namespace Server.Inventory
                             }
                             catch (Exception ex)
                             {
-
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
                             }
 
                         }
@@ -826,20 +977,6 @@ namespace Server.Inventory
 
                 }
             }
-        }
-
-        public List<Item> GetInventory(Player player)
-        {
-            List<Item> PlayerItems = new List<Item>();
-            uint charid = player.GetData<UInt32>("player:charID");
-            foreach (var item in ServerItems)
-            {
-                if (item.OwnerType == 0 && item.OwnerID == charid)
-                {
-                    PlayerItems.Add(item);
-                }
-            }
-            return PlayerItems;
         }
 
         public Item GetClothingOnSlot(Player player, uint itemid)
@@ -855,6 +992,11 @@ namespace Server.Inventory
             return null;
         }
 
+        public List<Item> GetInventory(Player player)
+        {
+            return Inventories[player];
+        }
+
 
 
 
@@ -864,8 +1006,8 @@ namespace Server.Inventory
         {
             uint charid = player.GetData<UInt32>("player:charID");
 
-            Item i1 = GetItemByDbId(source_dbid);
-            Item i2 = GetItemByDbId(target_dbid);
+            Item i1 = GetItemByDbId(player, source_dbid);
+            Item i2 = GetItemByDbId(player, target_dbid);
 
             if (i1 != null && i2 != null)
             {

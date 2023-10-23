@@ -22,9 +22,9 @@ namespace Server.Inventory
         }
 
         [Command("giveitem")]
-        public async void GiveItem(Player player, uint itemid, string itemvalue, int amount)
+        public async void GiveItem(Player player,int targetid, uint itemid, string itemvalue, int amount)
         {
-            
+            Player target = Admin.Commands.GetPlayerById(targetid);
             /*
             Clothing c = new Clothing(0, 0);
             Top t = new Top(0, 0, 0, 0, 0);
@@ -454,40 +454,14 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetAccessories(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                    
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
-
+                                    ItemValueToAccessorySwap(player, i, toSwap, clothing_id, target_slot);
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetAccessories(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
+
+                                ItemValueToAccessory(player, i, clothing_id, target_slot);
+
 
                         }
 
@@ -502,40 +476,15 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
+
+                                    ItemValueToClothingSwap(player, i, toSwap, clothing_id, target_slot);
+
 
                             }
                         }
                         else
-                        {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
-
+                        { 
+                                ItemValueToClothing(player, i, clothing_id, target_slot);
                         }
                     }
                     else if (i.ItemID == 3 && target_slot == 1)//nyaklánc - accessories
@@ -545,39 +494,12 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
-
+                                ItemValueToClothingSwap(player, i, toSwap, clothing_id, target_slot);
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
+                            ItemValueToClothing(player, i, clothing_id, target_slot);
 
                         }
                     }
@@ -588,39 +510,12 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetAccessories(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
-
+                                ItemValueToAccessorySwap(player, i, toSwap, clothing_id, target_slot);
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetAccessories(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
+                            ItemValueToAccessory(player, i, clothing_id, target_slot);
 
                         }
                     }
@@ -631,9 +526,11 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
+                                
                                 try
                                 {
+                                    player.TriggerEvent("client:RemoveItem", i.DBID);
+                                    player.TriggerEvent("client:RemoveItem", toSwap.DBID);
                                     Top t = NAPI.Util.FromJson<Top>(i.ItemValue);
                                     player.SetClothes(clothing_id, t.Drawable, t.Texture);
                                     player.SetClothes(8, t.UndershirtDrawable, t.UndershirtTexture);
@@ -644,6 +541,7 @@ namespace Server.Inventory
                                     player.TriggerEvent("client:AddItemToClothing", json, target_slot);
                                     string json2 = NAPI.Util.ToJson(toSwap);
                                     player.TriggerEvent("client:AddItemToInventory", json2);
+                                    player.TriggerEvent("client:RefreshInventoryPreview");
                                 }
                                 catch (Exception ex)
                                 {
@@ -656,6 +554,7 @@ namespace Server.Inventory
                         {
                             try
                             {
+                                player.TriggerEvent("client:RemoveItem", i.DBID);
                                 Top t = NAPI.Util.FromJson<Top>(i.ItemValue);
                                 player.SetClothes(clothing_id, t.Drawable, t.Texture);
                                 player.SetClothes(8, t.UndershirtDrawable, t.UndershirtTexture);
@@ -663,6 +562,7 @@ namespace Server.Inventory
                                 i.InUse = true;
                                 string json = NAPI.Util.ToJson(i);
                                 player.TriggerEvent("client:AddItemToClothing", json, target_slot);
+                                player.TriggerEvent("client:RefreshInventoryPreview");
                             }
                             catch (Exception ex)
                             {
@@ -679,39 +579,13 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetAccessories(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
+                                ItemValueToAccessorySwap(player, i, toSwap, clothing_id, target_slot);
 
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetAccessories(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
+                                ItemValueToAccessory(player, i, clothing_id, target_slot);
 
                         }
                     }
@@ -722,39 +596,13 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
-
+                                ItemValueToClothingSwap(player, i, toSwap, clothing_id, target_slot);
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
+                                ItemValueToClothing(player, i, clothing_id, target_slot);
+
 
                         }
                     }
@@ -765,39 +613,12 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetAccessories(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
-
+                                ItemValueToAccessorySwap(player, i, toSwap, clothing_id, target_slot);
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetAccessories(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
+                            ItemValueToAccessory(player, i, clothing_id, target_slot);
 
                         }
                     }
@@ -808,40 +629,12 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
-
+                                ItemValueToClothingSwap(player, i, toSwap, clothing_id, target_slot);
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
-
+                                ItemValueToClothing(player, i, clothing_id, target_slot);
                         }
                     }
                     else if (i.ItemID == 10 && target_slot == 10)//óra
@@ -851,40 +644,12 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetAccessories(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
-
+                                ItemValueToAccessorySwap(player, i, toSwap, clothing_id, target_slot);
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetAccessories(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
-
+                                ItemValueToAccessory(player, i, clothing_id, target_slot);
                         }
                     }
                     else if (i.ItemID == 11 && target_slot == 5)//táska
@@ -894,40 +659,14 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
+                                ItemValueToClothingSwap(player, i, toSwap, clothing_id, target_slot);
+
 
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
-
+                            ItemValueToClothing(player, i, clothing_id, target_slot);
                         }
                     }
                     else if (i.ItemID == 12 && target_slot == 11)//armor
@@ -937,39 +676,16 @@ namespace Server.Inventory
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                player.TriggerEvent("client:RemoveItem", toSwap.DBID);
-                                try
-                                {
-                                    Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                    i.InUse = true;
-                                    toSwap.InUse = false;
-                                    string json = NAPI.Util.ToJson(i);
-                                    player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                                    string json2 = NAPI.Util.ToJson(toSwap);
-                                    player.TriggerEvent("client:AddItemToInventory", json2);
-                                }
-                                catch (Exception ex)
-                                {
-                                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                                }
+
+                                ItemValueToClothingSwap(player, i, toSwap, clothing_id, target_slot);
+
 
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                                player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                                i.InUse = true;
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
-                            }
-                            catch (Exception ex)
-                            {
-                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-                            }
+                            ItemValueToClothing(player, i, clothing_id, target_slot);
+
 
                         }
                     }
@@ -977,6 +693,95 @@ namespace Server.Inventory
                 }
             }
         }
+
+        public void ItemValueToClothingSwap(Player player, Item i1, Item i2, int clothing_id, uint target_slot)
+        {
+            try
+            {
+                player.TriggerEvent("client:RemoveItem", i1.DBID);
+                player.TriggerEvent("client:RemoveItem", i2.DBID);
+                Clothing c = NAPI.Util.FromJson<Clothing>(i1.ItemValue);
+                player.SetClothes(clothing_id, c.Drawable, c.Texture);
+                i1.InUse = true;
+                i2.InUse = false;
+                string json = NAPI.Util.ToJson(i1);
+                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
+                string json2 = NAPI.Util.ToJson(i2);
+                player.TriggerEvent("client:AddItemToInventory", json2);
+                player.TriggerEvent("client:RefreshInventoryPreview");
+
+            }
+            catch (Exception ex)
+            {
+                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i1.DBID);
+            }
+
+        }
+
+
+        public void ItemValueToClothing(Player player, Item i, int clothing_id, uint target_slot)
+        {
+            try
+            {
+                player.TriggerEvent("client:RemoveItem", i.DBID);
+                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
+                player.SetClothes(clothing_id, c.Drawable, c.Texture);
+                i.InUse = true;
+                string json = NAPI.Util.ToJson(i);
+                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
+                player.TriggerEvent("client:RefreshInventoryPreview");
+            }
+            catch (Exception ex)
+            {
+                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
+            }
+
+        }
+
+        public void ItemValueToAccessorySwap(Player player, Item i1, Item i2, int clothing_id, uint target_slot)
+        {
+            try
+            {
+                player.TriggerEvent("client:RemoveItem", i1.DBID);
+                player.TriggerEvent("client:RemoveItem", i2.DBID);
+                Clothing c = NAPI.Util.FromJson<Clothing>(i1.ItemValue);
+                player.SetClothes(clothing_id, c.Drawable, c.Texture);
+                i1.InUse = true;
+                i2.InUse = false;
+                string json = NAPI.Util.ToJson(i1);
+                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
+                string json2 = NAPI.Util.ToJson(i2);
+                player.TriggerEvent("client:AddItemToInventory", json2);
+                player.TriggerEvent("client:RefreshInventoryPreview");
+            }
+            catch (Exception ex)
+            {
+                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i1.DBID);
+            }
+
+        }
+
+
+        public void ItemValueToAccessory(Player player, Item i, int clothing_id, uint target_slot)
+        {
+            try
+            {
+                player.TriggerEvent("client:RemoveItem", i.DBID);
+                Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
+                player.SetAccessories(clothing_id, c.Drawable, c.Texture);
+                i.InUse = true;
+                string json = NAPI.Util.ToJson(i);
+                player.TriggerEvent("client:AddItemToClothing", json, target_slot);
+                player.TriggerEvent("client:RefreshInventoryPreview");
+            }
+            catch (Exception ex)
+            {
+                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
+            }
+
+        }
+
+
 
         public Item GetClothingOnSlot(Player player, uint itemid)
         {

@@ -459,6 +459,7 @@ namespace Server.Characters
 
         public static async Task<bool> IsCharacterOwner(uint accid, uint charid)//ha az adott account-hoz tartozik a karakter akkor true, különben false
         {
+            bool state = false;
             string query = $"SELECT COUNT(id) FROM `characters` WHERE `accountId` = @AccID AND `id` = @CharID";
             using (MySqlConnection con = new MySqlConnection())
             {
@@ -474,7 +475,7 @@ namespace Server.Characters
                         var count = await cmd.ExecuteScalarAsync();
                         if (Convert.ToInt32(count) > 0)
                         {
-                            return true;
+                            state = true;
                         }
                     }
                     catch (Exception ex)
@@ -482,8 +483,9 @@ namespace Server.Characters
                         //Log.Log_Server(ex.ToString());
                     }
                 }
+                con.CloseAsync();
             }
-            return false;
+            return state;
         }
 
 

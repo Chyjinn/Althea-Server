@@ -62,7 +62,7 @@ namespace Server.Characters
                             player.TriggerEvent("client:CharEdit", true);
                             player.TriggerEvent("client:EditorCamera");
                             player.TriggerEvent("client:LoadCharacterAppearance", c);
-                            player.PlayAnimation("nm@hands", "hands_up", 1);
+                            //player.PlayAnimation("nm@hands", "hands_up", 1);
                         }, 4500);
 
                     }, 3000);
@@ -105,7 +105,7 @@ namespace Server.Characters
                         player.TriggerEvent("client:LoadCharacterAppearance", c);
                         player.TriggerEvent("client:CharEdit", true);
                         player.TriggerEvent("client:EditorCamera");
-                        player.PlayAnimation("nm@hands", "hands_up", 1);
+                        //player.PlayAnimation("nm@hands", "hands_up", 1);
                     }, 4500);
 
                 }, 3000);

@@ -71,6 +71,7 @@ namespace Server.Characters
             }
             else
             {
+                NAPI.Player.SpawnPlayer(player, new Vector3(-818f, 177f, 73f));
                     Editor.SetupCharEditor(player, accID);//nincs karaktere, bedobni karakter készítőbe
             }
 

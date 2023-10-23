@@ -49,7 +49,6 @@ namespace Server.Admin
             player.TriggerEvent("client:SkyCam", state);
         }
 
-        
 
         [Command("editcurrentlyrequiredadminlevelforcommandandsaveintodatabase")]
         public void EditAdminLevel(Player player)

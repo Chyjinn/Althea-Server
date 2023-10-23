@@ -206,34 +206,44 @@ namespace Server.Inventory
         {
             if (owner_type != null && owner_id != null)//nincs nyitva tároló tehát a játékoson belülre mozgatjuk
             {
-                player.SendChatMessage("inv mozgatás");
                 Item i1 = GetItemByDbId(player, item1_dbid);
-                i1.InUse = false;
                 player.TriggerEvent("client:RemoveItem", i1.DBID);
 
                 string json = NAPI.Util.ToJson(i1);
                 player.TriggerEvent("client:AddItemToInventory", json);
+                
                 if (i1.InUse)//használatban van (viseli) + ruha itemid-nek megfelel -> le kell venni róla
                 {
                     Tuple<bool, int> slot = GetClothingSlotFromItemId(i1.ItemID);
+                    player.SendChatMessage("ruha:" + slot.Item1 + " - ruhaid" + slot.Item2);
+                    bool gender = player.GetData<bool>("player:gender");
+                    int[] clothing = GetDefaultClothes(gender, i1.ItemID);
+                    player.SendChatMessage("PÓLÓ: " + clothing[0]+", " + clothing[1] + ", TORSO " + clothing[2] + ", UNDERSHIRT" + clothing[3] + ", " + clothing[4]);
+
                     if (slot.Item1)//ruha
                     {
-                        int[] clothing = GetDefaultClothes(, i1.ItemID);
-                        if (clothing.Length == 2)
+                        if (clothing.Length == 2)//sima ruha
                         {
-
+                            player.SetClothes(slot.Item2, clothing[0], clothing[1]);
+                            player.SendChatMessage("rendes ruha");
                         }
                         else
                         {
-
+                            player.SendChatMessage("polo");
+                            player.SetClothes(11, clothing[0], clothing[1]);
+                            player.SetClothes(3, clothing[2], 0);
+                            player.SetClothes(8, clothing[3], clothing[4]);
+                            
                         }
                         //player.SetClothes(slot.Item2,)
                     }
                     else//prop
                     {
-
+                        player.SetAccessories(slot.Item2, clothing[0], clothing[1]);
                     }
                 }
+                i1.InUse = false;
+
             }
             else//van nyitott tároló, tehát a tárolóhoz adjuk
             {
@@ -432,15 +442,7 @@ namespace Server.Inventory
             {
                 int clothing_id = -1;
                 Tuple<bool, int> slot = GetClothingSlotFromItemId(i.ItemID);
-                if (slot.Item1)//ruha
-                {
-
-                }
-                else//prop
-                {
-
-                }
-
+                clothing_id = slot.Item2;
 
                 if (clothing_id != -1)//nem -1, tehát találtunk valamit
                 {
@@ -467,6 +469,7 @@ namespace Server.Inventory
                                     player.TriggerEvent("client:AddItemToClothing", json, target_slot);
                                     string json2 = NAPI.Util.ToJson(toSwap);
                                     player.TriggerEvent("client:AddItemToInventory", json2);
+                                    
                                 }
                                 catch (Exception ex)
                                 {
@@ -974,6 +977,7 @@ namespace Server.Inventory
 
                         }
                     }
+                    player.SendChatMessage("ITEM " + i.DBID + " inuse");
 
                 }
             }

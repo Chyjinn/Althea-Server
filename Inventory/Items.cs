@@ -215,25 +215,21 @@ namespace Server.Inventory
                 if (i1.InUse)//használatban van (viseli) + ruha itemid-nek megfelel -> le kell venni róla
                 {
                     Tuple<bool, int> slot = GetClothingSlotFromItemId(i1.ItemID);
-                    player.SendChatMessage("ruha:" + slot.Item1 + " - ruhaid" + slot.Item2);
                     bool gender = player.GetData<bool>("player:gender");
                     int[] clothing = GetDefaultClothes(gender, i1.ItemID);
-                    player.SendChatMessage("PÓLÓ: " + clothing[0]+", " + clothing[1] + ", TORSO " + clothing[2] + ", UNDERSHIRT" + clothing[3] + ", " + clothing[4]);
 
                     if (slot.Item1)//ruha
                     {
                         if (clothing.Length == 2)//sima ruha
                         {
                             player.SetClothes(slot.Item2, clothing[0], clothing[1]);
-                            player.SendChatMessage("rendes ruha");
                         }
                         else
                         {
-                            player.SendChatMessage("polo");
                             player.SetClothes(11, clothing[0], clothing[1]);
                             player.SetClothes(3, clothing[2], 0);
                             player.SetClothes(8, clothing[3], clothing[4]);
-                            
+                            player.SendChatMessage("PÓLÓ: " + clothing[0] + "," + clothing[1] + "," + clothing[2] + "," + clothing[3] + "," + clothing[4]);
                         }
                         //player.SetClothes(slot.Item2,)
                     }
@@ -242,6 +238,7 @@ namespace Server.Inventory
                         player.SetAccessories(slot.Item2, clothing[0], clothing[1]);
                     }
                 }
+                player.TriggerEvent("client:RefreshInventoryPreview");
                 i1.InUse = false;
 
             }
@@ -355,7 +352,7 @@ namespace Server.Inventory
                         res = new int[2] { -1, 0 };
                         break;
                     case 5://póló
-                        res = new int[5] { 5, 0, 5, 5, 0 };
+                        res = new int[5] { 15, 0, 15, 15, 0 };
                         break;
                     case 6://fülbevaló
                         res = new int[2] { -1, 0 };

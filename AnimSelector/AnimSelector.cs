@@ -16,5 +16,17 @@ namespace Server.AnimSelector
             player.TriggerEvent("toggleSelectorWindow");            
             
         }
+        [RemoteEvent("server:playAnimation")]
+        public void playAnimation(GTANetworkAPI.Player player, string animDict, string animName, int flag, bool playPause)
+        {
+            if (playPause)
+            {
+                player.PlayAnimation(animDict, animName, flag);
+            }
+            else
+            {
+                player.StopAnimation();
+            }
+        }
     }
 }

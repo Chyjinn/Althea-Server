@@ -2,6 +2,7 @@
 using GTANetworkMethods;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace Server.AnimSelector
@@ -11,7 +12,9 @@ namespace Server.AnimSelector
         [Command("animselector")]
         public void animSelector(GTANetworkAPI.Player player)
         {
-            player.TriggerEvent("toggleSelectorWindow");
+            GTANetworkAPI.Player p = player;
+            player.TriggerEvent("toggleSelectorWindow");            
+            
         }
     }
 }

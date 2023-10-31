@@ -28,5 +28,6 @@ namespace Server.AnimSelector
                 player.StopAnimation();
             }
         }
+
     }
 }

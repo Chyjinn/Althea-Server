@@ -613,10 +613,40 @@ namespace Server.Admin
             v.SetSharedData("vehicle:Siren", siren);
         }
 
-        
+        [Command("setweather", Alias ="weather")]
+        public void SetWeather(GTANetworkAPI.Player player, string weather)
+        {
+            NAPI.World.SetWeather(weather);
+        }
+
+        [Command("settime")]
+        public void SetTime(GTANetworkAPI.Player player, string hours, string minutes, string seconds)
+        {
+            NAPI.World.SetTime(Convert.ToInt16(hours), Convert.ToInt16(minutes), Convert.ToInt16(seconds));
+        }
+
+        static float WindDirection = 0f;
+        static float WindSpeed = 0f;
 
 
+        [Command("setwind")]
+        public void SetWind(GTANetworkAPI.Player player, float dir, float speed)
+        {
+            WindDirection = dir;
+            WindSpeed = speed;
+            List<Player> p = NAPI.Pools.GetAllPlayers();
+            foreach (var item in p)
+            {
+                item.TriggerEvent("client:SetWind", WindDirection, WindSpeed);
+            }
+            player.SendChatMessage("Szélirány és sebesség átállítva!");
+        }
 
+        [RemoteEvent("server:SendWind")]
+        public void SendWind(GTANetworkAPI.Player player)
+        {
+            player.TriggerEvent("client:SetWind", WindDirection, WindSpeed);
+        }
 
 
 
@@ -723,12 +753,7 @@ namespace Server.Admin
         }
 
 
-        [Command("settime", GreedyArg = true)]
-        public void SetTime(GTANetworkAPI.Player player, string hours, string minutes, string seconds)
-        {
-            NAPI.World.SetTime(Convert.ToInt16(hours), Convert.ToInt16(minutes), Convert.ToInt16(seconds));
-            NAPI.World.SetWeather(Weather.CLEAR);
-        }
+
 
 
     }

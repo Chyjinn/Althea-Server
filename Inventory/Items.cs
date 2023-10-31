@@ -19,8 +19,20 @@ namespace Server.Inventory
             return Inventories[ent];
         }
 
+        public static bool HasItemWithValue(Player player, uint itemid, string itemvalue)
+        {
+            foreach (var item in Inventories[player])
+            {
+                if (item.ItemID == itemid && item.ItemValue == itemvalue)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         [Command("giveitem")]
-        public async void GiveItem(Player player,int targetid, uint itemid, string itemvalue, int amount)
+        public async static void GiveItem(Player player,int targetid, uint itemid, string itemvalue, int amount)
         {
             Player target = Admin.Commands.GetPlayerById(targetid);
             

@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Policy;
-using System.Text;
 using System.Threading.Tasks;
 using GTANetworkAPI;
 using MySql.Data.MySqlClient;
-using Server.Characters;
 
 namespace Server.Inventory
 {
     public class Items : Script
     {
+        static Dictionary<int, int> Bags = new Dictionary<int, int>();
 
         static Dictionary<Entity, List<Item>> Inventories = new Dictionary<Entity, List<Item>>();
 
@@ -21,17 +19,30 @@ namespace Server.Inventory
             return Inventories[ent];
         }
 
+        public static bool HasItemWithValue(Player player, uint itemid, string itemvalue)
+        {
+            foreach (var item in Inventories[player])
+            {
+                if (item.ItemID == itemid && item.ItemValue == itemvalue)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         [Command("giveitem")]
-        public async void GiveItem(Player player,int targetid, uint itemid, string itemvalue, int amount)
+        public async static void GiveItem(Player player,int targetid, uint itemid, string itemvalue, int amount)
         {
             Player target = Admin.Commands.GetPlayerById(targetid);
+            
             /*
             Clothing c = new Clothing(0, 0);
             Top t = new Top(0, 0, 0, 0, 0);
             Database.Log.Log_Server(NAPI.Util.ToJson(c));
             Database.Log.Log_Server(NAPI.Util.ToJson(t));
             */
-            uint charid = player.GetData<UInt32>("player:charID");
+            uint charid = target.GetData<UInt32>("player:charID");
             Item i = new Item(0, charid, 0, itemid, itemvalue, amount, false, false, 1000);
 
             uint dbid = await AddItemToDatabase(charid, i);
@@ -39,12 +50,13 @@ namespace Server.Inventory
             if (dbid != 0)
             {
                 i.DBID = dbid;
-                Inventories[player].Add(i);//hozzáadjuk a szerver itemjeihez
+                Inventories[target].Add(i);//hozzáadjuk a szerver itemjeihez
                 NAPI.Task.Run(() =>
                 {
                     string json = NAPI.Util.ToJson(i);
-                    player.TriggerEvent("client:AddItemToInventory", json);
-                    player.SendChatMessage("Kaptál egy " + ItemList.GetItemName(i.ItemID) + " tárgyat!");
+                    target.TriggerEvent("client:AddItemToInventory", json);
+                    player.SendChatMessage("Adtál " + amount + " db " + ItemList.GetItemName(i.ItemID) + " tárgyat " + target.Name + " játékosnak!");
+                    target.SendChatMessage("Kaptál "+amount +" db " + ItemList.GetItemName(i.ItemID) + " tárgyat "+ player.Name+" -tól!");
                 }, 500);
             }
 
@@ -238,6 +250,9 @@ namespace Server.Inventory
             }
         }
         */
+
+
+        
         [RemoteEvent("server:MoveItem")]
         public async void MoveItem(Player player, uint item1_dbid,uint owner_type, uint owner_id)
         {
@@ -292,10 +307,6 @@ namespace Server.Inventory
                 i1.InUse = false;
                 if (await UpdateItem(i1))
                 {
-                    NAPI.Task.Run(() =>
-                    {
-                        player.SendChatMessage("STATE: " + i1.InUse);
-                    }, 50);
                     
                 }
                 else
@@ -672,7 +683,6 @@ namespace Server.Inventory
                                 {
                                     NAPI.Task.Run(() =>
                                     {
-                                        player.SendChatMessage("póló swap");
                                         player.TriggerEvent("client:RemoveItem", i.DBID);
                                         player.TriggerEvent("client:RemoveItem", toSwap.DBID);
                                         Top t = NAPI.Util.FromJson<Top>(i.ItemValue);
@@ -702,7 +712,6 @@ namespace Server.Inventory
                             {
                                 NAPI.Task.Run(() =>
                                 {
-                                    player.SendChatMessage("póló add");
                                     player.TriggerEvent("client:RemoveItem", i.DBID);
                                     Top t = NAPI.Util.FromJson<Top>(i.ItemValue);
                                     player.SetClothes(clothing_id, t.Drawable, t.Texture);

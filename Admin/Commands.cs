@@ -245,14 +245,7 @@ namespace Server.Admin
             }
         }
 
-        [Command("engine", Alias = "end")]
-        public void StartStopEngine(Player player)
-        {
-            if (player.Vehicle != null)
-            {
-                player.Vehicle.EngineStatus = !player.Vehicle.EngineStatus;
-            }
-        }
+
 
         [Command("setarmor", Alias = "setarmour")]
         public void SetArmor(Player player, int targetid = -1, int armor = 100)
@@ -620,95 +613,43 @@ namespace Server.Admin
             v.SetSharedData("vehicle:Siren", siren);
         }
 
-        [Command("veh", Alias = "tempveh", GreedyArg = true)]
-        public void CreateVehicle(Player player, string model)
+        [Command("setweather", Alias ="weather")]
+        public void SetWeather(GTANetworkAPI.Player player, string weather)
         {
-            if (checkAdmin())
-            {
-                uint vHash = NAPI.Util.GetHashKey(model);
-                Vehicle v = NAPI.Vehicle.CreateVehicle(vHash, new Vector3(player.Position.X, player.Position.Y + 2.0, player.Position.Z), 0f, 1, 1, "TEMP");
-                v.Dimension = player.Dimension;
-
-                player.SendChatMessage("Jármű létrehozva: " + v.DisplayName);
-            }
+            NAPI.World.SetWeather(weather);
         }
 
-        [Command("setvehcolor", Alias = "setcarcolor")]
-        public void SetVehicleColor(GTANetworkAPI.Player player,byte r1, byte g1, byte b1, byte r2, byte g2, byte b2)
+        [Command("settime")]
+        public void SetTime(GTANetworkAPI.Player player, string hours, string minutes, string seconds)
         {
-            GTANetworkAPI.Vehicle v = player.Vehicle;
-            if (v != null)
-            {
-                    if (checkAdmin())
-                    {
-                        NAPI.Vehicle.SetVehicleCustomPrimaryColor(v, r1, g1, b1);
-                        NAPI.Vehicle.SetVehicleCustomSecondaryColor(v, r2, g2, b2);
-                        player.SendChatMessage("Jármű átszínezve!");
-                        return;
-                    }
-                    else
-                    {
-                        player.SendChatMessage("Add meg a színeket!");
-                        return;
-                    }
-                
-            }
-            player.SendChatMessage("Nem ülsz járműben!");
-            return;
+            NAPI.World.SetTime(Convert.ToInt16(hours), Convert.ToInt16(minutes), Convert.ToInt16(seconds));
         }
 
-        [Command("setvehextra", Alias = "setcarextra")]
-        public void SetVehicleExtra(GTANetworkAPI.Player player, int slot, bool state)
-        {
-            if (checkAdmin())
-            {
-                GTANetworkAPI.Vehicle v = player.Vehicle;
-                if (v != null)
-                {
-                
-                        NAPI.Vehicle.SetVehicleExtra(v, slot, state);
-                        player.SendChatMessage("Extra átállítva!");
-                        return;
-                }
-                else
-                {
-                    player.SendChatMessage("Nem ülsz járműben!");
-                    return;
-                }
+        static float WindDirection = 0f;
+        static float WindSpeed = 0f;
 
-            }
-            else
+
+        [Command("setwind")]
+        public void SetWind(GTANetworkAPI.Player player, float dir, float speed)
+        {
+            WindDirection = dir;
+            WindSpeed = speed;
+            List<Player> p = NAPI.Pools.GetAllPlayers();
+            foreach (var item in p)
             {
-                return;
+                item.TriggerEvent("client:SetWind", WindDirection, WindSpeed);
             }
+            player.SendChatMessage("Szélirány és sebesség átállítva!");
+        }
+
+        [RemoteEvent("server:SendWind")]
+        public void SendWind(GTANetworkAPI.Player player)
+        {
+            player.TriggerEvent("client:SetWind", WindDirection, WindSpeed);
         }
 
 
-        [Command("setvehlivery", Alias = "setcarlivery")]
-        public void SetVehicleLivery(GTANetworkAPI.Player player, int livery)
-        {
-            if (checkAdmin())
-            {
-                GTANetworkAPI.Vehicle v = player.Vehicle;
-                if (v != null)
-                {
 
-                    NAPI.Vehicle.SetVehicleLivery(v, livery);
-                    player.SendChatMessage("Paintjob átállítva!");
-                    return;
-                }
-                else
-                {
-                    player.SendChatMessage("Nem ülsz járműben!");
-                    return;
-                }
-
-            }
-            else
-            {
-                return;
-            }
-        }
 
         [Command("respawn")]
         public void RespawnPlayer(GTANetworkAPI.Player player)
@@ -812,12 +753,7 @@ namespace Server.Admin
         }
 
 
-        [Command("settime", GreedyArg = true)]
-        public void SetTime(GTANetworkAPI.Player player, string hours, string minutes, string seconds)
-        {
-            NAPI.World.SetTime(Convert.ToInt16(hours), Convert.ToInt16(minutes), Convert.ToInt16(seconds));
-            NAPI.World.SetWeather(Weather.CLEAR);
-        }
+
 
 
     }

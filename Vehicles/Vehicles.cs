@@ -14,7 +14,7 @@ namespace Server.Vehicles
     public class Jarmu
     {
         public uint ID { get; set; }
-        public int OwnerType { get; set; }
+        public uint OwnerType { get; set; }
         public uint OwnerID { get; set; }
         public string Model { get; set; }
         public Vector3 Position { get; set; }
@@ -32,7 +32,7 @@ namespace Server.Vehicles
         public byte NumberPlateType { get; set; }
         public uint Dimension { get; set; }
 
-        public Jarmu(uint id, int ownertype, uint ownerid, string model, Vector3 pos, Vector3 rot, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2, byte pearl, bool locked, bool engine, string numberplate, byte numberplatetype, uint dim)
+        public Jarmu(uint id, uint ownertype, uint ownerid, string model, Vector3 pos, Vector3 rot, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2, byte pearl, bool locked, bool engine, string numberplate, byte numberplatetype, uint dim)
         {
             ID = id;
             OwnerType = ownertype;
@@ -59,7 +59,28 @@ namespace Server.Vehicles
     internal class Vehicles : Script
     {
         static Dictionary<int,Vehicle> vehicles = new Dictionary<int,Vehicle>();
+        static Dictionary<Player, Vehicle> dealership = new Dictionary<Player, Vehicle>();
         int tempIndex = -1;
+        ColShape dealer;
+
+        public Vehicles()
+        {
+            CheckVehiclesToDespawn();
+            
+        }
+        //bejáratok:
+
+        //-38.2 -1108 26.5
+        //-33 -1093.5 26.5
+        //CAM: -813.95, 174.2, 76.78, 0, 0, -69
+        [ServerEvent(Event.ResourceStart)]
+        public void InitiateLoading()
+        {
+            //dealer = NAPI.ColShape.Create2DColShape(-52.5f, -1102.5f, 25.5f, 15f);
+            dealer = NAPI.ColShape.CreateSphereColShape(new Vector3(-44.2f, -1098f, 26.5f), 8f);
+            
+            //dealer = NAPI.ColShape.Create3DColShape(new Vector3(-35f, -1108f, 20f), new Vector3(-51f, -1089f, 31f),0);
+        }
 
         [Command("tempveh", Alias = "tempcar")]
         public void TemporaryVehicle(Player player, string model)
@@ -67,11 +88,17 @@ namespace Server.Vehicles
             uint vHash = NAPI.Util.GetHashKey(model);
             Vehicle v = NAPI.Vehicle.CreateVehicle(vHash, new Vector3(player.Position.X, player.Position.Y + 2.0, player.Position.Z), 0f, 1, 1, "TEMP");
             v.Dimension = player.Dimension;
-            v.SetData("vehicle:ID", tempIndex);
             player.SendChatMessage("Ideiglenes jármű létrehozva: " + model.ToLower() + " ("+tempIndex+")");
             
             vehicles[tempIndex] = v;
             tempIndex--;
+        }
+
+        [Command("rev")]
+        public void RevVehicle(Player player, float revs)
+        {
+            player.TriggerEvent("client:rev", revs);
+        
         }
 
 
@@ -105,15 +132,11 @@ namespace Server.Vehicles
                     player.SendChatMessage("Nem sikerült az adatbázisba menteni a járművet!");
                     v.Delete();
                 }, 250);
-
             }
-
-
         }
 
 
-
-        [Command("getveh")]
+        [Command("getveh", Alias ="getcar")]
         public void GetVehicle(Player player, int id)
         {
             if (vehicles.ContainsKey(id))//létezik a jármű
@@ -129,14 +152,104 @@ namespace Server.Vehicles
             }
         }
 
+
+
+        
+
+        [ServerEvent(Event.PlayerEnterColshape)]
+        public void EnterCheckpoint(ColShape cp, Player player)
+        {
+            player.SendChatMessage("beleléptél a colshapeba");
+            if (cp == dealer && player.Position.Z > 20f && player.Position.Z < 31f)//belépet a dealership-be
+            {
+                player.Dimension = Convert.ToUInt32(player.Id + 1);
+                player.SendChatMessage("Beléptél az autókereskedésbe, dimenziód átállítva.");
+                uint vHash = NAPI.Util.GetHashKey("blista");
+                Vehicle preview = NAPI.Vehicle.CreateVehicle(vHash, new Vector3(-44f, -1097.75f, 26f), 150f, 0, 0, "DEALER", 255, false, false, player.Dimension);
+                dealership[player] = preview;
+            }
+        }
+
+        [ServerEvent(Event.PlayerExitColshape)]
+        public void ExitCheckpoint(ColShape cp, Player player)
+        {
+            if (cp == dealer)//kilépett a dealership-ből
+            {
+                player.Dimension = 0;
+                player.SendChatMessage("Kiléptél az autókereskedésből, dimenziód visszaállítva.");
+                if (dealership.ContainsKey(player))
+                {
+                    dealership[player].Delete();
+                }
+                
+            }
+        }
+
+        /*
+        [Command("dealership")]
+        public void OpenDealership(Player player)
+        {
+            player.Dimension = Convert.ToUInt32(player.Id+1);
+            
+            Vector3 offset = new Vector3(1f, 1f, 0f);
+            
+            player.Position = v.Position + offset;
+            player.SendChatMessage("Ideiglenes jármű létrehozva: " + "elegy" + " (" + tempIndex + ")");
+            player.SetSharedData("player:Frozen", true);
+            player.SetSharedData("player:Invisible", true);
+            vehicles[tempIndex] = v;
+            tempIndex--;
+            NAPI.Task.Run(() =>
+            {
+                NAPI.Player.SetPlayerIntoVehicle(player, v, 0);
+                NAPI.Task.Run(() =>
+                {
+                    player.TriggerEvent("client:DealershipCamera");
+                }, 250);
+            }, 750);
+        }
+        */
+
+        [Command("flipveh", Alias = "flipcar")]
+        public void FlipVehicle(Player player, int id = 0)
+        {
+            if (id == 0)//saját jármű
+            {
+                player.Vehicle.Rotation = new Vector3(0f, 0f, player.Vehicle.Rotation.Z);
+            }
+            else if (vehicles.ContainsKey(id))//létezik a jármű
+            {
+                vehicles[id].Rotation = new Vector3(0f, 0f, vehicles[id].Rotation.Z);
+                player.SendChatMessage("Jármű fejre állítva!");
+            }
+
+
+        }
+
+        [Command("gotoveh", Alias ="gotocar")]
+        public void GotoVehicle(Player player, int id)
+        {
+            if (vehicles.ContainsKey(id))//létezik a jármű
+            {
+                Vector3 offset = new Vector3(2f, 2f, 0f);
+                player.Position = vehicles[id].Position + offset;
+                player.SendChatMessage("Jármű goto: " + id);
+            }
+            else
+            {
+                player.SendChatMessage("Jármű nem létezik");
+            }
+        }
+
+
         [Command("engine", Alias = "eng")]
         public void StartStopEngine(Player player)
         {
             if (player.Vehicle != null)//járműben ül
             {
-                if(player.Vehicle.GetData<int>("vehicle:ID") > 0)//pozitív ID, tehát fix autó
+                if(player.Vehicle.HasData("vehicle:ID"))//van id-je
                 {
-                    int vehid = player.Vehicle.GetData<int>("vehicle:ID");
+                    uint vehid = player.Vehicle.GetData<uint>("vehicle:ID");
                     if (Inventory.Items.HasItemWithValue(player, 15, vehid.ToString()))//van neki járműkulcs iteme (15) és az itemvalue az id-je
                     {
                         player.Vehicle.EngineStatus = !player.Vehicle.EngineStatus;
@@ -146,9 +259,9 @@ namespace Server.Vehicles
                         player.SendChatMessage("Nincs kulcsod a járműhöz!");
                     }
                 }
-                else//nem pozitív ID, tehát admin tudja csak indítani
+                else
                 {
-                    player.SendChatMessage("Temp veh motorja beindítva/leálltva.");
+                    player.SendChatMessage("Temp veh motorja beindítva/leálltva. (ADMIN)");
                     player.Vehicle.EngineStatus = !player.Vehicle.EngineStatus;
                 }
             }
@@ -200,6 +313,21 @@ namespace Server.Vehicles
             if (player.Vehicle != null)
             {
                 NAPI.Vehicle.SetVehicleMod(player.Vehicle, mod, value);
+                player.SendChatMessage("Tuning beállítva!");
+            }
+            else
+            {
+                player.SendChatMessage("Nem ülsz járműben!");
+            }
+        }
+
+
+        [Command("tuning", Alias = "tune")]
+        public void TuneVehicle(Player player, float torque, float power, bool drift)
+        {
+            if (player.Vehicle != null)
+            {
+                player.TriggerEvent("client:SetHandling", torque, power, drift);
                 player.SendChatMessage("Tuning beállítva!");
             }
             else
@@ -353,8 +481,9 @@ namespace Server.Vehicles
                             {
                                 Vector3 pos = new Vector3(Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]));
                                 Vector3 rot = new Vector3(Convert.ToSingle(reader["rotX"]), Convert.ToSingle(reader["rotY"]), Convert.ToSingle(reader["rotZ"]));
-                                Jarmu j = new Jarmu(Convert.ToUInt32(reader["id"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]),reader["model"].ToString(), pos, rot,0,0,0,0,0,0,0, Convert.ToBoolean(reader["locked"]), Convert.ToBoolean(reader["engine"]), reader["numberPlateText"].ToString(), 0, Convert.ToUInt32(reader["dimension"]));
+                                Jarmu j = new Jarmu(Convert.ToUInt32(reader["id"]), Convert.ToUInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]),reader["model"].ToString(), pos, rot, Convert.ToByte(reader["red1"]), Convert.ToByte(reader["green1"]), Convert.ToByte(reader["blue1"]), Convert.ToByte(reader["red2"]), Convert.ToByte(reader["green2"]), Convert.ToByte(reader["blue2"]), Convert.ToByte(reader["pearlescent"]), Convert.ToBoolean(reader["locked"]), Convert.ToBoolean(reader["engine"]), reader["numberPlateText"].ToString(), Convert.ToByte(reader["numberPlateType"]), Convert.ToUInt32(reader["dimension"]));
                                 jarmuvek.Add(j);
+                                //public Jarmu(uint id, int ownertype, uint ownerid, string model, Vector3 pos, Vector3 rot, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2, byte pearl, bool locked, bool engine, string numberplate, byte numberplatetype, uint dim)
                             }
                         }
                     }
@@ -390,12 +519,12 @@ namespace Server.Vehicles
                         v.Rotation = item.Rotation;
                         NAPI.Vehicle.SetVehiclePearlescentColor(v, item.Pearlescent);
                         NAPI.Vehicle.SetVehicleMod(v, 53, item.NumberPlateType);
-                        v.SetData("vehicle:ID", Convert.ToInt32(item.ID));
+                        v.SetData("vehicle:ID", item.ID);
+                        v.SetData("vehicle:OwnerType", item.OwnerType);
+                        v.SetData("vehicle:OwnerID", item.OwnerID);
                         player.SendChatMessage("Jámű betöltve! " + item.Model + " (" + item.ID + ")");
+                        vehicles[Convert.ToInt32(item.ID)] = v;
                     }, 1000);
-
-
-
                 }
             }
         }
@@ -403,7 +532,49 @@ namespace Server.Vehicles
         [ServerEvent(Event.PlayerDisconnected)]
         public void SetVehiclesToDespawn(Player player, DisconnectionType dc, string reason)
         {
+            foreach (var item in vehicles)
+            {
+                if (item.Value.HasData("vehicle:OwnerType") && item.Value.HasData("vehicle:OwnerID"))//vannak beállítva tulajdonoshoz adatok
+                {
+                    if (item.Value.GetData<uint>("vehicle:OwnerType") == 0)//0 tehát játékos által birtokolt
+                    {
+                        uint charid = player.GetData<uint>("player:charID");
+                        if (item.Value.GetData<uint>("vehicle:OwnerID") == charid)//a tulajdonos megegyezik a lelépő játékossal
+                        {
+                            DateTime dateTime = DateTime.Now;
+                            TimeSpan span = TimeSpan.FromDays(3);
+                            DateTime despawn = dateTime.Add(span);
+                            
+                            Database.Log.Log_Server("Jármű ID: " + item.Key + " - Idő: "+ DateTime.Now + " Despawn: " + despawn);
+                            item.Value.SetData("vehicle:Despawn", despawn);
+                        }
+                    }
+                }
+            }
+        }
 
+
+        public void CheckVehiclesToDespawn()
+        {
+            foreach (var item in vehicles)
+            {
+                if (item.Value.HasData("vehicle:Despawn"))
+                {
+                    DateTime despawn = item.Value.GetData<DateTime>("vehicle:Despawn");
+                    if (despawn < DateTime.Now)
+                    {
+                        int vehid = Convert.ToInt32(item.Value.GetData<uint>("vehicle:ID"));
+                        item.Value.Delete();//töröljük a járművet
+                        vehicles.Remove(vehid);//töröljük a listából
+                        Database.Log.Log_Server("Jármú despawnolva.");
+                    }
+                }
+            }
+
+            NAPI.Task.Run(() =>
+            {
+                CheckVehiclesToDespawn();
+            }, 120000);
         }
 
     

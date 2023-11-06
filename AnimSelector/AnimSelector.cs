@@ -1,5 +1,6 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
+using Server.Characters;
 using Server.Vehicles;
 using System;
 using System.Collections.Generic;
@@ -36,19 +37,32 @@ namespace Server.AnimSelector
         {
             if (await IsAnimInDatabase(dict,anim))//ha már mentettük
             {
-                player.SendChatMessage("Az anim már mentve van!");
+                NAPI.Task.Run(() =>
+                {
+                    player.SendChatMessage("Az anim már mentve van!");
+
+                });
+                
             }
             else//nem mentettük
             {
                 if (await InsertAnimToDatabase(cmd,dict,anim,flag,category))//megpróbáljuk hozzáadni
                 {
-                    //sikerült hozzáadni
-                    player.SendChatMessage("Anim mentve (" + dict +";" + anim +")" );
+                    //sikerült hozzáadni                    
+                    NAPI.Task.Run(() =>
+                    {
+                        player.SendChatMessage("Anim mentve (" + dict + ";" + anim + ")");
+                    });
                 }
                 else
                 {
                     //nem sikerült hozzáadni
-                    player.SendChatMessage("Adatbázis hiba - nem sikerült menteni.");
+                    NAPI.Task.Run(() =>
+                    {
+                        player.SendChatMessage("Adatbázis hiba - nem sikerült menteni.");
+
+                    });
+                    
                 }
             }
         }

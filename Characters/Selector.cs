@@ -127,6 +127,7 @@ namespace Server.Characters
                         player.TriggerEvent("client:HUD", true);
                         player.TriggerEvent("client:BindKeys", true);
                         Inventory.Items.LoadInventory(player);
+                        Vehicles.Vehicles.LoadPlayerVehicles(player);
                     }, 2000);
                     
                 });

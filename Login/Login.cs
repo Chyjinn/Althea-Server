@@ -86,7 +86,7 @@ namespace Server.Auth
                 
                 if (await Auth.VerifyToken(id, token))//Token ellenőrzés
                 {
-                    if (playerSerial == serial)//Serial egyezik
+                    if (true)//playerSerial == serial)//Serial egyezik
                     {
                         if (playerScId == scID && playerScName == scName)//Social Club egyezik
                         {
@@ -175,7 +175,7 @@ namespace Server.Auth
                 ulong scID = Convert.ToUInt32(playerData[5]);
                 string scName = playerData[6];
                 uint characterSlots = Convert.ToUInt32(playerData[7]);
-                if (playerSerial == serial)//Serial egyezik
+                if (true)//playerSerial == serial)//Serial egyezik
                 {
                     if (playerScId == scID && playerScName == scName)//Social Club egyezik
                     {

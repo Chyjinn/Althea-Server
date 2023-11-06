@@ -42,6 +42,11 @@ namespace Server.Admin
             player.SetHeadOverlay(overlay, h);
         }
 
+        [Command("nametagtest")]
+        public void nametagtest(Player player)
+        {
+            player.TriggerEvent("client:NametagTest");
+        }
 
         [Command("skycam")]
         public void SkyCam(Player player, bool state)

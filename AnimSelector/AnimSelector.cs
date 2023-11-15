@@ -74,7 +74,7 @@ namespace Server.AnimSelector
             string query = $"SELECT COUNT(id) FROM `anims` WHERE `dictionary` = @Dict AND `animation` = @Anim";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -112,7 +112,7 @@ namespace Server.AnimSelector
                 $" (@Cmd, @Dict, @Anim, @Flag, @Cat);";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand command = new MySqlCommand(query, con))

@@ -63,7 +63,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand command = new MySqlCommand(query, con))
@@ -97,7 +97,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
 
@@ -132,7 +132,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -172,7 +172,7 @@ namespace Server.Auth
             string[] res = new string[0];
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 try
                 {
                     await con.OpenAsync();
@@ -214,7 +214,7 @@ namespace Server.Auth
             string[] res = new string[0];
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -250,7 +250,7 @@ namespace Server.Auth
             string[] res = new string[0];
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -284,7 +284,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();//hiba volt itt - object reference not set to an instance of an object
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -316,7 +316,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -349,7 +349,7 @@ namespace Server.Auth
             string[] res = new string[0];
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -387,7 +387,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -418,7 +418,7 @@ namespace Server.Auth
             string res = "";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
 
@@ -452,7 +452,7 @@ namespace Server.Auth
             string res = "";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
 
@@ -485,7 +485,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
 
@@ -522,7 +522,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -558,7 +558,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -594,7 +594,7 @@ namespace Server.Auth
             Tuple<int, string> res = Tuple.Create(0, "Admin");
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -627,7 +627,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -662,7 +662,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -698,7 +698,7 @@ namespace Server.Auth
             bool state = false;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
 

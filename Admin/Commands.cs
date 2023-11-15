@@ -494,8 +494,6 @@ namespace Server.Admin
                 player.SendChatMessage(x.ToString());
                 player.SendChatMessage(ex.ToString());
             }
-                
-
         }
 
 
@@ -505,10 +503,19 @@ namespace Server.Admin
                 player.TriggerEvent("client:YTtest");
         }
 
-        [Command("weapon")]
-        public void WeaponCommand(Player sender, WeaponHash hash)
+        [Command("tint")]
+        public void WeaponTint(Player player, int tint)
         {
-            NAPI.Player.GivePlayerWeapon(sender, hash, 500);
+            player.SendChatMessage("Tint átállítva");
+            player.SetSharedData("player:WeaponTint", tint);
+            
+        }
+
+        [Command("weapon")]
+        public void WeaponCommand(Player sender, string hash)
+        {
+            //NAPI.Player.GivePlayerWeapon(sender, hash, 500);
+            NAPI.Player.GivePlayerWeapon(sender, NAPI.Util.GetHashKey(hash), 3000);
         }
 
         [Command("camtest")]
@@ -627,6 +634,7 @@ namespace Server.Admin
         [Command("settime")]
         public void SetTime(GTANetworkAPI.Player player, string hours, string minutes, string seconds)
         {
+
             NAPI.World.SetTime(Convert.ToInt16(hours), Convert.ToInt16(minutes), Convert.ToInt16(seconds));
         }
 

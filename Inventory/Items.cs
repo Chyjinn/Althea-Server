@@ -76,7 +76,7 @@ namespace Server.Inventory
 
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand command = new MySqlCommand(query, con))
@@ -147,7 +147,7 @@ namespace Server.Inventory
             List<Item> items = new List<Item>();
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 try
                 {
                     await con.OpenAsync();
@@ -189,7 +189,7 @@ namespace Server.Inventory
             //string query2 = $"UPDATE `characters` SET `characterName` = @CharacterName, `dob` = @DOB, `pob` = @POB WHERE `appearanceId` = @AppearanceID";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand command = new MySqlCommand(query, con))
@@ -388,32 +388,39 @@ namespace Server.Inventory
                             ItemValueToAccessory(player, worn, clothing_id);
                             break;
                         case 5:
-                            worn.InUse = true;
-                            NAPI.Task.Run(() =>
+                            try
                             {
-                                player.TriggerEvent("client:RemoveItem", worn.DBID);
-                                Top t = NAPI.Util.FromJson<Top>(worn.ItemValue);
-                                player.SetClothes(clothing_id, t.Drawable, t.Texture);
-                                player.SetClothes(8, t.UndershirtDrawable, t.UndershirtTexture);
-                                player.SetClothes(3, t.Torso, 0);
-                                string json = NAPI.Util.ToJson(i);
-                                player.TriggerEvent("client:AddItemToClothing", json);
-                                player.TriggerEvent("client:RefreshInventoryPreview");
-                            }, 50);
-                            if (await UpdateItem(worn))
-                            { 
+                                worn.InUse = true;
                                 NAPI.Task.Run(() =>
                                 {
-                                    player.SendChatMessage("ItemUpdate: " + worn.DBID);
-                                }, 500);
+                                    player.TriggerEvent("client:RemoveItem", worn.DBID);
+                                    Top t = NAPI.Util.FromJson<Top>(worn.ItemValue);
+                                    player.SetClothes(clothing_id, t.Drawable, t.Texture);
+                                    player.SetClothes(8, t.UndershirtDrawable, t.UndershirtTexture);
+                                    player.SetClothes(3, t.Torso, 0);
+                                    string json = NAPI.Util.ToJson(worn);
+                                    player.TriggerEvent("client:AddItemToClothing", json);
+                                    player.TriggerEvent("client:RefreshInventoryPreview");
+
+                                }, 50);
+                                if (await UpdateItem(worn))
+                                {
+                                    NAPI.Task.Run(() =>
+                                    {
+                                        player.SendChatMessage("ItemUpdate: " + worn.DBID);
+                                    }, 500);
+
+                                }
+                                else
+                                {
+                                    Database.Log.Log_Server("Adatbázis mentési hiba. (ITEM-DB-ID: " + worn.DBID + ")");
+                                }
+
                             }
-                            else
+                            catch (Exception ex)
                             {
-                                Database.Log.Log_Server("Adatbázis mentési hiba. (ITEM-DB-ID: " + worn.DBID + ")");
+                                Database.Log.Log_Server("Hibás ItemValue! DBID:" + worn.DBID);
                             }
-
-
-
                     break;
                         case 6:
                             ItemValueToAccessory(player, worn, clothing_id);
@@ -444,7 +451,7 @@ namespace Server.Inventory
             }
         }
 
-        public int[] GetDefaultClothes(bool gender, uint itemid)
+        public static int[] GetDefaultClothes(bool gender, uint itemid)
         {
             int[] res = new int[0];
             if (!gender)//nő
@@ -534,7 +541,7 @@ namespace Server.Inventory
             return res;
         }
 
-        public Tuple<bool,int> GetClothingSlotFromItemId(uint itemid)
+        public static Tuple<bool,int> GetClothingSlotFromItemId(uint itemid)
         {
             Tuple<bool, int> res = Tuple.Create(false, -1);
             switch (itemid)//megfeleltetjük a slot-ot (0-11) a RAGEMP ruha slottal (Clothes vagy Prop slot)
@@ -681,6 +688,8 @@ namespace Server.Inventory
                             {
                                 try
                                 {
+                                    i.InUse = true;
+                                    toSwap.InUse = false;
                                     NAPI.Task.Run(() =>
                                     {
                                         player.TriggerEvent("client:RemoveItem", i.DBID);
@@ -689,15 +698,25 @@ namespace Server.Inventory
                                         player.SetClothes(clothing_id, t.Drawable, t.Texture);
                                         player.SetClothes(8, t.UndershirtDrawable, t.UndershirtTexture);
                                         player.SetClothes(3, t.Torso, 0);
-                                        i.InUse = true;
-                                        toSwap.InUse = false;
+
                                         string json = NAPI.Util.ToJson(i);
                                         player.TriggerEvent("client:AddItemToClothing", json);
                                         string json2 = NAPI.Util.ToJson(toSwap);
                                         player.TriggerEvent("client:AddItemToInventory", json2);
                                         player.TriggerEvent("client:RefreshInventoryPreview");
                                     }, 50);
+                                    if (await UpdateItem(i) && await UpdateItem(toSwap))
+                                    {
+                                        NAPI.Task.Run(() =>
+                                        {
+                                            player.SendChatMessage("ItemUpdate: " + i.DBID + " -> " + toSwap.DBID);
+                                        }, 500);
 
+                                    }
+                                    else
+                                    {
+                                        Database.Log.Log_Server("Adatbázis mentési hiba. (ITEM-DB-ID: " + i.DBID + " & " + toSwap.DBID + ")");
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
@@ -710,6 +729,7 @@ namespace Server.Inventory
                         {
                             try
                             {
+                                i.InUse = true;
                                 NAPI.Task.Run(() =>
                                 {
                                     player.TriggerEvent("client:RemoveItem", i.DBID);
@@ -717,12 +737,24 @@ namespace Server.Inventory
                                     player.SetClothes(clothing_id, t.Drawable, t.Texture);
                                     player.SetClothes(8, t.UndershirtDrawable, t.UndershirtTexture);
                                     player.SetClothes(3, t.Torso, 0);
-                                    i.InUse = true;
+
                                     string json = NAPI.Util.ToJson(i);
                                     player.TriggerEvent("client:AddItemToClothing", json);
                                     player.TriggerEvent("client:RefreshInventoryPreview");
-                                }, 50);
 
+                                }, 50);
+                                if (await UpdateItem(i))
+                                {
+                                    NAPI.Task.Run(() =>
+                                    {
+                                        player.SendChatMessage("ItemUpdate: " + i.DBID);
+                                    }, 500);
+
+                                }
+                                else
+                                {
+                                    Database.Log.Log_Server("Adatbázis mentési hiba. (ITEM-DB-ID: " + i.DBID + ")");
+                                }
 
                             }
                             catch (Exception ex)
@@ -1009,7 +1041,7 @@ namespace Server.Inventory
 
 
 
-        public Item GetClothingOnSlot(Player player, uint itemid)
+        public static Item GetClothingOnSlot(Player player, uint itemid)
         {
             foreach (var item in Inventories[player])
             {

@@ -1,7 +1,10 @@
 ﻿using GTANetworkAPI;
+using MySql.Data.MySqlClient;
+using Server.Inventory;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Server.Characters
 {
@@ -383,6 +386,193 @@ namespace Server.Characters
             }
 
             player.SetClothes(2, character.Appearance.HairStyle, 0);
+            SetCharacterClothes(player, charid, character.Appearance.Gender);
+        }
+
+        public static async Task<Item[]> GetCharacterClothes(uint charid)//felhasználónév alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
+        {
+            string query = $"SELECT * FROM `items` WHERE `ownerType` = 0 AND `ownerID` = @CharacterID AND `itemID` <= 15 AND `inUse` = true";
+            List<Item> items = new List<Item>();
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                try
+                {
+                    await con.OpenAsync();
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("@CharacterID", charid);
+                        cmd.Prepare();
+                        try
+                        {
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    Item loadedItem = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToUInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["itemID"]), reader["itemValue"].ToString(), Convert.ToInt32(reader["itemAmount"]), Convert.ToBoolean(reader["inUse"]), Convert.ToBoolean(reader["duty"]), Convert.ToInt32(reader["priority"]));
+                                    items.Add(loadedItem);
+
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Database.Log.Log_Server(ex.ToString());
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+                await con.CloseAsync();
+                return items.ToArray();
+            }
+        }
+
+        public static async void SetCharacterClothes(Player player, uint charid, bool gender)
+        {
+            Item[] items = await GetCharacterClothes(charid);
+
+            for (uint i = 0; i < 12; i++)
+            {
+                Tuple<bool, int> slot = Inventory.Items.GetClothingSlotFromItemId(i);
+                int[] clothing = Inventory.Items.GetDefaultClothes(gender, i);
+
+                if (slot.Item1)//ruha
+                {
+                    if (clothing.Length == 2)//sima ruha
+                    {
+                        NAPI.Task.Run(() =>
+                        {
+                            player.SetClothes(slot.Item2, clothing[0], clothing[1]);
+                        }, 50);
+
+                    }
+                    else
+                    {
+                        NAPI.Task.Run(() =>
+                        {
+                            player.SetClothes(11, clothing[0], clothing[1]);
+                            player.SetClothes(3, clothing[2], 0);
+                            player.SetClothes(8, clothing[3], clothing[4]);
+                        }, 50);
+                    }
+                }
+            }
+
+
+            foreach (var item in items)//az összes viselt itemen végigmegyünk
+            {
+                SetWornClothing(player, item);
+            }
+        }
+
+        public async static void ItemValueToAccessory(Player player, Item i, int clothing_id)
+        {
+            try
+            {
+                NAPI.Task.Run(() =>
+                {
+                    Inventory.Clothing c = NAPI.Util.FromJson<Inventory.Clothing>(i.ItemValue);
+                    player.SetAccessories(clothing_id, c.Drawable, c.Texture);
+
+                }, 50);
+            }
+            catch (Exception ex)
+            {
+                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
+            }
+        }
+
+        public async static void ItemValueToClothing(Player player, Item i, int clothing_id)
+        {
+            try
+            {
+                NAPI.Task.Run(() =>
+                {
+                    Inventory.Clothing c = NAPI.Util.FromJson<Inventory.Clothing>(i.ItemValue);
+                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
+
+                }, 50);
+            }
+            catch (Exception ex)
+            {
+                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
+            }
+        }
+
+        public async static void ItemValueToTop(Player player, Item i, int clothing_id)
+        {
+            try
+            {
+                NAPI.Task.Run(() =>
+                {
+                    Inventory.Top t = NAPI.Util.FromJson<Inventory.Top>(i.ItemValue);
+                    player.SetClothes(clothing_id, t.Drawable, t.Texture);
+                    player.SetClothes(8, t.UndershirtDrawable, t.UndershirtTexture);
+                    player.SetClothes(3, t.Torso, 0);
+
+                }, 50);
+            }
+            catch (Exception ex)
+            {
+                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
+            }
+        }
+
+
+        public async static void SetWornClothing(Player player, Item worn)
+        {
+            Tuple<bool, int> slot = Inventory.Items.GetClothingSlotFromItemId(worn.ItemID);
+                int clothing_id = slot.Item2;
+
+                if (worn != null)
+                {
+                    switch (worn.ItemID)
+                    {
+                        case 1:
+                            ItemValueToAccessory(player, worn, clothing_id);
+                            break;
+                        case 2:
+                            ItemValueToClothing(player, worn, clothing_id);
+                            break;
+                        case 3:
+                            ItemValueToAccessory(player, worn, clothing_id);
+                            break;
+                        case 4:
+                            ItemValueToAccessory(player, worn, clothing_id);
+                            break;
+                        case 5:
+                            ItemValueToTop(player, worn, clothing_id);
+                            break;
+                        case 6:
+                            ItemValueToAccessory(player, worn, clothing_id);
+                            break;
+                        case 7:
+                            ItemValueToClothing(player, worn, clothing_id);
+                            break;
+                        case 8:
+                            ItemValueToAccessory(player, worn, clothing_id);
+                            break;
+                        case 9:
+                            ItemValueToClothing(player, worn, clothing_id);
+                            break;
+                        case 10:
+                            ItemValueToAccessory(player, worn, clothing_id);
+                            break;
+                        case 11:
+                            ItemValueToClothing(player, worn, clothing_id);
+                            break;
+                        case 12:
+                            ItemValueToClothing(player, worn, clothing_id);
+                            break;
+
+                        default:
+                            break;
+                    }
+                
+            }
         }
 
     }

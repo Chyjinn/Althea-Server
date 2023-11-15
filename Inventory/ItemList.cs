@@ -11,7 +11,7 @@ namespace Server.Inventory
     public class ItemList : Script
     {
         static List<Entry> itemList = new List<Entry>();
-       
+
         //betöltjük adatbázisból az itemlistát
         [ServerEvent(Event.ResourceStart)]
         public async void InitiateLoading()
@@ -59,7 +59,7 @@ namespace Server.Inventory
             string query = $"SELECT * FROM `itemlist`";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -70,7 +70,7 @@ namespace Server.Inventory
                         {
                             while (await reader.ReadAsync())
                             {
-                                Entry entry = new Entry(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), Convert.ToInt32(reader["itemType"]), Convert.ToUInt32(reader["itemWeight"]), Convert.ToString(reader["itemImage"]), Convert.ToBoolean(reader["stackable"]));
+                                Entry entry = new Entry(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), Convert.ToInt32(reader["itemType"]), Convert.ToUInt32(reader["itemWeight"]), Convert.ToString(reader["itemImage"]), Convert.ToByte(reader["container"]), Convert.ToBoolean(reader["stackable"]));
                                 itemList.Add(entry);
                             }
                         }

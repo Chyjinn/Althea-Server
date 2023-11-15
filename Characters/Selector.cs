@@ -1,6 +1,7 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Bcpg.Sig;
+using Server.Inventory;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Nodes;
@@ -35,6 +36,10 @@ namespace Server.Characters
             player.SetSharedData("player:Frozen", false);
             SetCharacterDataForPlayer(player, accID);
         }
+
+
+
+
 
         public static async void SetCharacterDataForPlayer(Player player, uint accID)
         {
@@ -83,15 +88,13 @@ namespace Server.Characters
 
 
 
-
-
-
     [RemoteEvent("server:CharChange")]
     public static void HandleCharacterChange(Player player, int characterid)
     {
         player.SetSharedData("player:Invisible", true);
         uint charid = Convert.ToUInt32(characterid);
         Appearance.HandleCharacterAppearanceById(player, charid);
+
             NAPI.Task.Run(() =>
             {
                 player.SetSharedData("player:Invisible", false);

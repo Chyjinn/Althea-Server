@@ -17,8 +17,10 @@ namespace Server
         [ServerEvent(Event.ResourceStart)]
         public void Start()
         {
-            NAPI.Server.SetCommandErrorMessage("!{#ffffff}[!{##a83232}Hiba!{#ffffff}]Parancs nem található!");
+            NAPI.Server.SetCommandErrorMessage("!{#ffffff}[!{##a83232}Hiba!{#ffffff}] Parancs nem található!");
+            NAPI.Server.SetGlobalServerChat(false);
             NAPI.Server.SetAutoSpawnOnConnect(false);
+            
             NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
             NAPI.Server.SetGlobalServerChat(true);
@@ -27,7 +29,19 @@ namespace Server
             {
                 Admin.Levels.LoadAcmds();
             },10000);
-            
+            SetServerTime();
+        }
+
+
+
+        public async void SetServerTime()
+        {
+            NAPI.Task.Run(() =>
+            {
+                DateTime time = DateTime.Now;
+                NAPI.World.SetTime(Convert.ToInt16(time.Hour), Convert.ToInt16(time.Minute), Convert.ToInt16(time.Second));
+                SetServerTime();
+            }, 60000);
         }
 
 
@@ -77,7 +91,7 @@ namespace Server
             string query = $"UPDATE `characters` SET `posX` = @PositionX, `posY` = @PositionY, `posZ` = @PositionZ, `rot` = @Rotation WHERE `characters`.`id` = @CharacterID;";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand command = new MySqlCommand(query, con))

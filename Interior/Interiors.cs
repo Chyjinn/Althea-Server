@@ -102,29 +102,37 @@ namespace Server.Interior
             string query = $"SELECT * FROM `interiors`";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
-                await con.OpenAsync();
-
-                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                try
                 {
-                    try
+                    con.ConnectionString = await Database.DBCon.GetConString();
+                    await con.OpenAsync();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
                     {
-                        using (var reader = await cmd.ExecuteReaderAsync())
+                        try
                         {
-                            while (await reader.ReadAsync())
+                            using (var reader = await cmd.ExecuteReaderAsync())
                             {
-                                Interior i = new Interior(Convert.ToUInt32(reader["id"]), reader["name"].ToString(), Convert.ToUInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]), new Vector3(Convert.ToSingle(reader["entranceX"]), Convert.ToSingle(reader["entranceY"]), Convert.ToSingle(reader["entranceZ"])), new Vector3(0f, 0f, Convert.ToSingle(reader["entranceHeading"])), Convert.ToUInt32(reader["entranceDimension"]), new Vector3(Convert.ToSingle(reader["exitX"]), Convert.ToSingle(reader["exitY"]), Convert.ToSingle(reader["exitZ"])), new Vector3(0f, 0f, Convert.ToSingle(reader["exitHeading"])), Convert.ToUInt32(reader["exitDimension"]), reader["ipl"].ToString());
-                                i.OwnerName = "Nigga bigga";
-                                interiors.Add(i);
+                                while (await reader.ReadAsync())
+                                {
+                                    Interior i = new Interior(Convert.ToUInt32(reader["id"]), reader["name"].ToString(), Convert.ToUInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]), new Vector3(Convert.ToSingle(reader["entranceX"]), Convert.ToSingle(reader["entranceY"]), Convert.ToSingle(reader["entranceZ"])), new Vector3(0f, 0f, Convert.ToSingle(reader["entranceHeading"])), Convert.ToUInt32(reader["entranceDimension"]), new Vector3(Convert.ToSingle(reader["exitX"]), Convert.ToSingle(reader["exitY"]), Convert.ToSingle(reader["exitZ"])), new Vector3(0f, 0f, Convert.ToSingle(reader["exitHeading"])), Convert.ToUInt32(reader["exitDimension"]), reader["ipl"].ToString());
+                                    i.OwnerName = "Nigga bigga";
+                                    interiors.Add(i);
+                                }
                             }
                         }
+                        catch (Exception ex)
+                        {
+                            Database.Log.Log_Server(ex.ToString());
+                        }
                     }
-                    catch (Exception ex)
-                    {
-                        Database.Log.Log_Server(ex.ToString());
-                    }
+                    await con.CloseAsync();
                 }
-                await con.CloseAsync();
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+
             }
         }
 

@@ -215,12 +215,20 @@ namespace Server.Vehicles
         {
             if (id == 0)//saját jármű
             {
-                player.Vehicle.Rotation = new Vector3(0f, 0f, player.Vehicle.Rotation.Z);
+                if (player.Vehicle != null)
+                {
+                    player.Vehicle.Rotation = new Vector3(0f, 0f, player.Vehicle.Rotation.Z);
+                    player.SendChatMessage("Jármű felállítva!");
+                }
+                else
+                {
+                    player.SendChatMessage("/flipveh [jármű id]");
+                }
             }
             else if (vehicles.ContainsKey(id))//létezik a jármű
             {
                 vehicles[id].Rotation = new Vector3(0f, 0f, vehicles[id].Rotation.Z);
-                player.SendChatMessage("Jármű fejre állítva!");
+                player.SendChatMessage("Jármű felállítva!");
             }
 
 
@@ -411,7 +419,7 @@ namespace Server.Vehicles
 
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand command = new MySqlCommand(query, con))
@@ -466,7 +474,7 @@ namespace Server.Vehicles
             List<Jarmu> jarmuvek = new List<Jarmu>();
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))

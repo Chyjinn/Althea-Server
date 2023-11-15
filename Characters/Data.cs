@@ -18,7 +18,7 @@ namespace Server.Characters
 
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -78,7 +78,7 @@ namespace Server.Characters
             uint res = 0;
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -110,7 +110,7 @@ namespace Server.Characters
             List<Character> characters = new List<Character>();
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -142,7 +142,7 @@ namespace Server.Characters
             string query = $"SELECT id,characterName,dob,pob,appearanceId,posX,posY,posZ,rot FROM `characters` WHERE `accountId` = @accountID AND `id` = @characterID LIMIT 1";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -194,7 +194,7 @@ namespace Server.Characters
                 $" @Bodyblemish1Id, @Bodyblemish1Opacity, @Bodyblemish2Id, @Bodyblemish2Opacity, NULL);";
                 using (MySqlConnection con = new MySqlConnection())
                 {
-                    con.ConnectionString = Database.DBCon.GetConString();
+                    con.ConnectionString = await Database.DBCon.GetConString();
                     await con.OpenAsync();
 
                     using (MySqlCommand command = new MySqlCommand(query, con))
@@ -279,7 +279,7 @@ namespace Server.Characters
 
                             using (MySqlConnection con2 = new MySqlConnection())
                             {
-                                con2.ConnectionString = Database.DBCon.GetConString();
+                                con2.ConnectionString = await Database.DBCon.GetConString();
                                 await con2.OpenAsync();
                                 //executereader kell majd mert insert + select, kell az utolsó id
 
@@ -335,7 +335,7 @@ namespace Server.Characters
                 $" `bodyblemishId` = @Bodyblemish1Id, `bodyblemishOpacity`= @Bodyblemish1Opacity, `bodyblemish2Id`= @Bodyblemish2Id, `bodyblemish2Opacity`= @Bodyblemish2Opacity WHERE `appearances`.`id` = @AppearanceID";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand command = new MySqlCommand(query, con))
@@ -418,7 +418,7 @@ namespace Server.Characters
 
                             using (MySqlConnection con2 = new MySqlConnection())
                             {
-                                con2.ConnectionString = Database.DBCon.GetConString();
+                                con2.ConnectionString = await Database.DBCon.GetConString();
                                 await con2.OpenAsync();
                                 //executereader kell majd mert insert + select, kell az utolsó id
 
@@ -463,7 +463,7 @@ namespace Server.Characters
             string query = $"SELECT COUNT(id) FROM `characters` WHERE `accountId` = @AccID AND `id` = @CharID";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))

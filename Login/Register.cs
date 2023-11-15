@@ -33,7 +33,7 @@ namespace Server.Auth
                     player.SendChatMessage("Van már ilyen email cím!");
                 });
             }
-            else if(await Auth.SocialClubInUse(playerScId))
+            /*else if(await Auth.SocialClubInUse(playerScId))
             {
                     NAPI.Task.Run(() =>
                     {
@@ -46,7 +46,7 @@ namespace Server.Auth
                     {
                         player.SendChatMessage("Ehhez a géphez van már felhasználó társítva!");
                     });
-            }
+            }*/
             else//az összes ellenőrzés rendben van, regisztrálhatjuk a játékost
             {
                 string salt = Auth.GenerateSalt(100);

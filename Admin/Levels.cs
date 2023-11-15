@@ -37,7 +37,7 @@ namespace Server.Admin
             string query = $"SELECT command, adminLevel FROM `acmds`";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
@@ -86,7 +86,7 @@ namespace Server.Admin
             string query = $"UPDATE `acmds` SET `adminLevel` = @AdminLevel WHERE `acmds`.`command` = @AdminCMD;";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand command = new MySqlCommand(query, con))
@@ -121,7 +121,7 @@ namespace Server.Admin
             string query = $"UPDATE `accounts` SET `adminLevel` = @AdminLevel WHERE `accounts`.`id` = @AccID;";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = Database.DBCon.GetConString();
+                con.ConnectionString = await Database.DBCon.GetConString();
                 await con.OpenAsync();
 
                 using (MySqlCommand command = new MySqlCommand(query, con))

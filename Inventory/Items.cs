@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using GTANetworkAPI;
 using MySql.Data.MySqlClient;
@@ -234,22 +235,46 @@ namespace Server.Inventory
             return null;
         }
 
-        /*
-        [RemoteEvent("server:UseItem")]
-        public void ItemUse(Player player, int section, int slot)
+
+        public Item[] GetItemsByItemID(Entity entity, uint itemid)
         {
-            uint charid = player.GetData<UInt32>("player:charID");
-            Item i = GetItemByData(charid, section, slot);
-            if (i != null)
+            List<Item> items = new List<Item>();
+            foreach (var item in Inventories[entity])
             {
-                HandleItemUse(player,i);
+                if (item.ItemID == itemid)
+                {
+                    items.Add(item);
+                }
             }
-            else//hiba van, frissítjük a player inventoryját
-            {
-                RefreshInventory(player, charid);
-            }
+            return items.ToArray();
         }
-        */
+
+        
+        [RemoteEvent("server:UseItem")]
+        public void ItemUse(Player player, uint item_dbid)
+        {
+            Item i = GetItemByDbId(player, item_dbid);
+
+            if (i.ItemID == 18 && i.InUse == false)//pisztoly és nincs elővéve
+            {
+                Item[] tarak = GetItemsByItemID(player, 19);
+                int loszer = 0;
+                foreach (var item in tarak)
+                {
+                    loszer += Convert.ToInt32(item.ItemAmount);
+                }
+
+                NAPI.Player.GivePlayerWeapon(player, NAPI.Util.GetHashKey("weapon_pistol"), loszer);
+                //keresünk tárat és úgy adunk neki fegyvert
+            }
+            else if (i.ItemID == 18 && i.InUse == true)//pisztoly és elő van véve
+            {
+                NAPI.Player.GetPlayerWeaponAmmo(player, NAPI.Util.GetHashKey("weapon_pistol"));
+                NAPI.Player.RemovePlayerWeapon(player, NAPI.Util.GetHashKey("weapon_pistol"));
+            }
+
+        }
+        
 
 
         
@@ -320,19 +345,27 @@ namespace Server.Inventory
             }
         }
 
-        /*
+        public void SortInventory(Entity e)
+        {
+            //Inventories[e] = Inventories[e].OrderBy(x => x.Priority).ToDictionary(pair => pair, x => x.Value);)
+            //dict = dict.OrderBy(x => x.Value).ToDictionary(x => x.Key, x => x.Value);
+            //Inventories[e].OrderBy<>
+        }
+
+        
         [RemoteEvent("server:SwapItem")]
-        public void SwapItem(Player player, uint item1_dbid, uint item2_dbid, int owner_type, uint owner_id)
+        public void SwapItem(Player player, uint item1_dbid, uint item2_dbid)
         {
             Item i1 = GetItemByDbId(player, item1_dbid);
             Item i2 = GetItemByDbId(player, item2_dbid);
 
-            if (i1.InUse && 1 <= i2.ItemID && i2.ItemID <= 12)//használatban van (viseli) + ruha itemid-nek megfelel -> le kell venni róla
+            if (1 <= i1.ItemID && i1.ItemID <= 14 && i1.ItemID == i2.ItemID && i1.InUse)//használatban lévő ruhát húzott egy másik itemre, meg szeretné cserélni
             {
-
+                MoveItemToClothing(player, item2_dbid, -1);
             }
             else//nem ruha item
             {
+                /*
                 Item temp = new Item(i1.DBID, i1.OwnerID, i1.OwnerType, i1.ItemID, i1.ItemValue, i1.ItemAmount, i1.InUse,i1.Duty, i1.Priority);
                 player.TriggerEvent("client:RemoveItem", i1.DBID);
                 player.TriggerEvent("client:RemoveItem", i2.DBID);
@@ -341,14 +374,11 @@ namespace Server.Inventory
                     i2.InUse = false;
 
                     string json = NAPI.Util.ToJson(i2);
-                    player.TriggerEvent("client:AddItemToInventory", json2);
-
-
-
-
+                    //player.TriggerEvent("client:AddItemToInventory", json2);
+                */
                 }
         }
-        */
+        
 
         public Item GetItemInUse(Player player, uint itemID)
         {
@@ -407,7 +437,7 @@ namespace Server.Inventory
                                 {
                                     NAPI.Task.Run(() =>
                                     {
-                                        player.SendChatMessage("ItemUpdate: " + worn.DBID);
+                                        //player.SendChatMessage("ItemUpdate: " + worn.DBID);
                                     }, 500);
 
                                 }
@@ -494,6 +524,12 @@ namespace Server.Inventory
                     case 12://páncél
                         res = new int[2] { 0, 0 };
                         break;
+                    case 13://kesztyű
+                        res = new int[2] { 0, 0 };
+                        break;
+                    case 14://decal
+                        res = new int[2] { 0, 0 };
+                        break;
                 }
             }
             else
@@ -534,6 +570,12 @@ namespace Server.Inventory
                         res = new int[2] { 0, 0 };
                         break;
                     case 12://páncél
+                        res = new int[2] { 0, 0 };
+                        break;
+                    case 13://kesztyű
+                        res = new int[2] { 0, 0 };
+                        break;
+                    case 14://decal
                         res = new int[2] { 0, 0 };
                         break;
                 }
@@ -582,6 +624,12 @@ namespace Server.Inventory
                 case 12://páncél
                     res = Tuple.Create(true, 9);
                     break;
+                case 13:
+                    res = Tuple.Create(true, 3);
+                    break;
+                case 14:
+                    res = Tuple.Create(true, 10);
+                    break;
                 default:
                     return res;
                     break;
@@ -590,13 +638,13 @@ namespace Server.Inventory
         }
 
         [RemoteEvent("server:MoveItemToClothing")]
-        public async void MoveItemToClothing(Player player, uint db_id, uint target_slot)
+        public async void MoveItemToClothing(Player player, uint db_id, int target_slot)
         {
             //slotokat kezelni, a megfelelő ruhát ráadni a playerre, törölni az inventory-jából vagy container-ből az itemet nála és hozzáadni a slothoz
             Item i = GetItemByDbId(player, db_id);
             if (ItemList.GetItemType(i.ItemID) == 1 && i.InUse == false)//1-es típus: ruha
             {
-                int clothing_id = -1;
+                int clothing_id = -5;
                 Tuple<bool, int> slot = GetClothingSlotFromItemId(i.ItemID);
                 clothing_id = slot.Item2;
 
@@ -604,32 +652,28 @@ namespace Server.Inventory
                 {
                     //az ItemID-től és a slot-tól függően ha jó itemet húzott a player a jó slotra
                     //ruha vagy prop beállítása, itemvalue konvertálásával
-                   
 
 
-                    if (i.ItemID == 1 && target_slot == 0)//kalap itemid és kalap target_slot
+                    if ((i.ItemID == 1 && target_slot == 0) || (i.ItemID == 1 && target_slot == -1))//kalap itemid és kalap target_slot
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
                         {
                             if (toSwap.ItemID == i.ItemID)
                             {
-                                    ItemValueToAccessorySwap(player, i, toSwap, clothing_id);
+                                ItemValueToAccessorySwap(player, i, toSwap, clothing_id);
                             }
                         }
                         else
                         {
-
-                                ItemValueToAccessory(player, i, clothing_id);
-
-
+                            ItemValueToAccessory(player, i, clothing_id);
                         }
 
 
                         
                         //ha igen, akkor: ruhát ráadni, elküldeni kliensnek a törlést és a hozzáadást a slothoz
                     }
-                    else if(i.ItemID == 2 && target_slot == 6)//maszk
+                    else if((i.ItemID == 2 && target_slot == 6) || (i.ItemID == 2 && target_slot == -1))//maszk
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -647,7 +691,7 @@ namespace Server.Inventory
                                 ItemValueToClothing(player, i, clothing_id);
                         }
                     }
-                    else if (i.ItemID == 3 && target_slot == 1)//nyaklánc - accessories
+                    else if ((i.ItemID == 3 && target_slot == 1) ||((i.ItemID == 3 && target_slot == -1)))//nyaklánc - accessories
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -663,7 +707,7 @@ namespace Server.Inventory
 
                         }
                     }
-                    else if (i.ItemID == 4 && target_slot == 7)//szemüveg - prop
+                    else if ((i.ItemID == 4 && target_slot == 7) || (i.ItemID == 4 && target_slot == -1))//szemüveg - prop
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -679,7 +723,7 @@ namespace Server.Inventory
 
                         }
                     }
-                    else if (i.ItemID == 5 && target_slot == 2)//póló + undershirt + torso
+                    else if ((i.ItemID == 5 && target_slot == 2) || (i.ItemID == 5 && target_slot == -1))//póló + undershirt + torso
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -709,7 +753,7 @@ namespace Server.Inventory
                                     {
                                         NAPI.Task.Run(() =>
                                         {
-                                            player.SendChatMessage("ItemUpdate: " + i.DBID + " -> " + toSwap.DBID);
+                                            //player.SendChatMessage("ItemUpdate: " + i.DBID + " -> " + toSwap.DBID);
                                         }, 500);
 
                                     }
@@ -747,7 +791,7 @@ namespace Server.Inventory
                                 {
                                     NAPI.Task.Run(() =>
                                     {
-                                        player.SendChatMessage("ItemUpdate: " + i.DBID);
+                                        //player.SendChatMessage("ItemUpdate: " + i.DBID);
                                     }, 500);
 
                                 }
@@ -765,7 +809,7 @@ namespace Server.Inventory
                         }
 
                     }
-                    else if (i.ItemID == 6 && target_slot == 8)//fülbevaló
+                    else if ((i.ItemID == 6 && target_slot == 8) || (i.ItemID == 6 && target_slot == -1))//fülbevaló
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -782,7 +826,7 @@ namespace Server.Inventory
 
                         }
                     }
-                    else if (i.ItemID == 7 && target_slot == 3)//nadrág
+                    else if ((i.ItemID == 7 && target_slot == 3) || (i.ItemID == 7 && target_slot == -1))//nadrág
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -799,7 +843,7 @@ namespace Server.Inventory
 
                         }
                     }
-                    else if (i.ItemID == 8 && target_slot == 9)//karkötő
+                    else if ((i.ItemID == 8 && target_slot == 9) || (i.ItemID == 8 && target_slot == -1))//karkötő
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -815,7 +859,7 @@ namespace Server.Inventory
 
                         }
                     }
-                    else if (i.ItemID == 9 && target_slot == 4)//cipő
+                    else if ((i.ItemID == 9 && target_slot == 4) || (i.ItemID == 9 && target_slot == -1))//cipő
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -830,7 +874,7 @@ namespace Server.Inventory
                                 ItemValueToClothing(player, i, clothing_id);
                         }
                     }
-                    else if (i.ItemID == 10 && target_slot == 10)//óra
+                    else if ((i.ItemID == 10 && target_slot == 10) || (i.ItemID == 10 && target_slot == -1))//óra
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -845,7 +889,7 @@ namespace Server.Inventory
                                 ItemValueToAccessory(player, i, clothing_id);
                         }
                     }
-                    else if (i.ItemID == 11 && target_slot == 5)//táska
+                    else if ((i.ItemID == 11 && target_slot == 5) || (i.ItemID == 11 && target_slot == -1))//táska
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -862,7 +906,7 @@ namespace Server.Inventory
                             ItemValueToClothing(player, i, clothing_id);
                         }
                     }
-                    else if (i.ItemID == 12 && target_slot == 11)//armor
+                    else if ((i.ItemID == 12 && target_slot == 11) || (i.ItemID == 12 && target_slot == -1))//armor
                     {
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
@@ -884,7 +928,6 @@ namespace Server.Inventory
                 }
 
             }
-
 
         }
 
@@ -911,7 +954,7 @@ namespace Server.Inventory
                 {
                     NAPI.Task.Run(() =>
                     {
-                        player.SendChatMessage("ItemUpdate: " + i1.DBID +" -> " + i2.DBID);
+                        //player.SendChatMessage("ItemUpdate: " + i1.DBID +" -> " + i2.DBID);
                     }, 500);
 
                 }
@@ -947,7 +990,7 @@ namespace Server.Inventory
                 {
                     NAPI.Task.Run(() =>
                     {
-                        player.SendChatMessage("ItemUpdate: " + i.DBID);
+                        //player.SendChatMessage("ItemUpdate: " + i.DBID);
                     }, 500);
 
                 }
@@ -975,8 +1018,8 @@ namespace Server.Inventory
                     player.TriggerEvent("client:RemoveItem", i1.DBID);
                     player.TriggerEvent("client:RemoveItem", i2.DBID);
                     Clothing c = NAPI.Util.FromJson<Clothing>(i1.ItemValue);
-                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
-                    
+                    player.SetAccessories(clothing_id, c.Drawable, c.Texture);
+
                     string json = NAPI.Util.ToJson(i1);
                     player.TriggerEvent("client:AddItemToClothing", json);
                     string json2 = NAPI.Util.ToJson(i2);
@@ -987,7 +1030,7 @@ namespace Server.Inventory
                 {
                     NAPI.Task.Run(() =>
                     {
-                        player.SendChatMessage("ItemUpdate: " + i1.DBID + " -> "+ i2.DBID);
+                        //player.SendChatMessage("ItemUpdate: " + i1.DBID + " -> "+ i2.DBID);
                     }, 500);
 
                 }
@@ -1023,7 +1066,7 @@ namespace Server.Inventory
                 {
                     NAPI.Task.Run(() =>
                     {
-                        player.SendChatMessage("ItemUpdate: " + i.DBID);
+                        //player.SendChatMessage("ItemUpdate: " + i.DBID);
                     }, 500);
 
                 }

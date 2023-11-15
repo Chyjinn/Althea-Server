@@ -73,10 +73,11 @@ namespace Server.Chat
         [RemoteEvent("server:BeanBagHit")]
         public void HitByBeanbag(Player player)
         {
+            player.SendChatMessage("Eltaláltak egy babzsák sörétes puskával! Kérlek ügyelj a karakteredhez illő szerepjátékra.");
             var nearbyPlayers = NAPI.Player.GetPlayersInRadiusOfPlayer(10.0, player);
             foreach (Player item in nearbyPlayers)
             {
-                item.SendChatMessage("!{#ff2850}* Eltalálta egy beanbag shotgun. ((" + player.Name + "))");
+                item.SendChatMessage("!{#ff2850}* A földre esik. ((" + player.Name + "))");
             }
         }
 

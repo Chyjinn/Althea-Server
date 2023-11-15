@@ -16,6 +16,7 @@ namespace Server.Inventory
         public bool InUse { get; set; }
         public bool Duty { get; set; }
         public int Priority { get; set; }
+        public byte Container { get; set; }
         public Item(uint dbid, uint ownerid, int ownertype, uint itemid, string itemvalue, int itemamount, bool inuse, bool duty, int priority)
         {
             DBID = dbid;
@@ -27,6 +28,16 @@ namespace Server.Inventory
             Duty = duty;
             Priority = priority;
             InUse = inuse;
+            Container = 0;
+            SetContainer();
+        }
+
+
+
+        public void SetContainer()
+        {
+            //itt kell beállítani, ha van neki tárhelye
+
         }
     }
 
@@ -64,9 +75,8 @@ namespace Server.Inventory
         public int ItemType { get; set; }//felhasználás kezeléséhez kell majd, pl Weapon akkor úgy kezeljük
         public string ItemImage { get; set; }//lehet local, pl. src/img.png, vagy url
         public uint ItemWeight { get; set; }
-        public byte Container { get; set; }//ha 0, akkor nem tároló, ha 1 vagy több akkor igen
         public bool Stackable { get; set; }
-        public Entry(uint id, string name, string desc, int type, uint weight, string itemimage, byte container, bool stack)
+        public Entry(uint id, string name, string desc, int type, uint weight, string itemimage, bool stack)
         {
             ItemID = id;
             Name = name;
@@ -74,7 +84,6 @@ namespace Server.Inventory
             ItemType = type;
             ItemWeight = weight;
             ItemImage = itemimage;
-            Container = container;
             Stackable = stack;
         }
 

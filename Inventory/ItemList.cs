@@ -16,15 +16,17 @@ namespace Server.Inventory
         [ServerEvent(Event.ResourceStart)]
         public async void InitiateLoading()
         {
+
             DateTime timestamp1 = DateTime.Now;
-           
+
             await LoadItemList();
 
             DateTime timestamp2 = DateTime.Now;
 
             TimeSpan LoadTime = timestamp2 - timestamp1;
-            
+
             NAPI.Util.ConsoleOutput("Itemlista betöltve " + LoadTime.Milliseconds + " ms alatt.");
+
         }
 
         [Command("refreshitemlist")]
@@ -70,7 +72,7 @@ namespace Server.Inventory
                         {
                             while (await reader.ReadAsync())
                             {
-                                Entry entry = new Entry(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), Convert.ToInt32(reader["itemType"]), Convert.ToUInt32(reader["itemWeight"]), Convert.ToString(reader["itemImage"]), Convert.ToByte(reader["container"]), Convert.ToBoolean(reader["stackable"]));
+                                Entry entry = new Entry(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), Convert.ToInt32(reader["itemType"]), Convert.ToUInt32(reader["itemWeight"]), Convert.ToString(reader["itemImage"]), Convert.ToBoolean(reader["stackable"]));
                                 itemList.Add(entry);
                             }
                         }

@@ -78,6 +78,7 @@ namespace Server.Characters
             {
                 NAPI.Task.Run(() =>
                 {
+                    player.SetSharedData("player:Frozen", true);
                     NAPI.Player.SpawnPlayer(player, new Vector3(-818f, 177f, 73f));
                     Editor.SetupCharEditor(player, accID);//nincs karaktere, bedobni karakter készítőbe
                 }, 1000);

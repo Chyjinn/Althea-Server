@@ -28,8 +28,10 @@ namespace Server
             NAPI.Task.Run(() =>
             {
                 Admin.Levels.LoadAcmds();
+                Inventory.ItemList.InitiateItemList();
+                Interior.Interiors.InitiateInteriors();
             },10000);
-            SetServerTime();
+            //SetServerTime();
         }
 
 

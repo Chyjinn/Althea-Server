@@ -12,17 +12,54 @@ namespace Server.Inventory
     {
         static Dictionary<int, int> Bags = new Dictionary<int, int>();
 
-        static Dictionary<Entity, List<Item>> Inventories = new Dictionary<Entity, List<Item>>();
+        static Dictionary<Tuple<int, uint>, List<Item>> Inventories = new Dictionary<Tuple<int, uint>, List<Item>>();
+        //OWNERTYPE-ok:
+        /*
+        0 - JÁTÉKOS
+        1 - ITEM TÁROLÓ
+        2 - JÁRMŰ CSOMAGTARTÓ
+        3 - JÁRMŰ KESZTYŰTARTÓ
+        4 - INTERIOR
+        5 - OBJECT
+          
+         */
+
+        /*
+        TÁROLÓKNÁL:
+        ITEMID-t összehasonlítjuk
+        ha itemid megfelel akkor esetleg itemvalue-t -> jó drawable? pl táskánál
+
+        
 
 
-        public static List<Item> GetEntityInventory(Entity ent)
+
+        */
+
+        public static List<Item> GetInventory(int OwnerType, uint OwnerID)
         {
-            return Inventories[ent];
+            return Inventories[new Tuple<int, uint>(OwnerType, OwnerID)];
+        }
+
+        public static void SetInventory(int OwnerType, uint OwnerID, Item[] items)
+        {
+            Inventories[new Tuple<int, uint>(OwnerType, OwnerID)] = items.ToList();
+        }
+
+        public static void SetPlayerInventory(Player player, Item[] items)
+        {
+            uint charid = player.GetData<UInt32>("player:charID");
+            Inventories[new Tuple<int, uint>(0, charid)] = items.ToList();
+        }
+
+        public static List<Item> GetPlayerInventory(Player player)
+        {
+            uint charid = player.GetData<UInt32>("player:charID");
+            return Inventories[new Tuple<int, uint>(0, charid)];
         }
 
         public static bool HasItemWithValue(Player player, uint itemid, string itemvalue)
         {
-            foreach (var item in Inventories[player])
+            foreach (var item in GetPlayerInventory(player))
             {
                 if (item.ItemID == itemid && item.ItemValue == itemvalue)
                 {
@@ -51,7 +88,7 @@ namespace Server.Inventory
             if (dbid != 0)
             {
                 i.DBID = dbid;
-                Inventories[target].Add(i);//hozzáadjuk a szerver itemjeihez
+                GetPlayerInventory(target).Add(i);//hozzáadjuk a szerver itemjeihez
                 NAPI.Task.Run(() =>
                 {
                     string json = NAPI.Util.ToJson(i);
@@ -113,9 +150,6 @@ namespace Server.Inventory
             return ItemDBID;
         }
 
-
-
-
         public static void LoadInventory(Player player)
         {
             uint charid = player.GetData<UInt32>("player:charID");
@@ -126,7 +160,7 @@ namespace Server.Inventory
         public async static void RefreshInventory(Player player,uint charid)
         {
             Item[] playerItems = await GetPlayerInventory(charid);
-            Inventories[player] = playerItems.ToList();
+            SetInventory(0, charid, playerItems);
             Inventory.ItemList.SendItemListToPlayer(player);
             SendInventoryToPlayer(player, playerItems);
         }
@@ -220,12 +254,21 @@ namespace Server.Inventory
             return state;
         }
 
-
-
-
-        public Item GetItemByDbId(Entity entity, uint dbid)
+        public Item GetItemByDbId(Player player, uint dbid)
         {
-            foreach (var item in Inventories[entity])
+            foreach (var item in GetPlayerInventory(player))
+            {
+                if (item.DBID == dbid)
+                {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+        public Item GetItemByDbId(int ownertype, uint ownerid, uint dbid)
+        {
+            foreach (var item in GetInventory(ownertype,ownerid))
             {
                 if (item.DBID == dbid)
                 {
@@ -236,10 +279,26 @@ namespace Server.Inventory
         }
 
 
-        public Item[] GetItemsByItemID(Entity entity, uint itemid)
+        public Item GetItemByDbId(uint dbid)//az összes itemen végig megyünk, hosszú futási idő - el kéne kerülni a használatát
+        {
+            foreach (var item in Inventories)
+            {
+                foreach (var items in item.Value)
+                {
+                    if (items.DBID == dbid)
+                    {
+                        return items;
+                    }
+                }
+            }
+            return null;
+        }
+
+
+        public Item[] GetItemsByItemID(Player player, uint itemid)
         {
             List<Item> items = new List<Item>();
-            foreach (var item in Inventories[entity])
+            foreach (var item in GetPlayerInventory(player))
             {
                 if (item.ItemID == itemid)
                 {
@@ -254,27 +313,188 @@ namespace Server.Inventory
         public void ItemUse(Player player, uint item_dbid)
         {
             Item i = GetItemByDbId(player, item_dbid);
+            switch (i.ItemID)
+            {
+                case 18:
+                    if (i.InUse)
+                    {
+                        Item[] tarak = GetItemsByItemID(player, 19);
+                        NAPI.Player.SetPlayerCurrentWeapon(player, NAPI.Util.GetHashKey("weapon_unarmed"));
+                        int remaining_ammo = NAPI.Player.GetPlayerWeaponAmmo(player, NAPI.Util.GetHashKey("weapon_pistol"));
+
+                        int loszer = 0;
+                        for (int j = 0; j < tarak.Length; j++)
+                        {
+                            if (tarak[j].ItemAmount > 0)
+                            {
+                                loszer = remaining_ammo - loszer;
+                            }
+                        }
+
+                        //NAPI.Player.RemovePlayerWeapon(player, NAPI.Util.GetHashKey("weapon_pistol"));
+                        i.InUse = false;
+                        player.TriggerEvent("client:ChangeItemInUse", i.DBID, i.InUse);
+                        Server.Chat.Commands.ChatEmoteME(player, "eltesz egy fegyver. ("+ItemList.GetItemName(i.ItemID)+")");
+                        player.PlayAnimation("reaction@intimidation@1h", "outro", 49);
+                        NAPI.Task.Run(() =>
+                        {
+                            player.StopAnimation();
+
+                        }, 2500);
+                        NAPI.Task.Run(() =>
+                        {
+                           NAPI.Player.SetPlayerCurrentWeapon(player, NAPI.Util.GetHashKey("weapon_unarmed"));
+                           NAPI.Player.RemoveAllPlayerWeapons(player);
+                        }, 1500);
+                    }
+                    else
+                    {
+                        Item[] tarak = GetItemsByItemID(player, 19);
+                        int loszer = 0;//az első nem üres tárat töltjük majd be
+                        for (int j = 0; j < tarak.Length; j++)
+                        {
+                            if (tarak[j].ItemAmount > 0)
+                            {
+                                loszer += tarak[j].ItemAmount;
+                                tarak[j].InUse = true;
+                            }
+                        }
+
+
+                        NAPI.Player.GivePlayerWeapon(player, NAPI.Util.GetHashKey("weapon_pistol"), loszer);
+                        NAPI.Player.SetPlayerCurrentWeapon(player, NAPI.Util.GetHashKey("weapon_pistol"));
+                        i.InUse = true;
+                        player.TriggerEvent("client:ChangeItemInUse", i.DBID, i.InUse);
+                        Server.Chat.Commands.ChatEmoteME(player, "elővesz egy fegyver. (" + ItemList.GetItemName(i.ItemID) + ")");
+
+                        player.PlayAnimation("reaction@intimidation@1h", "intro", 49);
+                        NAPI.Task.Run(() =>
+                        {
+                            player.StopAnimation();
+                        }, 2500);
+                        //keresünk tárat és úgy adunk neki fegyvert
+                    }
+                    break;
+
+                case 20:
+                    if (i.InUse)
+                    {
+                        Item[] tarak = GetItemsByItemID(player, 19);
+                        
+                        int remaining_ammo = NAPI.Player.GetPlayerWeaponAmmo(player, NAPI.Util.GetHashKey("weapon_combatpistol"));
+
+                        int loszer = 0;
+                        for (int j = 0; j < tarak.Length; j++)
+                        {
+                            if (tarak[j].ItemAmount > 0)
+                            {
+                                loszer = remaining_ammo - loszer;
+                            }
+                        }
+                        
+                        //NAPI.Player.RemovePlayerWeapon(player, NAPI.Util.GetHashKey("weapon_pistol"));
+                        i.InUse = false;
+                        player.TriggerEvent("client:ChangeItemInUse", i.DBID, i.InUse);
+                        Server.Chat.Commands.ChatEmoteME(player, "eltesz egy fegyver. (" + ItemList.GetItemName(i.ItemID) + ")");
+
+                        player.PlayAnimation("reaction@intimidation@1h", "outro", 49);
+                        NAPI.Task.Run(() =>
+                        {
+                            player.StopAnimation();
+
+                        }, 2500);
+                        NAPI.Task.Run(() =>
+                        {
+                            NAPI.Player.SetPlayerCurrentWeapon(player, NAPI.Util.GetHashKey("weapon_unarmed"));
+                            NAPI.Player.RemoveAllPlayerWeapons(player);
+                        }, 1500);
+                    }
+                    else
+                    {
+                        Item[] tarak = GetItemsByItemID(player, 19);
+                        int loszer = 0;//az első nem üres tárat töltjük majd be
+                        for (int j = 0; j < tarak.Length; j++)
+                        {
+                            if (tarak[j].ItemAmount > 0)
+                            {
+                                loszer += tarak[j].ItemAmount;
+                                tarak[j].InUse = true;
+                            }
+                        }
+
+
+                        NAPI.Player.GivePlayerWeapon(player, NAPI.Util.GetHashKey("weapon_combatpistol"), loszer);
+                        NAPI.Player.SetPlayerCurrentWeapon(player, NAPI.Util.GetHashKey("weapon_pistol"));
+                        i.InUse = true;
+                        player.TriggerEvent("client:ChangeItemInUse", i.DBID, i.InUse);
+                        Server.Chat.Commands.ChatEmoteME(player, "elővesz egy fegyver. (" + ItemList.GetItemName(i.ItemID) + ")");
+
+                        player.PlayAnimation("reaction@intimidation@1h", "intro", 49);
+                        NAPI.Task.Run(() =>
+                        {
+                            player.StopAnimation();
+                        }, 2500);
+                        //keresünk tárat és úgy adunk neki fegyvert
+                    }
+                    break;
+                default:
+                    break;
+            }
+
 
             if (i.ItemID == 18 && i.InUse == false)//pisztoly és nincs elővéve
             {
-                Item[] tarak = GetItemsByItemID(player, 19);
-                int loszer = 0;
-                foreach (var item in tarak)
-                {
-                    loszer += Convert.ToInt32(item.ItemAmount);
-                }
 
-                NAPI.Player.GivePlayerWeapon(player, NAPI.Util.GetHashKey("weapon_pistol"), loszer);
-                //keresünk tárat és úgy adunk neki fegyvert
             }
             else if (i.ItemID == 18 && i.InUse == true)//pisztoly és elő van véve
             {
-                NAPI.Player.GetPlayerWeaponAmmo(player, NAPI.Util.GetHashKey("weapon_pistol"));
-                NAPI.Player.RemovePlayerWeapon(player, NAPI.Util.GetHashKey("weapon_pistol"));
+
             }
+
+
+
+            
 
         }
         
+        private async Task<bool> SortInventory(int ownertype, uint ownerid)//sorba rendezzük prioritás alapján az itemeket és új számokat adunk nekik növekvő sorrendben
+        {
+            List<Item> items = GetInventory(ownertype, ownerid);
+            List<Item> ordered = items.OrderBy(o => o.Priority).ToList();
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                ordered[i].Priority = i;
+            }
+            SetInventory(ownertype, ownerid, ordered.ToArray());
+            return true;
+        }
+
+        private async Task<bool> SortPlayerInventory(Player player)//sorba rendezzük prioritás alapján az itemeket és új számokat adunk nekik növekvő sorrendben
+        {
+            List<Item> items = GetPlayerInventory(player);
+            List<Item> ordered = items.OrderBy(o => o.Priority).ToList();
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                ordered[i].Priority = i;
+            }
+            SetPlayerInventory(player, ordered.ToArray());
+            return true;
+        }
+
+
+        private async void OrderInventory(Player player)
+        {
+            return;
+            uint charid = player.GetData<UInt32>("player:charID");
+            if (await SortPlayerInventory(player))//megvárjuk amíg elrendezte az inventoryt a playernek
+            {
+                RefreshInventory(player, charid);
+                //leküldjük az itemeket sorrendjét egy listában amit majd kliens kibont -> átálligatja a priority-t és elrendezi
+                /*Dictionary<uint, uint> priorities = new Dictionary<uint, uint>();
+                List<Item> items = GetPlayerInventory(player);
+                player.TriggerEvent("client:GetItemPriorities", priorities);*/
+            }
+        }
 
 
         
@@ -320,7 +540,11 @@ namespace Server.Inventory
                     {
                         NAPI.Task.Run(() =>
                         {
-                            player.SetAccessories(slot.Item2, clothing[0], clothing[1]);
+                            if (clothing.Length == 2)
+                            {
+                                player.SetAccessories(slot.Item2, clothing[0], clothing[1]);
+                            }
+                            
                         }, 50);
                     }
                 }
@@ -343,6 +567,7 @@ namespace Server.Inventory
             {
                 
             }
+            OrderInventory(player);
         }
 
         public void SortInventory(Entity e)
@@ -354,7 +579,7 @@ namespace Server.Inventory
 
         
         [RemoteEvent("server:SwapItem")]
-        public void SwapItem(Player player, uint item1_dbid, uint item2_dbid)
+        public async void SwapItem(Player player, uint item1_dbid, uint item2_dbid)
         {
             Item i1 = GetItemByDbId(player, item1_dbid);
             Item i2 = GetItemByDbId(player, item2_dbid);
@@ -365,6 +590,138 @@ namespace Server.Inventory
             }
             else//nem ruha item
             {
+                if (i1.InUse == false && i2.InUse == false)
+                {
+                    int ownertype = i1.OwnerType;
+                    uint ownerid = i1.OwnerID;
+                    int priority = i1.Priority;
+                    i1.OwnerType = i2.OwnerType;
+                    i1.OwnerID = i2.OwnerID;
+                    i1.Priority = i2.Priority;
+                    i2.OwnerType = ownertype;
+                    i2.OwnerID = ownerid;
+                    i2.Priority = priority;
+
+                    if (i1.OwnerType != 0)//nem játékosnál van, tehát container-hez adjuk
+                    {
+                        try
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.TriggerEvent("client:RemoveItem", i1.DBID);
+                                string json = NAPI.Util.ToJson(i1);
+                                player.TriggerEvent("client:AddItemToContainer", json);
+                            }, 50);
+                            if (await UpdateItem(i1) && await UpdateItem(i2))
+                            {
+                                NAPI.Task.Run(() =>
+                                {
+                                    //player.SendChatMessage("ItemUpdate: " + i1.DBID +" -> " + i2.DBID);
+                                }, 500);
+                            }
+                            else
+                            {
+                                Database.Log.Log_Server("Adatbázis mentési hiba. (ITEM-DB-ID: " + i1.DBID + " & " + i2.DBID + ")");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Database.Log.Log_Server("Hibás ItemValue! DBID:" + i1.DBID);
+                        }
+                    }
+                    else//játékosnál van
+                    {
+                        try
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.TriggerEvent("client:RemoveItem", i1.DBID);
+                                string json = NAPI.Util.ToJson(i1);
+                                player.TriggerEvent("client:AddItemToInventory", json);
+                            }, 50);
+                            if (await UpdateItem(i1))
+                            {
+                                NAPI.Task.Run(() =>
+                                {
+                                    //player.SendChatMessage("ItemUpdate: " + i1.DBID +" -> " + i2.DBID);
+                                }, 500);
+
+                            }
+                            else
+                            {
+                                Database.Log.Log_Server("Adatbázis mentési hiba. (ITEM-DB-ID: " + i1.DBID + ")");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Database.Log.Log_Server("Hibás ItemValue! DBID:" + i1.DBID);
+                        }
+
+                    }
+
+
+                    if (i2.OwnerType != 0)//nem játékosnál van, tehát container-hez adjuk
+                    {
+                        try
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.TriggerEvent("client:RemoveItem", i2.DBID);
+                                string json = NAPI.Util.ToJson(i2);
+                                player.TriggerEvent("client:AddItemToContainer", json);
+                            }, 50);
+                            if (await UpdateItem(i2))
+                            {
+                                NAPI.Task.Run(() =>
+                                {
+                                    //player.SendChatMessage("ItemUpdate: " + i1.DBID +" -> " + i2.DBID);
+                                }, 500);
+
+                            }
+                            else
+                            {
+                                Database.Log.Log_Server("Adatbázis mentési hiba. (ITEM-DB-ID: " + i2.DBID + ")");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Database.Log.Log_Server("Hibás ItemValue! DBID:" + i2.DBID);
+                        }
+                    }
+                    else//játékosnál van
+                    {
+                        try
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.TriggerEvent("client:RemoveItem", i2.DBID);
+                                string json = NAPI.Util.ToJson(i2);
+                                player.TriggerEvent("client:AddItemToInventory", json);
+                            }, 50);
+                            if (await UpdateItem(i2))
+                            {
+                                NAPI.Task.Run(() =>
+                                {
+                                    //player.SendChatMessage("ItemUpdate: " + i1.DBID +" -> " + i2.DBID);
+                                }, 500);
+
+                            }
+                            else
+                            {
+                                Database.Log.Log_Server("Adatbázis mentési hiba. (ITEM-DB-ID: " + i2.DBID + ")");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Database.Log.Log_Server("Hibás ItemValue! DBID:" + i2.DBID);
+                        }
+
+                    }
+
+                }
+
+
+
                 /*
                 Item temp = new Item(i1.DBID, i1.OwnerID, i1.OwnerType, i1.ItemID, i1.ItemValue, i1.ItemAmount, i1.InUse,i1.Duty, i1.Priority);
                 player.TriggerEvent("client:RemoveItem", i1.DBID);
@@ -377,12 +734,13 @@ namespace Server.Inventory
                     //player.TriggerEvent("client:AddItemToInventory", json2);
                 */
                 }
+            OrderInventory(player);
         }
         
 
         public Item GetItemInUse(Player player, uint itemID)
         {
-            foreach (var item in Inventories[player])
+            foreach (var item in GetPlayerInventory(player))
             {
                 if (item.ItemID == itemID && item.InUse)
                 {
@@ -928,7 +1286,7 @@ namespace Server.Inventory
                 }
 
             }
-
+            OrderInventory(player);
         }
 
         public async void ItemValueToClothingSwap(Player player, Item i1, Item i2, int clothing_id)
@@ -1086,7 +1444,7 @@ namespace Server.Inventory
 
         public static Item GetClothingOnSlot(Player player, uint itemid)
         {
-            foreach (var item in Inventories[player])
+            foreach (var item in GetPlayerInventory(player))
             {
                 if (item.ItemID == itemid && item.InUse == true)
                 {
@@ -1096,10 +1454,6 @@ namespace Server.Inventory
             return null;
         }
 
-        public List<Item> GetInventory(Player player)
-        {
-            return Inventories[player];
-        }
 
 
 

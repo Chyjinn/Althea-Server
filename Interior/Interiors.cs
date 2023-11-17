@@ -54,7 +54,7 @@ namespace Server.Interior
     }
     internal class Interiors : Script
     {
-        public List<Interior> interiors = new List<Interior>();
+        static List<Interior> interiors = new List<Interior>();
 
        
         public Interior GetInteriorByExit(ColShape cp)
@@ -83,8 +83,7 @@ namespace Server.Interior
         }
         //CHAR: -811.68, 175.2, 76.74, 0, 0, 109.73
         //CAM: -813.95, 174.2, 76.78, 0, 0, -69
-        [ServerEvent(Event.ResourceStart)]
-        public async void InitiateLoading()
+        public async static void InitiateInteriors()
         {
             DateTime timestamp1 = DateTime.Now;
 
@@ -97,42 +96,35 @@ namespace Server.Interior
             NAPI.Util.ConsoleOutput("Interiorok betöltve " + LoadTime.Milliseconds + " ms alatt.");
         }
 
-        public async Task LoadInteriors()
+        public async static Task LoadInteriors()
         {
             string query = $"SELECT * FROM `interiors`";
             using (MySqlConnection con = new MySqlConnection())
             {
-                try
-                {
-                    con.ConnectionString = await Database.DBCon.GetConString();
-                    await con.OpenAsync();
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
 
-                    using (MySqlCommand cmd = new MySqlCommand(query, con))
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Prepare();
+                    try
                     {
-                        try
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            using (var reader = await cmd.ExecuteReaderAsync())
+                            while (await reader.ReadAsync())
                             {
-                                while (await reader.ReadAsync())
-                                {
-                                    Interior i = new Interior(Convert.ToUInt32(reader["id"]), reader["name"].ToString(), Convert.ToUInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]), new Vector3(Convert.ToSingle(reader["entranceX"]), Convert.ToSingle(reader["entranceY"]), Convert.ToSingle(reader["entranceZ"])), new Vector3(0f, 0f, Convert.ToSingle(reader["entranceHeading"])), Convert.ToUInt32(reader["entranceDimension"]), new Vector3(Convert.ToSingle(reader["exitX"]), Convert.ToSingle(reader["exitY"]), Convert.ToSingle(reader["exitZ"])), new Vector3(0f, 0f, Convert.ToSingle(reader["exitHeading"])), Convert.ToUInt32(reader["exitDimension"]), reader["ipl"].ToString());
-                                    i.OwnerName = "Nigga bigga";
-                                    interiors.Add(i);
-                                }
+                                Interior i = new Interior(Convert.ToUInt32(reader["id"]), reader["name"].ToString(), Convert.ToUInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]), new Vector3(Convert.ToSingle(reader["entranceX"]), Convert.ToSingle(reader["entranceY"]), Convert.ToSingle(reader["entranceZ"])), new Vector3(0f, 0f, Convert.ToSingle(reader["entranceHeading"])), Convert.ToUInt32(reader["entranceDimension"]), new Vector3(Convert.ToSingle(reader["exitX"]), Convert.ToSingle(reader["exitY"]), Convert.ToSingle(reader["exitZ"])), new Vector3(0f, 0f, Convert.ToSingle(reader["exitHeading"])), Convert.ToUInt32(reader["exitDimension"]), reader["ipl"].ToString());
+                                i.OwnerName = "Nigga bigga";
+                                interiors.Add(i);
                             }
                         }
-                        catch (Exception ex)
-                        {
-                            Database.Log.Log_Server(ex.ToString());
-                        }
                     }
-                    await con.CloseAsync();
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
                 }
-                catch (Exception ex)
-                {
-                    Database.Log.Log_Server(ex.ToString());
-                }
-
+                await con.CloseAsync();
             }
         }
 

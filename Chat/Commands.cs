@@ -23,6 +23,7 @@ namespace Server.Chat
         [ServerEvent(Event.PlayerWeaponSwitch)]
         public void PlayerWeaponSwitch(Player player, WeaponHash oldWeapon, WeaponHash newWeapon)
         {
+            /*
             if (oldWeapon == WeaponHash.Unarmed)
             {
                 ChatEmoteME(player, "elővesz egy fegyvert.");
@@ -35,7 +36,7 @@ namespace Server.Chat
             {
                 ChatEmoteME(player, $"lecseréli "+ oldWeapon.ToString() + " fegyverét egy "+ newWeapon.ToString() + "-ra.");
             }    
-            
+            */
         }
 
 
@@ -51,7 +52,7 @@ namespace Server.Chat
 
         //c2a2da
         [Command("me", "HASZNÁLAT: /me [cselekvés]", GreedyArg = true)]
-        public void ChatEmoteME(Player player, string message)
+        public static void ChatEmoteME(Player player, string message)
         {
             var nearbyPlayers = NAPI.Player.GetPlayersInRadiusOfPlayer(5.0, player);
             foreach(Player item in nearbyPlayers)

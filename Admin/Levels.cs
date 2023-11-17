@@ -1,5 +1,6 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
+using Server.Inventory;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -32,7 +33,7 @@ namespace Server.Admin
 
         }
 
-        public static async Task LoadAdminCommands()
+        public async static Task LoadAdminCommands()
         {
             string query = $"SELECT command, adminLevel FROM `acmds`";
             using (MySqlConnection con = new MySqlConnection())
@@ -42,6 +43,7 @@ namespace Server.Admin
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
+                    cmd.Prepare();
                     try
                     {
                         using (var reader = await cmd.ExecuteReaderAsync())
@@ -52,7 +54,6 @@ namespace Server.Admin
                                 int level = Convert.ToInt32(reader["adminLevel"]);
                                 acmds.Add(command, level);
                             }
-
                         }
                     }
                     catch (Exception ex)
@@ -60,6 +61,7 @@ namespace Server.Admin
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
+                await con.CloseAsync();
             }
         }
 

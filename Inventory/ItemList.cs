@@ -1,6 +1,7 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Utilities;
+using Server.Interior;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,8 +14,7 @@ namespace Server.Inventory
         static List<Entry> itemList = new List<Entry>();
 
         //betöltjük adatbázisból az itemlistát
-        [ServerEvent(Event.ResourceStart)]
-        public async void InitiateLoading()
+        public async static void InitiateItemList()
         {
 
             DateTime timestamp1 = DateTime.Now;
@@ -55,8 +55,7 @@ namespace Server.Inventory
 
         }
 
-
-        public static async Task LoadItemList()
+        public async static Task LoadItemList()
         {
             string query = $"SELECT * FROM `itemlist`";
             using (MySqlConnection con = new MySqlConnection())
@@ -66,6 +65,7 @@ namespace Server.Inventory
 
                 using (MySqlCommand cmd = new MySqlCommand(query, con))
                 {
+                    cmd.Prepare();
                     try
                     {
                         using (var reader = await cmd.ExecuteReaderAsync())

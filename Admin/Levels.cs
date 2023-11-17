@@ -2,6 +2,7 @@
 using MySql.Data.MySqlClient;
 using Server.Inventory;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ namespace Server.Admin
     internal class Levels
     {
 
-        static Dictionary<string, int> acmds = new Dictionary<string, int>();
+        static ConcurrentDictionary<string, int> acmds = new ConcurrentDictionary<string, int>();
         /*{
             {"setdimension", 1},
             {"fly", 1},
@@ -33,36 +34,39 @@ namespace Server.Admin
 
         }
 
-        public async static Task LoadAdminCommands()
+        public async static Task<bool> LoadAdminCommands()
         {
             string query = $"SELECT command, adminLevel FROM `acmds`";
-            using (MySqlConnection con = new MySqlConnection())
+            using (MySqlConnection con = new MySqlConnection(await Database.DBCon.GetConString()))
             {
-                con.ConnectionString = await Database.DBCon.GetConString();
-                await con.OpenAsync();
-
-                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                try
                 {
-                    cmd.Prepare();
-                    try
+                    con.Open();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
                     {
+                        cmd.Prepare();
+
                         using (var reader = await cmd.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
                             {
                                 string command = Convert.ToString(reader["command"]);
                                 int level = Convert.ToInt32(reader["adminLevel"]);
-                                acmds.Add(command, level);
+                                acmds.TryAdd(command, level);
                             }
+
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Database.Log.Log_Server(ex.ToString());
-                    }
                 }
-                await con.CloseAsync();
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+
+                con.Close();
             }
+            return true;
         }
 
 

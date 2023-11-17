@@ -5,6 +5,7 @@ using System.Security.Policy;
 using System.Threading.Tasks;
 using GTANetworkAPI;
 using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace Server.Inventory
 {
@@ -45,10 +46,10 @@ namespace Server.Inventory
             Inventories[new Tuple<int, uint>(OwnerType, OwnerID)] = items.ToList();
         }
 
-        public static void SetPlayerInventory(Player player, Item[] items)
+        public static void SetPlayerInventory(Player player, List<Item> items)
         {
             uint charid = player.GetData<UInt32>("player:charID");
-            Inventories[new Tuple<int, uint>(0, charid)] = items.ToList();
+            Inventories[new Tuple<int, uint>(0, charid)] = items;
         }
 
         public static List<Item> GetPlayerInventory(Player player)
@@ -161,6 +162,7 @@ namespace Server.Inventory
         {
             Item[] playerItems = await GetPlayerInventory(charid);
             SetInventory(0, charid, playerItems);
+            await SortPlayerInventory(player);
             Inventory.ItemList.SendItemListToPlayer(player);
             SendInventoryToPlayer(player, playerItems);
         }
@@ -217,10 +219,10 @@ namespace Server.Inventory
             }
         }
 
-        public async Task<bool> UpdateItem(Item item)
+        public async static Task<bool> UpdateItem(Item item)
         {
             bool state = false;
-            string query = $"UPDATE `items` SET `ownerID` = @OwnerID, `ownerType` = @OwnerType, `itemAmount` = @ItemAmount, `inUse` = @InUse  WHERE `items`.`DbID` = @DBID;";
+            string query = $"UPDATE `items` SET `ownerID` = @OwnerID, `ownerType` = @OwnerType, `itemAmount` = @ItemAmount, `inUse` = @InUse, `priority` = @Priority  WHERE `items`.`DbID` = @DBID;";
             //string query2 = $"UPDATE `characters` SET `characterName` = @CharacterName, `dob` = @DOB, `pob` = @POB WHERE `appearanceId` = @AppearanceID";
             using (MySqlConnection con = new MySqlConnection())
             {
@@ -234,6 +236,7 @@ namespace Server.Inventory
                     command.Parameters.AddWithValue("@OwnerType", item.OwnerType);
                     command.Parameters.AddWithValue("@ItemAmount", item.ItemAmount);
                     command.Parameters.AddWithValue("@InUse", item.InUse);
+                    command.Parameters.AddWithValue("@Priority", item.Priority);
                     command.Prepare();
                     try
                     {
@@ -451,10 +454,6 @@ namespace Server.Inventory
 
             }
 
-
-
-            
-
         }
         
         private async Task<bool> SortInventory(int ownertype, uint ownerid)//sorba rendezzük prioritás alapján az itemeket és új számokat adunk nekik növekvő sorrendben
@@ -469,26 +468,32 @@ namespace Server.Inventory
             return true;
         }
 
-        private async Task<bool> SortPlayerInventory(Player player)//sorba rendezzük prioritás alapján az itemeket és új számokat adunk nekik növekvő sorrendben
+        private async static Task<bool> SortPlayerInventory(Player player)//sorba rendezzük prioritás alapján az itemeket és új számokat adunk nekik növekvő sorrendben
         {
             List<Item> items = GetPlayerInventory(player);
             List<Item> ordered = items.OrderBy(o => o.Priority).ToList();
             for (int i = 0; i < ordered.Count; i++)
             {
                 ordered[i].Priority = i;
+                if (await UpdateItem(ordered[i]))
+                {
+                    NAPI.Task.Run(() =>
+                    {
+                        player.SendChatMessage(ordered[i].DBID + " rendezve.");
+                    }, 500);
+                }
             }
-            SetPlayerInventory(player, ordered.ToArray());
+            SetPlayerInventory(player, ordered);
             return true;
         }
 
 
         private async void OrderInventory(Player player)
         {
-            return;
             uint charid = player.GetData<UInt32>("player:charID");
             if (await SortPlayerInventory(player))//megvárjuk amíg elrendezte az inventoryt a playernek
             {
-                RefreshInventory(player, charid);
+                //RefreshInventory(player, charid);
                 //leküldjük az itemeket sorrendjét egy listában amit majd kliens kibont -> átálligatja a priority-t és elrendezi
                 /*Dictionary<uint, uint> priorities = new Dictionary<uint, uint>();
                 List<Item> items = GetPlayerInventory(player);
@@ -639,17 +644,16 @@ namespace Server.Inventory
                                 string json = NAPI.Util.ToJson(i1);
                                 player.TriggerEvent("client:AddItemToInventory", json);
                             }, 50);
-                            if (await UpdateItem(i1))
+                            if (await UpdateItem(i1) && await UpdateItem(i2))
                             {
                                 NAPI.Task.Run(() =>
                                 {
                                     //player.SendChatMessage("ItemUpdate: " + i1.DBID +" -> " + i2.DBID);
                                 }, 500);
-
                             }
                             else
                             {
-                                Database.Log.Log_Server("Adatbázis mentési hiba. (ITEM-DB-ID: " + i1.DBID + ")");
+                                Database.Log.Log_Server("Adatbázis mentési hiba. (ITEM-DB-ID: " + i1.DBID + " & " + i2.DBID + ")");
                             }
                         }
                         catch (Exception ex)
@@ -734,7 +738,6 @@ namespace Server.Inventory
                     //player.TriggerEvent("client:AddItemToInventory", json2);
                 */
                 }
-            OrderInventory(player);
         }
         
 

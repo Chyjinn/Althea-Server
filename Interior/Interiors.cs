@@ -3,6 +3,7 @@ using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Asn1.X509;
 using Server.Inventory;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -96,19 +97,20 @@ namespace Server.Interior
             NAPI.Util.ConsoleOutput("Interiorok betöltve " + LoadTime.Milliseconds + " ms alatt.");
         }
 
-        public async static Task LoadInteriors()
+        public async static Task<bool> LoadInteriors()
         {
             string query = $"SELECT * FROM `interiors`";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = await Database.DBCon.GetConString();
-                await con.OpenAsync();
-
-                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                try
                 {
-                    cmd.Prepare();
-                    try
+                    con.ConnectionString = await Database.DBCon.GetConString();
+                    await con.OpenAsync();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
                     {
+                        cmd.Prepare();
+
                         using (var reader = await cmd.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
@@ -117,15 +119,19 @@ namespace Server.Interior
                                 i.OwnerName = "Nigga bigga";
                                 interiors.Add(i);
                             }
+
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Database.Log.Log_Server(ex.ToString());
-                    }
                 }
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+
                 await con.CloseAsync();
+
             }
+            return true;
         }
 
         [ServerEvent(Event.PlayerEnterColshape)]

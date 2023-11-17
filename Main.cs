@@ -29,7 +29,7 @@ namespace Server
             {
                 Admin.Levels.LoadAcmds();
                 Inventory.ItemList.InitiateItemList();
-                Interior.Interiors.InitiateInteriors();
+                //Interior.Interiors.InitiateInteriors();
             },10000);
             //SetServerTime();
         }

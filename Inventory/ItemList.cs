@@ -3,6 +3,7 @@ using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Utilities;
 using Server.Interior;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -55,19 +56,20 @@ namespace Server.Inventory
 
         }
 
-        public async static Task LoadItemList()
+        public async static Task<bool> LoadItemList()
         {
             string query = $"SELECT * FROM `itemlist`";
             using (MySqlConnection con = new MySqlConnection())
             {
-                con.ConnectionString = await Database.DBCon.GetConString();
-                await con.OpenAsync();
-
-                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                try
                 {
-                    cmd.Prepare();
-                    try
+                    con.ConnectionString = await Database.DBCon.GetConString();
+                    con.Open();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
                     {
+                        cmd.Prepare();
+
                         using (var reader = await cmd.ExecuteReaderAsync())
                         {
                             while (await reader.ReadAsync())
@@ -75,15 +77,19 @@ namespace Server.Inventory
                                 Entry entry = new Entry(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), Convert.ToInt32(reader["itemType"]), Convert.ToUInt32(reader["itemWeight"]), Convert.ToString(reader["itemImage"]), Convert.ToBoolean(reader["stackable"]));
                                 itemList.Add(entry);
                             }
+
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Database.Log.Log_Server(ex.ToString());
-                    }
                 }
-                await con.CloseAsync();
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+
+                con.Close();
+
             }
+            return true;
         }
 
         [RemoteEvent("server:RefreshItemList")]

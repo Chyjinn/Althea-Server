@@ -16,7 +16,6 @@ namespace Server.Inventory
         public bool InUse { get; set; }
         public bool Duty { get; set; }
         public int Priority { get; set; }
-        public byte Container { get; set; }
         public Item(uint dbid, uint ownerid, int ownertype, uint itemid, string itemvalue, int itemamount, bool inuse, bool duty, int priority)
         {
             DBID = dbid;
@@ -28,16 +27,6 @@ namespace Server.Inventory
             Duty = duty;
             Priority = priority;
             InUse = inuse;
-            Container = 0;
-            SetContainer();
-        }
-
-
-
-        public void SetContainer()
-        {
-            //itt kell beállítani, ha van neki tárhelye
-
         }
     }
 

@@ -23,7 +23,7 @@ namespace Server
             
             NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
-            NAPI.Server.SetGlobalServerChat(true);
+            //NAPI.Server.SetGlobalServerChat(true);
             //AutosavePlayers();
             NAPI.Task.Run(() =>
             {

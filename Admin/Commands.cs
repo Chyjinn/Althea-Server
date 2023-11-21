@@ -406,6 +406,7 @@ namespace Server.Admin
             if (target != null)
             {
                 player.Position = target.Position;
+                player.Dimension = target.Dimension;
                 player.SendChatMessage("Goto");
             }
         }

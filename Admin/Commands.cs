@@ -531,7 +531,11 @@ namespace Server.Admin
         {
             player.TriggerEvent("client:RadarGun", state);
         }
-
+        [Command("speedcam")]
+        public void SpeedCam(Player player, bool state)
+        {
+            player.TriggerEvent("client:SpeedCam", state);
+        }
 
         [Command("fly", Alias ="freecam")]
         public void ToggleFly(Player player)

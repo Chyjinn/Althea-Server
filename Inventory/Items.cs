@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Security.Policy;
 using System.Threading.Tasks;
@@ -630,6 +631,8 @@ namespace Server.Inventory
             new Container(11,82,15f)
         };
 
+        static Dictionary<Tuple<int, uint>, bool> OpenedInventories = new Dictionary<Tuple<int, uint>, bool>();
+
         static Dictionary<Tuple<int, uint>, List<Item>> Inventories = new Dictionary<Tuple<int, uint>, List<Item>>();
         //OWNERTYPE-ok:
         /*
@@ -648,6 +651,30 @@ namespace Server.Inventory
         ha itemid megfelel akkor esetleg itemvalue-t -> jó drawable? pl táskánál
 
         */
+
+        public static bool IsInventoryInUse(int OwnerType, uint OwnerID)
+        {
+            if(OpenedInventories.ContainsKey(new Tuple<int, uint>(OwnerType, OwnerID)))
+                {
+                if (OpenedInventories[new Tuple<int, uint>(OwnerType, OwnerID)] == true)//használatban van az adott inventory
+                {
+                    return true;
+                }
+                else//nincs használatban
+                {
+                    return false;
+                }
+            }
+            else//nincs benne a kulcs szóval nincs megnyitva
+            {
+                return false;
+            }
+        }
+
+        public static void SetInventoryInUse(int OwnerType, uint OwnerID, bool state)
+        {
+            OpenedInventories[new Tuple<int, uint>(OwnerType, OwnerID)] = state;
+        }
 
         public static List<Item> GetInventory(int OwnerType, uint OwnerID)
         {
@@ -901,48 +928,65 @@ namespace Server.Inventory
 
                 if (vehid > 0)
                 {
-                    Chat.Commands.ChatEmoteME(player, "belenéz egy jármű csomagtartójába. ((" + vehid + "))");
-                    if (IsInventoryLoaded(2, vehid))//be van töltve, vissza tudjuk adni neki
+                    if (!IsInventoryInUse(2, vehid))//más nem használja a tárolót
                     {
-                        SendContainerToPlayer(player, 2, vehid, GetInventory(2, vehid).ToArray());
+                        Chat.Commands.ChatEmoteME(player, "belenéz egy jármű csomagtartójába. ((" + vehid + "))");
+                        if (IsInventoryLoaded(2, vehid))//be van töltve, vissza tudjuk adni neki
+                        {
+                            SendContainerToPlayer(player, 2, vehid, GetInventory(2, vehid).ToArray());
+                        }
+                        else//nincs betöltve a tároló, be kell tölteni és utána visszaadni
+                        {
+                            RefreshVehicleTrunk(player, vehid);
+                        }
                     }
-                    else//nincs betöltve a tároló, be kell tölteni és utána visszaadni
+                    else
                     {
-                        RefreshVehicleTrunk(player, vehid);
+                        player.SendChatMessage("Valaki más már használja ezt a csomagtartót.");
                     }
+
                 }
             }
         }
 
-
         [RemoteEvent("server:ClosedContainer")]
         public void PlayerCloseContainer(Player player)//bezárta a tárolót, tehát bezárjuk szerver oldalon is
         {
+            int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
+            uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+
             player.ResetData("player:OpenedContainerOwnerType");
             player.ResetData("player:OpenedContainerID");
+            SetInventoryInUse(container_ownertype, container_targetid, false);
         }
 
         [RemoteEvent("server:OpenVehicleGloveBox")]
         public void OpenVehicleGloveBox(Player player)
         {
-            Vehicle v = player.Vehicle;
+                Vehicle v = player.Vehicle;
             if (v.HasData("vehicle:ID"))
             {
                 uint vehid = v.GetData<uint>("vehicle:ID");
 
-                if (vehid > 0)
+                if (vehid > 0)//pozitív a jármű id (nem ideiglenes)
                 {
-                    Chat.Commands.ChatEmoteME(player, "belenéz egy jármű kesztyűtartójába. ((" + vehid + "))");
-                    if (IsInventoryLoaded(3, vehid))//be van töltve, vissza tudjuk adni neki
+                    if(!IsInventoryInUse(3, vehid))
                     {
-                        SendContainerToPlayer(player, 3, vehid, GetInventory(3, vehid).ToArray());
+                        Chat.Commands.ChatEmoteME(player, "belenéz egy jármű kesztyűtartójába. ((" + vehid + "))");
+                        if (IsInventoryLoaded(3, vehid))//be van töltve, vissza tudjuk adni neki
+                        {
+                            SendContainerToPlayer(player, 3, vehid, GetInventory(3, vehid).ToArray());
+                        }
+                        else//nincs betöltve a tároló, be kell tölteni és utána visszaadni
+                        {
+                            RefreshVehicleGloveBox(player, vehid);
+                        }
                     }
-                    else//nincs betöltve a tároló, be kell tölteni és utána visszaadni
+                    else
                     {
-                        RefreshVehicleGloveBox(player, vehid);
+                        player.SendChatMessage("Valaki más már használja ezt a kesztyűtartót.");
                     }
                 }
-
             }
         }
 
@@ -988,6 +1032,7 @@ namespace Server.Inventory
             {
                 player.SetData("player:OpenedContainerOwnerType", Convert.ToInt32(ownertype));//beállítjuk hogy tudjuk melyik van megnyitva neki
                 player.SetData("player:OpenedContainerID", Convert.ToUInt32(ownerid));//beállítjuk hogy tudjuk melyik van megnyitva neki
+                SetInventoryInUse(ownertype, ownerid, true);
                 string json = NAPI.Util.ToJson(items);
                 player.TriggerEvent("client:ContainerFromServer", json);
             });
@@ -1012,6 +1057,13 @@ namespace Server.Inventory
 
         public void OpenContainer(Player player, Item containeritem)
         {
+            int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
+            uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+            //bezárjuk ha van megnyitott tároló
+            player.ResetData("player:OpenedContainerOwnerType");
+            player.ResetData("player:OpenedContainerID");
+            SetInventoryInUse(container_ownertype, container_targetid, false);
+
             Chat.Commands.ChatEmoteME(player, "megnyit egy tárolót. ((" + containeritem.DBID + "))");
             if (IsInventoryLoaded(1, containeritem.DBID))//be van töltve, vissza tudjuk adni neki
             {
@@ -1022,12 +1074,37 @@ namespace Server.Inventory
                 RefreshContainer(player, containeritem.DBID);
             }
         }
+
         public void CloseContainer(Player player)
         {
+            int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
+            uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+
+            player.ResetData("player:OpenedContainerOwnerType");
+            player.ResetData("player:OpenedContainerID");
+            SetInventoryInUse(container_ownertype, container_targetid, false);
             player.TriggerEvent("client:CloseContainer");
         }
 
+        [ServerEvent(Event.PlayerDisconnected)]
+        public void PlayerDisconnected(Player player, DisconnectionType type, string reason)
+        {
+            if(player.HasData("player:OpenedContainerOwnerType"))
+            {
+                int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
+                uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
 
+                player.ResetData("player:OpenedContainerOwnerType");
+                player.ResetData("player:OpenedContainerID");
+                SetInventoryInUse(container_ownertype, container_targetid, false);
+            }
+        }
+
+        [RemoteEvent("server:GiveItemToPlayer")]
+        public async void GiveItemToPlayer(Player player, uint item_dbid)
+        {
+            //le kell ellenőrizni, hogy az item a játékosnál van-e, vagy a megnyitott tárolójában. HA egyikben sem akkor baj van
+        }
 
 
 
@@ -1059,13 +1136,15 @@ namespace Server.Inventory
                             uint target_owner_id = player.GetData<uint>("player:OpenedContainerID");
                             if (target_owner_type == 1 && target_owner_id == item_dbid)//már meg van nyitva a tároló, be akarja zárni
                             {
-                                player.ResetData("player:OpenedContainerOwnerType");
-                                player.ResetData("player:OpenedContainerID");
                                 CloseContainer(player);
+                            }
+                            else if (!IsInventoryInUse(1, item_dbid))//nincs használatban a tároló
+                            {
+                                OpenContainer(player, i);
                             }
                             else
                             {
-                                OpenContainer(player, i);
+                                player.SendChatMessage("Valaki más már használja ezt a tárolót.");
                             }
                         }
                     }
@@ -1075,16 +1154,17 @@ namespace Server.Inventory
                         uint target_owner_id = player.GetData<uint>("player:OpenedContainerID");
                         if (target_owner_type == 1 && target_owner_id == item_dbid)//már meg van nyitva a tároló, be akarja zárni
                         {
-                            player.ResetData("player:OpenedContainerOwnerType");
-                            player.ResetData("player:OpenedContainerID");
                             CloseContainer(player);
                         }
-                        else
+                        else if (!IsInventoryInUse(1, item_dbid))//nincs használatban a tároló
                         {
                             OpenContainer(player, i);
                         }
+                        else
+                        {
+                            player.SendChatMessage("Valaki más már használja ezt a tárolót.");
+                        }
                     }
-
                 }
                 else if(i.ItemID <= 14)//nem tároló de ruha, ha rajta van le akarjuk venni, ha nincs akkor fel
                 {
@@ -1111,8 +1191,20 @@ namespace Server.Inventory
                             break;
                     }
                 }
+            }
+            else
+            {
+                Item i2 = await GetItemByDbId(item_dbid);
+                int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
+                uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                if (i2.OwnerType == container_ownertype && i2.OwnerID == container_targetid)//megegyezik a megnyitott tárolóval, nincs baj
+                {
 
-
+                }
+                else
+                {
+                    Database.Log.Log_Server("ITEM HIBA! Játékos megpróbált egy tárgyat használni de az nem elérhető számára. " + player.Name + " (DBID: " + item_dbid + ")");
+                }
             }
         }
 
@@ -1188,19 +1280,20 @@ namespace Server.Inventory
                 priorities[ordered[i].DBID] = i;
                 try
                 {
-                    UpdateItem(ordered[i]);
-                    
+                    if (!await UpdateItem(ordered[i]))
+                    {
+                        player.SendChatMessage("ADATBÁZIS MENTÉSI HIBA! DBID: " + ordered[i].DBID);
+                    }
                 }
                 catch (Exception ex)
                 {
                     Database.Log.Log_Server("Adatbázis hiba! Item DBID: " + ordered[i].DBID);
                 }
-
             }
             NAPI.Task.Run(() =>
             {
                 player.TriggerEvent("client:GetItemPriorities", NAPI.Util.ToJson(priorities));
-            }, 500);
+            });
             
             return true;
         }
@@ -1247,16 +1340,16 @@ namespace Server.Inventory
                 uint charid = player.GetData<UInt32>("player:charID");
                 int originalowner = i1.OwnerType;
                 uint originalownerid = i1.OwnerID;
+
                 i1.OwnerType = 0;
                 i1.OwnerID = charid;
-
 
                 NAPI.Task.Run(() =>
                 {
                     if (originalowner != 0)//nem játékostól jön az item (pl. inventoryban mozgatom akkor ownertype = 0
                     {
                         string tarolo = "tárolóból.";
-                        switch (originalownerid)
+                        switch (originalowner)
                         {
                             case 1:
                                 tarolo = "tárolóból";
@@ -1270,11 +1363,16 @@ namespace Server.Inventory
                             default:
                                 break;
                         }
-                        Chat.Commands.ChatEmoteME(player, "kivesz " + i1.ItemAmount + " db " + ItemList.GetItemName(i1.ItemID) + " tárgyat a " + tarolo + " ((" + i1.OwnerID + ")) ");
+                        Chat.Commands.ChatEmoteME(player, "kivesz " + i1.ItemAmount + " db " + ItemList.GetItemName(i1.ItemID) + " tárgyat a " + tarolo + " ((" + originalownerid + ")) ");
                     }
 
                     //player.TriggerEvent("client:RemoveItem", i1.DBID);
                 });
+
+
+
+
+
 
                 if (i1.InUse && i1.ItemID <= 14)//használatban van (viseli) + ruha itemid-nek megfelel -> le kell venni róla
                 {
@@ -1288,7 +1386,28 @@ namespace Server.Inventory
 
                         if (slot.Item1)//ruha
                         {
-                            if (clothing.Length == 2)//sima ruha
+                            if (clothing.Length == 1)//kesztyű
+                            {
+                                NAPI.Task.Run(() =>
+                                {
+                                    //player.TriggerEvent("client:RemoveItem", i1.DBID);
+                                    //beállítjuk a rajta lévő pólót mivel levette a kesztyűt, csak a torso-t akarjuk az alap értékre állítani
+                                    Item Polo = GetClothingOnSlot(player, 5);
+                                    if (Polo != null)//ha van rajta póló
+                                    {
+                                        Top t = NAPI.Util.FromJson<Top>(Polo.ItemValue);
+                                        player.SetClothes(slot.Item2, t.Torso, 0);
+                                    }
+                                    else//nincs rajta póló, átrakjuk az alap torso-ra
+                                    {
+                                        player.SetClothes(slot.Item2, clothing[0], 0);//átrakjuk a torso-ját az alap torso-ra
+                                    }
+                                    player.TriggerEvent("client:RefreshInventoryPreview");
+                                    string json = NAPI.Util.ToJson(i1);
+                                    player.TriggerEvent("client:AddItemToInventory", json);
+                                });
+                        }
+                            else if (clothing.Length == 2)//sima ruha
                             {
                                 NAPI.Task.Run(() =>
                                 {
@@ -1470,9 +1589,10 @@ namespace Server.Inventory
                     uint ownerid1 = i1.OwnerID;
                     uint ownerid2 = i2.OwnerID;
 
-                    int prio = i1.Priority;
-                    i1.Priority = i2.Priority;
-                    i2.Priority = prio;
+                    int prio1 = i1.Priority;
+                    int prio2 = i2.Priority;
+                    i1.Priority = prio2;
+                    i2.Priority = prio1;
 
                     i1.OwnerType = ownertype2;
                     i1.OwnerID = ownerid2;
@@ -1482,8 +1602,8 @@ namespace Server.Inventory
 
                     if (i1.OwnerID != i2.OwnerID || i1.OwnerType != i2.OwnerType)//nem egy inventoryn belül mozgatjuk
                     {
-                        AddItemToInventory(player, i1.OwnerType, i1.OwnerID, i1);
-                        AddItemToInventory(player, i2.OwnerType, i2.OwnerID, i2);
+                        AddItemToInventory(player, ownertype1, ownerid1, i2);
+                        AddItemToInventory(player, ownertype2, ownerid2, i1);
                     }
                         if (i1.OwnerType != 0)//nem játékosnál van, tehát container-hez adjuk
                         {
@@ -1587,7 +1707,7 @@ namespace Server.Inventory
         [RemoteEvent("server:SetWornClothing")]
         public async void SetWornClothing(Player player)
         {
-            for (uint i = 1; i <= 12; i++)
+            for (uint i = 1; i <= 14; i++)
             {
                 Tuple<bool, int> slot = GetClothingSlotFromItemId(i);
                 int clothing_id = slot.Item2;
@@ -1665,7 +1785,43 @@ namespace Server.Inventory
                         case 12:
                             ItemValueToClothing(player, worn, clothing_id);
                             break;
+                        case 13:
+                                worn.InUse = true;
+                                NAPI.Task.Run(() =>
+                                {
+                                    bool gender = player.GetData<bool>("player:gender");
 
+                                    //player.TriggerEvent("client:RemoveItem", i.DBID);
+                                    Item Top = GetClothingOnSlot(player, 5);//lekérjük a pólóját
+                                    Top t;
+                                    if (Top != null)//van rajta póló
+                                    {
+                                        t = NAPI.Util.FromJson<Top>(Top.ItemValue);//itemvalue 0-10 közötti érték, melyik kesztyű
+                                    }
+                                    else
+                                    {
+                                        int[] slots = GetDefaultClothes(gender, 5);
+                                        t = new Top(slots[0], slots[1], slots[3], slots[4], slots[2]);//beállítjuk az alapértékekre a felsőjét
+                                    }
+
+                                    int gloves = Convert.ToInt32(worn.ItemValue);
+                                    int correctTorso = Gloves.GetCorrectTorsoForGloves(gender, t.Torso, gloves);
+                                    if (correctTorso != -1)//ha kompatibilis kesztyű van hozzá
+                                    {
+                                        player.SetClothes(3, correctTorso, 0);
+                                    }
+                                    else
+                                    {
+                                        player.SetClothes(3, t.Torso, 0);
+                                    }
+                                    string json = NAPI.Util.ToJson(worn);
+                                    player.TriggerEvent("client:AddItemToClothing", json);
+                                    player.TriggerEvent("client:RefreshInventoryPreview");
+                                });
+                            break;
+                        case 14:
+                            ItemValueToClothing(player, worn, clothing_id);
+                            break;
                         default:
                             break;
                     }
@@ -1718,7 +1874,7 @@ namespace Server.Inventory
                         res = new int[2] { 0, 0 };
                         break;
                     case 13://kesztyű
-                        res = new int[2] { 0, 0 };
+                        res = new int[1] { 15 };
                         break;
                     case 14://decal
                         res = new int[2] { 0, 0 };
@@ -1766,7 +1922,7 @@ namespace Server.Inventory
                         res = new int[2] { 0, 0 };
                         break;
                     case 13://kesztyű
-                        res = new int[2] { 0, 0 };
+                        res = new int[1] { 15 };
                         break;
                     case 14://decal
                         res = new int[2] { 0, 0 };
@@ -1817,10 +1973,10 @@ namespace Server.Inventory
                 case 12://páncél
                     res = Tuple.Create(true, 9);
                     break;
-                case 13:
+                case 13://kesztyű
                     res = Tuple.Create(true, 3);
                     break;
-                case 14:
+                case 14://kitűző
                     res = Tuple.Create(true, 10);
                     break;
                 default:
@@ -1949,7 +2105,6 @@ namespace Server.Inventory
                                             bool gender = player.GetData<bool>("player:gender");
                                             int glovetorso = Convert.ToInt32(GloveItem.ItemValue);//0-10, melyik kesztyű
                                             int correctTorso = Gloves.GetCorrectTorsoForGloves(gender, t.Torso, glovetorso);
-                                            player.SendChatMessage("GENDER: " + gender + " TORSO: " + t.Torso + " MELYIKET SZERETNÉNK: " + glovetorso + " RESULT: " + correctTorso);
                                             if (correctTorso != -1)//kaptunk lehetséges kesztyűt
                                             {
                                                 player.SetClothes(3, correctTorso, 0);
@@ -2001,7 +2156,6 @@ namespace Server.Inventory
                                         bool gender = player.GetData<bool>("player:gender");
                                         int glovetorso = Convert.ToInt32(GloveItem.ItemValue);//0-10, melyik kesztyű
                                         int correctTorso = Gloves.GetCorrectTorsoForGloves(gender, t.Torso, glovetorso);
-                                        player.SendChatMessage("GENDER: " + gender + " TORSO: " + t.Torso + " MELYIKET SZERETNÉNK: " + glovetorso + " RESULT: " + correctTorso);
                                         if (correctTorso != -1)//kaptunk lehetséges kesztyűt
                                         {
                                             player.SetClothes(3, correctTorso, 0);
@@ -2011,7 +2165,6 @@ namespace Server.Inventory
                                             player.SetClothes(3, t.Torso, 0);
                                             player.SendChatMessage("A kesztyűd nem kompatibilits ezzel a TORSO-val.");
                                         }
-
                                     }
                                     else
                                     {
@@ -2051,7 +2204,6 @@ namespace Server.Inventory
                     }
                     else if ((i.ItemID == 7 && target_slot == 3) || (i.ItemID == 7 && target_slot == -1))//nadrág
                     {
-                        player.SendChatMessage("nadrág");
                         Item toSwap = GetClothingOnSlot(player, i.ItemID);
                         if (toSwap != null)//megszereztük az itemet ami rajta van, meg akarjuk cserélni. TODO: törölni mind a kettőt és hozzáadni a megfelelő helyekre
                         {
@@ -2178,7 +2330,7 @@ namespace Server.Inventory
                                         else
                                         {
                                             int[] slots = GetDefaultClothes(gender, 5);
-                                            t = new Top(slots[0], slots[1], slots[2], slots[3], slots[4]);//beállítjuk az alapértékekre a felsőjét
+                                            t = new Top(slots[0], slots[1], slots[3], slots[4], slots[2]);//beállítjuk az alapértékekre a felsőjét
                                         }
                                         
                                         int gloves = Convert.ToInt32(i.ItemValue);
@@ -2226,7 +2378,7 @@ namespace Server.Inventory
                                 else
                                 {
                                     int[] slots = GetDefaultClothes(gender, 5);
-                                    t = new Top(slots[0], slots[1], slots[2], slots[3], slots[4]);//beállítjuk az alapértékekre a felsőjét
+                                    t = new Top(slots[0], slots[1], slots[3], slots[4], slots[2]);//beállítjuk az alapértékekre a felsőjét
                                 }
 
                                 int gloves = Convert.ToInt32(i.ItemValue);

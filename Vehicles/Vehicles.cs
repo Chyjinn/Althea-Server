@@ -66,7 +66,6 @@ namespace Server.Vehicles
         public Vehicles()
         {
             CheckVehiclesToDespawn();
-            
         }
         //bejáratok:
 
@@ -144,6 +143,7 @@ namespace Server.Vehicles
                 Vector3 offset = new Vector3(2f, 2f, 0f);
                 vehicles[id].Position = player.Position+offset;
                 vehicles[id].Rotation = player.Rotation;
+                vehicles[id].Dimension = player.Dimension;
                 player.SendChatMessage("Jármű get: " + id);
             }
             else
@@ -241,6 +241,7 @@ namespace Server.Vehicles
             {
                 Vector3 offset = new Vector3(2f, 2f, 0f);
                 player.Position = vehicles[id].Position + offset;
+                player.Dimension = vehicles[id].Dimension;
                 player.SendChatMessage("Jármű goto: " + id);
             }
             else

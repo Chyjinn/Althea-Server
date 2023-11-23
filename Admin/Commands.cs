@@ -643,6 +643,12 @@ namespace Server.Admin
             NAPI.World.SetTime(Convert.ToInt16(hours), Convert.ToInt16(minutes), Convert.ToInt16(seconds));
         }
 
+        [Command("setdof")]
+        public void SetDOF(GTANetworkAPI.Player player, bool state, float near, float far)
+        {
+            player.TriggerEvent("client:SetDOF", state, near, far);
+        }
+
         static float WindDirection = 0f;
         static float WindSpeed = 0f;
 

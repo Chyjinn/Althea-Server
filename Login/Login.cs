@@ -123,7 +123,7 @@ namespace Server.Auth
                                 await Auth.DeleteUsedToken(token);
                                 NAPI.Task.Run(() =>
                                 {
-                                    player.SendChatMessage("Social Club Error");
+                                    Database.Log.Log_Server("SC ERROR");
                                 });
                             }
                         }
@@ -211,7 +211,7 @@ namespace Server.Auth
                         {
                             NAPI.Task.Run(() =>
                             {
-                                player.SendChatMessage("Helytelen jelszó");
+                                Database.Log.Log_Server("HELYTELEN JELSZÓ");
                             });
                             //Helytelen jelszó
                         }
@@ -220,7 +220,7 @@ namespace Server.Auth
                     {
                         NAPI.Task.Run(() =>
                         {
-                            player.SendChatMessage("Social Club Error");
+                            Database.Log.Log_Server("SC ERROR");
                         });
                     }
                 }

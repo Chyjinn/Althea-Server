@@ -59,6 +59,7 @@ namespace Server.Inventory
         public async static Task<bool> LoadItemList()
         {
             string query = $"SELECT * FROM `itemlist`";
+            itemList.Clear();
             using (MySqlConnection con = new MySqlConnection())
             {
                 try

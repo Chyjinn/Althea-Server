@@ -368,6 +368,11 @@ namespace Server.Characters
                 player.SetClothes(8, 2, 0);//undershirt
                 player.SetClothes(11, 15, 0);//felső
             }
+            player.SetAccessories(0, -1, 0);
+            player.SetAccessories(1, -1, 0);
+            player.SetAccessories(2, -1, 0);
+            player.SetAccessories(6, -1, 0);
+            player.SetAccessories(7, -1, 0);
 
             player.SetClothes(2, character.Appearance.HairStyle, 0);
         }
@@ -391,7 +396,7 @@ namespace Server.Characters
 
         public static async Task<Item[]> GetCharacterClothes(uint charid)//felhasználónév alapján adja vissza az adatokat, ha nincs ilyen akkor üres string tömböt
         {
-            string query = $"SELECT * FROM `items` WHERE `ownerType` = 0 AND `ownerID` = @CharacterID AND `itemID` <= 15 AND `inUse` = true";
+            string query = $"SELECT * FROM `items` WHERE `ownerType` = 0 AND `ownerID` = @CharacterID AND `itemID` <= 27 AND `inUse` = true";
             List<Item> items = new List<Item>();
             using (MySqlConnection con = new MySqlConnection())
             {
@@ -432,147 +437,229 @@ namespace Server.Characters
 
         public static async void SetCharacterClothes(Player player, uint charid, bool gender)
         {
-            Item[] items = await GetCharacterClothes(charid);
 
-            for (uint i = 0; i < 12; i++)
+            if (!gender)//nő
             {
-                Tuple<bool, int> slot = Inventory.Items.GetClothingSlotFromItemId(i);
-                int[] clothing = Inventory.Items.GetDefaultClothes(gender, i);
-
-                if (slot.Item1)//ruha
+                for (uint i = 14; i <= 26; i++)
                 {
-                    if (clothing.Length == 2)//sima ruha
+                    Tuple<bool, int> slot = Inventory.Items.GetClothingSlotFromItemId(i);
+                    int[] clothing = Inventory.Items.GetDefaultClothes(i);
+
+                    if (slot.Item1)//ruha
+                    {
+                        if (clothing.Length == 2)//sima ruha
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.SetClothes(slot.Item2, clothing[0], clothing[1]);
+                            });
+                        }
+                        else
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.SetClothes(11, clothing[0], clothing[1]);
+                                player.SetClothes(3, clothing[2], 0);
+                                player.SetClothes(8, clothing[3], clothing[4]);
+                            });
+                        }
+                    }
+                    else//prop
                     {
                         NAPI.Task.Run(() =>
                         {
-                            player.SetClothes(slot.Item2, clothing[0], clothing[1]);
-                        }, 50);
+                            player.SetAccessories(slot.Item2, clothing[0], clothing[1]);
+                        });
+                    }
+                }
+            }
+            else//férfi
+            {
+                for (uint i = 1; i <= 13; i++)
+                {
+                    Tuple<bool, int> slot = Inventory.Items.GetClothingSlotFromItemId(i);
+                    int[] clothing = Inventory.Items.GetDefaultClothes(i);
+                    
+                    if (slot.Item1)//ruha
+                    {
+                        if (clothing.Length == 2)//sima ruha
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.SetClothes(slot.Item2, clothing[0], clothing[1]);
+                            });
 
+                        }
+                        else//prop
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.SetClothes(11, clothing[0], clothing[1]);
+                                player.SetClothes(3, clothing[2], 0);
+                                player.SetClothes(8, clothing[3], clothing[4]);
+                            });
+                        }
                     }
                     else
                     {
                         NAPI.Task.Run(() =>
                         {
-                            player.SetClothes(11, clothing[0], clothing[1]);
-                            player.SetClothes(3, clothing[2], 0);
-                            player.SetClothes(8, clothing[3], clothing[4]);
-                        }, 50);
+                            player.SetAccessories(slot.Item2, clothing[0], clothing[1]);
+                        });
                     }
                 }
             }
 
 
+            Item[] items = await GetCharacterClothes(charid);
             foreach (var item in items)//az összes viselt itemen végigmegyünk
             {
-                SetWornClothing(player, item);
+                SetWornClothing(player, item, gender);
             }
         }
 
-        public async static void ItemValueToAccessory(Player player, Item i, int clothing_id)
+        public async static void SetWornClothing(Player player, Item worn, bool gender)
         {
-            try
+            if (worn != null)
             {
-                NAPI.Task.Run(() =>
+                if (worn.ItemID <= 27)//ruha
                 {
-                    Inventory.Clothing c = NAPI.Util.FromJson<Inventory.Clothing>(i.ItemValue);
-                    player.SetAccessories(clothing_id, c.Drawable, c.Texture);
+                    if (gender)//férfi
+                    {
+                        Tuple<bool, int> slot = Inventory.Items.GetClothingSlotFromItemId(worn.ItemID);
+                        int clothing_id = slot.Item2;
 
-                }, 50);
-            }
-            catch (Exception ex)
-            {
-                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-            }
-        }
+                        if (worn.ItemID == 5)//póló
+                        {
+                            ItemValueToTop(player, worn, clothing_id);
+                        }
+                        else if (slot.Item1)//RUHA
+                        {
+                            ItemValueToClothing(player, worn, clothing_id);
+                        }
+                        else//PROP
+                        {
+                            ItemValueToAccessory(player, worn, clothing_id);
+                        }
+                    }
+                    else//nő
+                    {
+                        Tuple<bool, int> slot = Inventory.Items.GetClothingSlotFromItemId(worn.ItemID);
+                        int clothing_id = slot.Item2;
+                        if (worn.ItemID == 18)//póló
+                        {
+                            ItemValueToTop(player, worn, clothing_id);
+                        }
+                        else if (slot.Item1)//RUHA
+                        {
+                            ItemValueToClothing(player, worn, clothing_id);
+                        }
+                        else//PROP
+                        {
+                            ItemValueToAccessory(player, worn, clothing_id);
+                        }
 
-        public async static void ItemValueToClothing(Player player, Item i, int clothing_id)
-        {
-            try
-            {
-                NAPI.Task.Run(() =>
-                {
-                    Inventory.Clothing c = NAPI.Util.FromJson<Inventory.Clothing>(i.ItemValue);
-                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
 
-                }, 50);
+                    }
+
+                    //KESZTYŰ
+
+                    if (worn.ItemID == 27)
+                    {
+                        Tuple<bool, int> gloveslot = Inventory.Items.GetClothingSlotFromItemId(27);
+                        int glove_id = gloveslot.Item2;
+                        Item top = Inventory.Items.GetClothingOnSlot(player, 5);
+                        if (worn != null)
+                        {
+                            ItemValueToGlove(player, worn, top, glove_id, gender);
+                        }
+                    }
+
+                }
             }
-            catch (Exception ex)
-            {
-                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-            }
+
+
+
         }
 
         public async static void ItemValueToTop(Player player, Item i, int clothing_id)
         {
-            try
+            NAPI.Task.Run(() =>
             {
-                NAPI.Task.Run(() =>
+                //player.TriggerEvent("client:RemoveItem", i.DBID);
+
+                try
                 {
-                    Inventory.Top t = NAPI.Util.FromJson<Inventory.Top>(i.ItemValue);
+                    Top t = NAPI.Util.FromJson<Top>(i.ItemValue);//itemvalue 0-10 közötti érték, melyik kesztyű
+
                     player.SetClothes(clothing_id, t.Drawable, t.Texture);
                     player.SetClothes(8, t.UndershirtDrawable, t.UndershirtTexture);
                     player.SetClothes(3, t.Torso, 0);
+                }
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
+                }
 
-                }, 50);
-            }
-            catch (Exception ex)
-            {
-                Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
-            }
+                //player.TriggerEvent("client:RefreshInventoryPreview");
+            });
+
         }
 
-
-        public async static void SetWornClothing(Player player, Item worn)
+        public async static void ItemValueToGlove(Player player, Item i, Item top, int clothing_id, bool gender)
         {
-            Tuple<bool, int> slot = Inventory.Items.GetClothingSlotFromItemId(worn.ItemID);
-                int clothing_id = slot.Item2;
-
-                if (worn != null)
+                NAPI.Task.Run(() =>
                 {
-                    switch (worn.ItemID)
+                    try
                     {
-                        case 1:
-                            ItemValueToAccessory(player, worn, clothing_id);
-                            break;
-                        case 2:
-                            ItemValueToClothing(player, worn, clothing_id);
-                            break;
-                        case 3:
-                            ItemValueToAccessory(player, worn, clothing_id);
-                            break;
-                        case 4:
-                            ItemValueToAccessory(player, worn, clothing_id);
-                            break;
-                        case 5:
-                            ItemValueToTop(player, worn, clothing_id);
-                            break;
-                        case 6:
-                            ItemValueToAccessory(player, worn, clothing_id);
-                            break;
-                        case 7:
-                            ItemValueToClothing(player, worn, clothing_id);
-                            break;
-                        case 8:
-                            ItemValueToAccessory(player, worn, clothing_id);
-                            break;
-                        case 9:
-                            ItemValueToClothing(player, worn, clothing_id);
-                            break;
-                        case 10:
-                            ItemValueToAccessory(player, worn, clothing_id);
-                            break;
-                        case 11:
-                            ItemValueToClothing(player, worn, clothing_id);
-                            break;
-                        case 12:
-                            ItemValueToClothing(player, worn, clothing_id);
-                            break;
-
-                        default:
-                            break;
+                        Top t = NAPI.Util.FromJson<Top>(top.ItemValue);
+                        int gloves = Convert.ToInt32(i.ItemValue);
+                        int correctTorso = Gloves.GetCorrectTorsoForGloves(gender, t.Torso, gloves);
+                        if (correctTorso != -1)//ha kompatibilis kesztyű van hozzá
+                        {
+                            player.SetClothes(clothing_id, correctTorso, 0);
+                        }
                     }
-                
-            }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
+                    }
+                });
+   
+
+        }
+
+        public async static void ItemValueToAccessory(Player player, Item i, int clothing_id)
+        {
+                NAPI.Task.Run(() =>
+                {
+                    try
+                    {
+                        Inventory.Clothing c = NAPI.Util.FromJson<Inventory.Clothing>(i.ItemValue);
+                        player.SetAccessories(clothing_id, c.Drawable, c.Texture);
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
+                    }
+                });
+
+        }
+
+        public async static void ItemValueToClothing(Player player, Item i, int clothing_id)
+        {
+                NAPI.Task.Run(() =>
+                {
+                    try
+                    {
+                    Inventory.Clothing c = NAPI.Util.FromJson<Inventory.Clothing>(i.ItemValue);
+                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server("Hibás ItemValue! DBID:" + i.DBID);
+                    }
+                });
         }
 
     }

@@ -120,7 +120,7 @@ namespace Server.Vehicles
                     v.SetData("vehicle:ID", id);
                     vehicles[Convert.ToInt32(id)] = v;
                     player.SendChatMessage("Jármű létrehozva: " + model.ToLower() + " (" + id + ")");
-                    Inventory.Items.GiveItem(player, player.Id, 15, id.ToString(), 1);
+                    //Inventory.Items.GiveItem(player, player.Id, 15, id.ToString(), 1);
                 }, 250);
 
             }
@@ -150,6 +150,12 @@ namespace Server.Vehicles
             {
                 player.SendChatMessage("Jármű nem létezik");
             }
+        }
+
+
+        public static Vehicle GetVehicleById(int id)
+        {
+            return vehicles[id];
         }
 
 

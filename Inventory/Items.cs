@@ -780,7 +780,8 @@ namespace Server.Inventory
         2 - JÁRMŰ CSOMAGTARTÓ
         3 - JÁRMŰ KESZTYŰTARTÓ
         4 - INTERIOR
-        5 - OBJECT
+        5 - OBJECT -> meg lehet nyitni rá kattintva
+        6 - LERAKOTT ITEM TÁROLÓ (OBJECT) -> megnyitni nem lehet a földön csak felvenni
           
          */
 
@@ -889,7 +890,11 @@ namespace Server.Inventory
         public static List<Item> GetPlayerInventory(Player player)
         {
             uint charid = player.GetData<UInt32>("player:charID");
-            return Inventories[new Tuple<int, uint>(0, charid)];
+            if (charid != 0)
+            {
+                return Inventories[new Tuple<int, uint>(0, charid)];
+            }
+            return null;
         }
 
         public static bool IsInventoryLoaded(int OwnerType, uint OwnerID)
@@ -1143,7 +1148,7 @@ namespace Server.Inventory
         [RemoteEvent("server:OpenVehicleGloveBox")]
         public void OpenVehicleGloveBox(Player player)
         {
-                Vehicle v = player.Vehicle;
+            Vehicle v = player.Vehicle;
             if (v.HasData("vehicle:ID"))
             {
                 uint vehid = v.GetData<uint>("vehicle:ID");
@@ -1215,6 +1220,25 @@ namespace Server.Inventory
                 SetInventoryInUse(ownertype, ownerid, true);
                 string json = NAPI.Util.ToJson(items);
                 player.TriggerEvent("client:ContainerFromServer", json);
+                string containername = "";
+
+
+                switch (ownertype)
+                {
+                    case 1:
+                        containername = "Tároló ((" + ownerid + "))";
+                        break;
+                    case 2:
+                        containername = Vehicles.Vehicles.GetVehicleById(Convert.ToInt32(ownerid)).NumberPlate + " csomagtere ((" + ownerid + "))";
+                        break;
+                    case 3:
+                        containername = Vehicles.Vehicles.GetVehicleById(Convert.ToInt32(ownerid)).NumberPlate + " kesztyűtartója ((" + ownerid + "))";
+                        break;
+                    default:
+                        break;
+                }
+
+                player.TriggerEvent("client:SetContainerName", containername);
             });
         }
 
@@ -1286,6 +1310,31 @@ namespace Server.Inventory
             //le kell ellenőrizni, hogy az item a játékosnál van-e, vagy a megnyitott tárolójában. HA egyikben sem akkor baj van
         }
 
+        [RemoteEvent("server:DropItem")]
+        public async void DropItem(Player player, uint item_dbid, float ground)
+        {
+            Item i = await GetItemByDbId(player, item_dbid);
+            if (i != null)
+            {
+                if (i.ItemID == 5 || i.ItemID == 18)
+                {
+                        Vector3 pos = player.Position;
+                        pos.Z = ground;
+                        //
+                        GTANetworkAPI.Object obj = NAPI.Object.CreateObject(NAPI.Util.GetHashKey("prop_ld_tshirt_02"), pos, player.Rotation, 255, player.Dimension);
+                        player.SendChatMessage("Póló eldobva");
+                }
+               else if (i.ItemID == 27)
+                {
+                    Vector3 pos = player.Position;
+                    pos.Z = ground;
+                    //
+                    GTANetworkAPI.Object obj = NAPI.Object.CreateObject(NAPI.Util.GetHashKey("v_ret_ta_gloves"), pos, player.Rotation, 255, player.Dimension);
+                    player.SendChatMessage("Kesztyű eldobva");
+                }
+            }
+        }
+
 
         [RemoteEvent("server:UseItem")]
         public async void ItemUse(Player player, uint item_dbid)
@@ -1301,7 +1350,7 @@ namespace Server.Inventory
                         Top t = NAPI.Util.FromJson<Top>(i.ItemValue);
                         draw = t.Drawable;
                     }
-                    else if(i.ItemID <= 14)//nem póló de ruha
+                    else if(i.ItemID <= 26)//nem póló de ruha
                     {
                         Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
                         draw = c.Drawable;
@@ -1662,13 +1711,12 @@ namespace Server.Inventory
             else if(target_inv == 1)//a megnyitott tárolóra húzza
             {
                 Item i1 = await GetItemByDbId(item_dbid);
-                
                 int target_owner_type = player.GetData<int>("player:OpenedContainerOwnerType");
                 uint target_owner_id = player.GetData<uint>("player:OpenedContainerID");
                 i1.OwnerType = target_owner_type;
                 i1.OwnerID = target_owner_id;
                 
-                if (i1.InUse && i1.ItemID <= 14)//használatban van (viseli) + ruha itemid-nek megfelel -> le kell venni róla
+                if (i1.InUse && i1.ItemID <= 27)//használatban van (viseli) + ruha itemid-nek megfelel -> le kell venni róla
                 {
                     i1.InUse = false;
                     i1.Priority = 1000;
@@ -1679,7 +1727,40 @@ namespace Server.Inventory
                     {
                         if (slot.Item1)//ruha
                         {
-                            if (clothing.Length == 2)//sima ruha
+                            if(clothing.Length == 1)//kesztyű
+                            {
+
+                                NAPI.Task.Run(() =>
+                                {
+                                    bool gender = player.GetData<bool>("player:gender");
+                                    //player.TriggerEvent("client:RemoveItem", i1.DBID);
+                                    //beállítjuk a rajta lévő pólót mivel levette a kesztyűt, csak a torso-t akarjuk az alap értékre állítani
+                                    Item Polo;
+                                    if (gender)//férfi
+                                    {
+                                        Polo = GetClothingOnSlot(player, 5);//lekérjük a pólóját
+                                    }
+                                    else
+                                    {
+                                        Polo = GetClothingOnSlot(player, 18);//lekérjük a pólóját
+                                    }
+
+                                    if (Polo != null)//ha van rajta póló
+                                    {
+                                        Top t = NAPI.Util.FromJson<Top>(Polo.ItemValue);
+                                        player.SetClothes(slot.Item2, t.Torso, 0);
+                                    }
+                                    else//nincs rajta póló, átrakjuk az alap torso-ra
+                                    {
+                                        player.SetClothes(slot.Item2, clothing[0], 0);//átrakjuk a torso-ját az alap torso-ra
+                                    }
+
+                                    string json = NAPI.Util.ToJson(i1);
+                                    player.TriggerEvent("client:AddItemToContainer", json);
+                                    player.TriggerEvent("client:RefreshInventoryPreview");
+                                });
+                            }
+                            else if (clothing.Length == 2)//sima ruha
                             {
                                 NAPI.Task.Run(() =>
                                 {
@@ -2696,14 +2777,19 @@ namespace Server.Inventory
 
         public static Item GetClothingOnSlot(Player player, uint itemid)
         {
-            foreach (var item in GetPlayerInventory(player))
+            List<Item> inv = GetPlayerInventory(player);
+
+            if (inv != null)
             {
-                if (item.ItemID == itemid && item.InUse == true)
+                foreach (var item in inv)
                 {
-                    return item;
+                    if (item.ItemID == itemid && item.InUse == true)
+                    {
+                        return item;
+                    }
                 }
             }
-            return null;
+                return null;
         }
 
         public static async Task<Item[]> LoadPlayerInventory(uint charid)

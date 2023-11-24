@@ -522,7 +522,7 @@ namespace Server.Characters
         {
             if (worn != null)
             {
-                if (worn.ItemID <= 27)//ruha
+                if (worn.ItemID <= 26)//ruha
                 {
                     if (gender)//férfi
                     {
@@ -531,15 +531,15 @@ namespace Server.Characters
 
                         if (worn.ItemID == 5)//póló
                         {
-                            ItemValueToTop(player, worn, clothing_id);
+                            Characters.Appearance.ItemValueToTop(player, worn, clothing_id);
                         }
                         else if (slot.Item1)//RUHA
                         {
-                            ItemValueToClothing(player, worn, clothing_id);
+                            Characters.Appearance.ItemValueToClothing(player, worn, clothing_id);
                         }
                         else//PROP
                         {
-                            ItemValueToAccessory(player, worn, clothing_id);
+                            Characters.Appearance.ItemValueToAccessory(player, worn, clothing_id);
                         }
                     }
                     else//nő
@@ -548,22 +548,20 @@ namespace Server.Characters
                         int clothing_id = slot.Item2;
                         if (worn.ItemID == 18)//póló
                         {
-                            ItemValueToTop(player, worn, clothing_id);
+                            Characters.Appearance.ItemValueToTop(player, worn, clothing_id);
                         }
                         else if (slot.Item1)//RUHA
                         {
-                            ItemValueToClothing(player, worn, clothing_id);
+                            Characters.Appearance.ItemValueToClothing(player, worn, clothing_id);
                         }
                         else//PROP
                         {
-                            ItemValueToAccessory(player, worn, clothing_id);
+                            Characters.Appearance.ItemValueToAccessory(player, worn, clothing_id);
                         }
-
-
                     }
 
                     //KESZTYŰ
-
+                    //ez csak akkor fog jól működni ha kesztyű adatbázis id > póló adatbázis id
                     if (worn.ItemID == 27)
                     {
                         Tuple<bool, int> gloveslot = Inventory.Items.GetClothingSlotFromItemId(27);
@@ -571,15 +569,12 @@ namespace Server.Characters
                         Item top = Inventory.Items.GetClothingOnSlot(player, 5);
                         if (worn != null)
                         {
-                            ItemValueToGlove(player, worn, top, glove_id, gender);
+                            Characters.Appearance.ItemValueToGlove(player, worn, glove_id, gender);
                         }
                     }
 
                 }
             }
-
-
-
         }
 
         public async static void ItemValueToTop(Player player, Item i, int clothing_id)
@@ -606,15 +601,15 @@ namespace Server.Characters
 
         }
 
-        public async static void ItemValueToGlove(Player player, Item i, Item top, int clothing_id, bool gender)
+        public async static void ItemValueToGlove(Player player, Item i,  int clothing_id, bool gender)
         {
                 NAPI.Task.Run(() =>
                 {
                     try
                     {
-                        Top t = NAPI.Util.FromJson<Top>(top.ItemValue);
+                        int torso = player.GetClothesDrawable(3);
                         int gloves = Convert.ToInt32(i.ItemValue);
-                        int correctTorso = Gloves.GetCorrectTorsoForGloves(gender, t.Torso, gloves);
+                        int correctTorso = Gloves.GetCorrectTorsoForGloves(gender, torso, gloves);
                         if (correctTorso != -1)//ha kompatibilis kesztyű van hozzá
                         {
                             player.SetClothes(clothing_id, correctTorso, 0);

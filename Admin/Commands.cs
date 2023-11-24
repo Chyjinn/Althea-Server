@@ -617,6 +617,12 @@ namespace Server.Admin
             Database.Log.Log_Server(player.Serial);
         }
 
+        [Command("obj")]
+        public void ObjectTest(Player player, string objectname)
+        {
+            NAPI.Object.CreateObject(NAPI.Util.GetHashKey(objectname), player.Position, player.Rotation, 255, player.Dimension);
+        }
+
         [Command("flashlight")]
         public void GiveWeapon(Player player)
         {

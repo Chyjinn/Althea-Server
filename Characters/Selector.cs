@@ -71,7 +71,6 @@ namespace Server.Characters
                         player.TriggerEvent("client:showCharScreen", NAPI.Util.ToJson(characters));
                         player.TriggerEvent("client:InfrontCamera");
                     }, 2000);
-                    
                 }, 2000);
             }
             else
@@ -109,7 +108,6 @@ namespace Server.Characters
             Character c = await Data.GetCharacterDataByID(player, charid);
             if (await Data.IsCharacterOwner(accID, charid))
             {
-                
                 NAPI.Task.Run(() =>
                 {
                     player.TriggerEvent("client:SkyCam", true);

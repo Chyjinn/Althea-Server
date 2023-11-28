@@ -1327,6 +1327,8 @@ namespace Server.Inventory
         [RemoteEvent("server:GiveItemToPlayer")]
         public async void GiveItemToPlayer(Player player, uint item_dbid, int target_id, uint amount)
         {
+            //ha rajta van ruha akkor ne tudja átadni
+            //ha használja akkor szintén ne
             Item i = await GetItemByDbId(item_dbid);
             if (i != null)
             {

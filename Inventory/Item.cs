@@ -64,8 +64,9 @@ namespace Server.Inventory
         public int ItemType { get; set; }//felhasználás kezeléséhez kell majd, pl Weapon akkor úgy kezeljük
         public string ItemImage { get; set; }//lehet local, pl. src/img.png, vagy url
         public uint ItemWeight { get; set; }
+        public string Object { get; set; }
         public bool Stackable { get; set; }
-        public Entry(uint id, string name, string desc, int type, uint weight, string itemimage, bool stack)
+        public Entry(uint id, string name, string desc, int type, uint weight, string itemimage, string obj, bool stack)
         {
             ItemID = id;
             Name = name;
@@ -73,6 +74,7 @@ namespace Server.Inventory
             ItemType = type;
             ItemWeight = weight;
             ItemImage = itemimage;
+            Object = obj;
             Stackable = stack;
         }
 

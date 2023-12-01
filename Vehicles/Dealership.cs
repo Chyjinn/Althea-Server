@@ -29,10 +29,5 @@ namespace Server.Vehicles
             //dealer = NAPI.ColShape.Create3DColShape(new Vector3(-35f, -1108f, 20f), new Vector3(-51f, -1089f, 31f),0);
         }
 
-        [Command("dealership")]
-        public void OpenDealership(Player player)
-        {
-
-        }
     }
 }

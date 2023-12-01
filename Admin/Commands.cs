@@ -164,6 +164,20 @@ namespace Server.Admin
             
         }
 
+        [Command("kick")]
+        public void KickPlayer(Player player, ushort id, string reason)
+        {
+            Player target = RAGE.Entities.Players.All.Where((p) => p.Id == id).FirstOrDefault();
+            target.Kick(reason);
+        }
+
+        [Command("fov")]
+        public void SetFOV(Player player, float fov)
+        {
+            player.TriggerEvent("client:SetFPSFov", fov);
+        }
+
+
         [Command("helicam")]
         public void GetId(Player player)
         {
@@ -405,7 +419,9 @@ namespace Server.Admin
             Player target = GetPlayerById(targetid);
             if (target != null)
             {
-                player.Position = target.Position;
+                Vector3 offset = target.Position;
+                offset.Y += 0.5f;
+                player.Position = offset;
                 player.Dimension = target.Dimension;
                 player.SendChatMessage("Goto");
             }
@@ -608,7 +624,19 @@ namespace Server.Admin
 
         }
 
-
+        [RemoteEvent("server:ToggleCrouching")]
+        public void ToggleCrouching(Player player)
+        {
+            if (player.HasSharedData("player:Crouching"))
+            {
+                bool state = player.GetSharedData<bool>("player:Crouching");
+                player.SetSharedData("player:Crouching", !state);
+            }
+            else
+            {
+                player.SetSharedData("player:Crouching", true);
+            }
+        }
 
         [Command("serial")]
         public void ShowSerial(Player player)

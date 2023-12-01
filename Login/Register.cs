@@ -23,14 +23,14 @@ namespace Server.Auth
             {
                 NAPI.Task.Run(() =>
                 {
-                    player.SendChatMessage("Van már ilyen felhasználónév!");
+                    Database.Log.Log_Server("Van már ilyen felhasználónév!");
                 });
             }
             else if (await Auth.EmailInUse(email))
             {
                 NAPI.Task.Run(() =>
                 {
-                    player.SendChatMessage("Van már ilyen email cím!");
+                    Database.Log.Log_Server("Van már ilyen email cím!");
                 });
             }
             /*else if(await Auth.SocialClubInUse(playerScId))
@@ -61,6 +61,7 @@ namespace Server.Auth
                 }
                 else
                 {
+                    Database.Log.Log_Server("Sikertelen regisztráció!");
                     //nem sikerült a regisztráció, TODO: valamit jelezzen
                 }
             }

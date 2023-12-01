@@ -75,10 +75,9 @@ namespace Server.Inventory
                         {
                             while (await reader.ReadAsync())
                             {
-                                Entry entry = new Entry(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), Convert.ToInt32(reader["itemType"]), Convert.ToUInt32(reader["itemWeight"]), Convert.ToString(reader["itemImage"]), Convert.ToBoolean(reader["stackable"]));
+                                Entry entry = new Entry(Convert.ToUInt32(reader["itemID"]), Convert.ToString(reader["itemName"]), Convert.ToString(reader["itemDescription"]), Convert.ToInt32(reader["itemType"]), Convert.ToUInt32(reader["itemWeight"]), Convert.ToString(reader["itemImage"]), reader["object"].ToString(), Convert.ToBoolean(reader["stackable"]));
                                 itemList.Add(entry);
                             }
-
                         }
                     }
                 }
@@ -140,6 +139,30 @@ namespace Server.Inventory
                 }
             }
             return "Nem létező item.";
+        }
+
+        public static string GetItemObject(uint itemid)
+        {
+            foreach (var item in itemList)
+            {
+                if (item.ItemID == itemid)
+                {
+                    return item.Object;
+                }
+            }
+            return "-1";
+        }
+
+        public static uint GetItemWeight(uint itemid)
+        {
+            foreach (var item in itemList)
+            {
+                if (item.ItemID == itemid)
+                {
+                    return item.ItemWeight;
+                }
+            }
+            return 0;
         }
 
     }

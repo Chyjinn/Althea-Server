@@ -1,20 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Diagnostics.Tracing;
 using System.Linq;
-using System.Reflection;
-using System.Security.Policy;
 using System.Threading.Tasks;
 using GTANetworkAPI;
-using K4os.Compression.LZ4.Encoders;
 using MySql.Data.MySqlClient;
-using Org.BouncyCastle.Asn1.Cmp;
-using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.Utilities;
-using Server.Characters;
-using Server.Inventory;
-using static System.Reflection.Metadata.BlobBuilder;
+using MySqlX.XDevAPI.Relational;
 
 namespace Server.Inventory
 {
@@ -22,17 +12,72 @@ namespace Server.Inventory
     {
         public uint ItemID { get; }//ITEMID
         public int Drawable { get; } = -1;//DRAWABLE, ha ruháról beszélünk pl
-        public float Capacity { get; }
-        public Container(uint itemid, int drawable, float capacity) {
+        public uint Capacity { get; }
+        public Container(uint itemid, int drawable, uint capacity) {
             ItemID = itemid;
             Drawable = drawable; 
             Capacity = capacity;
         }
 
-        public Container(uint itemid, float capacity)
+        public Container(uint itemid, uint capacity)
         {
             ItemID = itemid;
             Capacity = capacity;
+        }
+    }
+
+    public class GroundItem
+    {
+        public uint ID { get; set; }
+        public uint Item_DBID { get;  }
+        public GTANetworkAPI.Object Object { get; set; }
+        public TextLabel Label { get; set; }
+        public Vector3 Position { get; set; }
+        public Vector3 Rotation { get; set; }
+        public uint Dimension { get; set; }
+        public DateTime ThrownAwayTime { get; set; }
+        public uint ThrownAwayBy { get; set; }
+        public DateTime PickUpTime { get; set; } = DateTime.Now;
+        public uint PickedUpBy { get; set; } = 0;
+
+        public GroundItem(uint id, uint itemid, Vector3 pos, Vector3 rot, uint dim, DateTime thrownaway, uint thrownawayby, DateTime pickedup, uint pickedupby)
+        {
+            ID = id;
+            Item_DBID = itemid;
+            Position = pos;
+            Rotation = rot;
+            Dimension = dim;
+            ThrownAwayTime = thrownaway;
+            ThrownAwayBy = thrownawayby;
+            PickUpTime = pickedup;
+            PickedUpBy = pickedupby;
+        }
+
+        public GroundItem(uint id, uint itemid, Vector3 pos, Vector3 rot, uint dim, DateTime thrownaway, uint thrownawayby)
+        {
+            ID = id;
+            Item_DBID = itemid;
+            Position = pos;
+            Rotation = rot;
+            Dimension = dim;
+            ThrownAwayTime = thrownaway;
+            ThrownAwayBy = thrownawayby;
+        }
+
+        public void CreateObject(string objectname)
+        {
+            NAPI.Task.Run(() =>
+            {
+                Object = NAPI.Object.CreateObject(NAPI.Util.GetHashKey(objectname), Position, Rotation, 255, Dimension);
+                Vector3 labelPos = Position;
+                labelPos.Z += 0.2f;
+                Label = NAPI.TextLabel.CreateTextLabel("A tárgy felvételéhez kattints rá.", Position, 1.5f, 1f, 4, new Color(255, 255, 255, 200), true, Dimension);
+                NAPI.Task.Run(() =>
+                {
+                    
+                    Object.SetSharedData("object:ID", ID);
+                }, 500);
+            }, 250);
         }
     }
 
@@ -632,7 +677,7 @@ namespace Server.Inventory
     {
         static List<Container> Containers = new List<Container>//ITEMID, DRAWABLE(ha ruha), KAPACITÁS/SÚLY
         {
-            new Container(11,82,15f)
+            new Container(11,82,15000)
         };
         /*
          * {"model":"mp_f_freemode_01", "dlc":"mp2023_01", "components":[45, 226, 84, 244, 190, 110, 141, 144, 244, 57, 190, 533], "props":[193, 54, 22, null, null, null, 35, 20]},
@@ -774,6 +819,8 @@ namespace Server.Inventory
         static Dictionary<Tuple<int, uint>, bool> OpenedInventories = new Dictionary<Tuple<int, uint>, bool>();
 
         static Dictionary<Tuple<int, uint>, List<Item>> Inventories = new Dictionary<Tuple<int, uint>, List<Item>>();
+
+        static List<GroundItem> GroundItems = new List<GroundItem>();
         //OWNERTYPE-ok:
         /*
         0 - JÁTÉKOS
@@ -792,6 +839,196 @@ namespace Server.Inventory
         ha itemid megfelel akkor esetleg itemvalue-t -> jó drawable? pl táskánál
 
         */
+
+
+        public async static void PopulateGroundItems()
+        {
+            DateTime timestamp1 = DateTime.Now;
+
+            await LoadGroundItems();
+
+            DateTime timestamp2 = DateTime.Now;
+
+            TimeSpan LoadTime = timestamp2 - timestamp1;
+
+            NAPI.Util.ConsoleOutput("Eldobott tárgyak betöltve " + LoadTime.Milliseconds + " ms alatt.");
+            //TODO: indításnál ellenőrizze mióta van a földön az adott object és vegye fel ha régóta
+        }
+
+
+
+        public async static Task<bool> LoadGroundItems()
+        {
+            string query = $"SELECT * FROM `grounditems` WHERE `pickupBy` IS NULL";//csak azokat választjuk ki amik nem lettek még felszedve, tehát aktívak
+            GroundItems.Clear();
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                try
+                {
+                    con.ConnectionString = await Database.DBCon.GetConString();
+                    con.Open();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
+                    {
+                        cmd.Prepare();
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                GroundItem gi;
+                                if (reader["pickupDate"] == System.DBNull.Value || reader["pickupBy"] == System.DBNull.Value)
+                                {
+                                    gi = new GroundItem(Convert.ToUInt32(reader["id"]), Convert.ToUInt32(reader["item_DbID"]), new Vector3(Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"])), new Vector3(Convert.ToSingle(reader["rotX"]), Convert.ToSingle(reader["rotY"]), Convert.ToSingle(reader["rotZ"])), Convert.ToUInt32(reader["dim"]), Convert.ToDateTime(reader["thrownDate"]), Convert.ToUInt32(reader["thrownBy"]));
+                                }
+                                else
+                                {
+                                    gi = new GroundItem(Convert.ToUInt32(reader["id"]), Convert.ToUInt32(reader["item_DbID"]), new Vector3(Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"])), new Vector3(Convert.ToSingle(reader["rotX"]), Convert.ToSingle(reader["rotY"]), Convert.ToSingle(reader["rotZ"])), Convert.ToUInt32(reader["dim"]), Convert.ToDateTime(reader["thrownDate"]), Convert.ToUInt32(reader["thrownBy"]), Convert.ToDateTime(reader["pickupDate"]), Convert.ToUInt32(reader["pickupBy"]));
+                                }
+                                
+                                //létrehozunk egy új földön lévő itemet
+                                uint itemid = await LoadItemIDByDatabaseID(gi.Item_DBID);
+                                //megszerezzük az adatbázis id alapján az itemid-t
+
+                                gi.CreateObject(ItemList.GetItemObject(itemid));
+                                //az itemid alapján már tudjuk, hogy milyen objectet kéne leraknunk, azt létre is hozzuk
+                                GroundItems.Add(gi);
+                                //végül hozzáadjuk a földön lévő tárgyak listájához
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+
+                con.Close();
+
+            }
+            return true;
+        }
+
+
+        public async static Task<uint> LoadItemIDByDatabaseID(uint dbid)
+        {
+            uint loaded_itemid = 0;
+            string query = $"SELECT * FROM `items` WHERE `DbID` LIKE @DBID";
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                try
+                {
+                    con.ConnectionString = await Database.DBCon.GetConString();
+                    con.Open();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("@DBID", dbid);
+                        cmd.Prepare();
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                Item loadedItem = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToUInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["itemID"]), reader["itemValue"].ToString(), Convert.ToInt32(reader["itemAmount"]), Convert.ToBoolean(reader["inUse"]), Convert.ToBoolean(reader["duty"]), Convert.ToInt32(reader["priority"]));
+                                loaded_itemid = loadedItem.ItemID;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+
+                con.Close();
+
+            }
+            return loaded_itemid;
+        }
+
+        public async static Task<bool> PickupGroundItem(GroundItem item)
+        {
+            bool state = false;
+            string query = $"UPDATE `grounditems` SET `pickupDate` = @PickupDate, `pickupBy` = @PickupPlayer  WHERE `grounditems`.`id` = @ID;";
+            //string query2 = $"UPDATE `characters` SET `characterName` = @CharacterName, `dob` = @DOB, `pob` = @POB WHERE `appearanceId` = @AppearanceID";
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
+                {
+                    command.Parameters.AddWithValue("@ID", item.ID);
+                    command.Parameters.AddWithValue("@PickupPlayer", item.PickedUpBy);
+                    command.Parameters.AddWithValue("@PickupDate", item.PickUpTime);
+                    command.Prepare();
+                    try
+                    {
+                        int rows = await command.ExecuteNonQueryAsync();
+                        if (rows > 0)
+                        {
+                            state = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+                con.CloseAsync();
+            }
+            return state;
+        }
+
+        
+        public async static Task<uint> AddGroundItemToDatabase(GroundItem itemdata)//létrehozunk egy új itemet az adatbázisban
+        {
+            uint GroundItemID = 0;
+            //INSERT INTO `appearances` (`id`, `gender`, `eyeColor`, `hairStyle`, `hairColor`, `hairHighlight`, `parent1face`, `parent2face`, `parent3face`, `parent1skin`, `parent2skin`, `parent3skin`, `faceMix`, `skinMix`, `thirdMix`, `noseWidth`, `noseHeight`, `noseLength`, `noseBridge`, `noseTip`, `noseBroken`, `browHeight`, `browWidth`, `cheekboneHeight`, `cheekboneWidth`, `cheekWidth`, `eyes`, `lips`, `jawWidth`, `jawHeight`, `chinLength`, `chinPosition`, `chinWidth`, `chinShape`, `neckWidth`, `blemishId`, `blemishOpacity`, `facialhairId`, `facialhairColor`, `facialhairOpacity`, `eyebrowId`, `eyebrowColor`, `eyebrowOpacity`, `ageId`, `ageOpacity`, `makeupId`, `makeupOpacity`, `blushId`, `blushColor`, `blushOpacity`, `complexionId`, `complexionOpacity`, `sundamageId`, `sundamageOpacity`, `lipstickId`, `lipstickColor`, `lipstickOpacity`, `frecklesId`, `frecklesOpacity`, `chesthairId`, `chesthairColor`, `chesthairOpacity`, `bodyblemishId`, `bodyblemishOpacity`, `bodyblemish2Id`, `bodyblemish2Opacity`, `tattoos`) VALUES (NULL, '0', '', '0', '', '', '', '', '', '', '', '', '', '', '', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '255', '0', '255', '0', '0', '255', '0', '0', '255', '0', '255', '0', '255', '0', '0', '255', '0', '255', '0', '255', '0', '0', '255', '0', '255', '0', '0', '255', '0', '255', '0', NULL);
+            //SELECT LAST_INSERT_ID();
+            string query = $"INSERT INTO `grounditems` " +
+                $"(`item_DbID`, `posX`, `posY`, `posZ`, `rotX`, `rotY`, `rotZ`, `dim`, `thrownDate`, `thrownBy`)" +
+                $" VALUES " +
+                $"(@ItemDBID, @PosX, @PosY, @PosZ, @RotX, @RotY, @RotZ, @Dim, @ThrownDate, @ThrownBy)";
+
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
+                {
+                    command.Parameters.AddWithValue("@ItemDBID", itemdata.Item_DBID);
+                    command.Parameters.AddWithValue("@PosX", itemdata.Position.X);
+                    command.Parameters.AddWithValue("@PosY", itemdata.Position.Y);
+                    command.Parameters.AddWithValue("@PosZ", itemdata.Position.Z);
+                    command.Parameters.AddWithValue("@RotX", itemdata.Rotation.X);
+                    command.Parameters.AddWithValue("@RotY", itemdata.Rotation.Y);
+                    command.Parameters.AddWithValue("@RotZ", itemdata.Rotation.Z);
+                    command.Parameters.AddWithValue("@Dim", itemdata.Dimension);
+                    command.Parameters.AddWithValue("@ThrownDate", itemdata.ThrownAwayTime);
+                    command.Parameters.AddWithValue("@ThrownBy", itemdata.ThrownAwayBy);
+                    command.Prepare();
+                    try
+                    {
+                        int rows = await command.ExecuteNonQueryAsync();
+                        if (rows > 0)
+                        {
+                            long lastid = command.LastInsertedId;
+                            GroundItemID = Convert.ToUInt32(lastid);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+
+                }
+            }
+            return GroundItemID;
+        }
+        
 
         public static bool IsInventoryInUse(int OwnerType, uint OwnerID)
         {
@@ -852,7 +1089,8 @@ namespace Server.Inventory
             Inventories[new Tuple<int, uint>(OwnerType, OwnerID)] = items.ToList();
         }
 
-        public async static Task AddItemToInventory(Player player, int OwnerType, uint OwnerID, Item item)
+
+            public async static Task AddItemToInventory(Player player, int OwnerType, uint OwnerID, Item item)
         {
             foreach (var inv in Inventories)
             {
@@ -869,6 +1107,7 @@ namespace Server.Inventory
         {
             Inventories[new Tuple<int, uint>(OwnerType, OwnerID)].Remove(item);
         }
+
         public static void AddItemToPlayerInventory(Player player, Item item)
         {
             uint charid = player.GetData<UInt32>("player:charID");
@@ -879,8 +1118,6 @@ namespace Server.Inventory
             uint charid = player.GetData<UInt32>("player:charID");
             Inventories[new Tuple<int, uint>(0, charid)].Remove(item);
         }
-
-
 
         public static void SetPlayerInventory(Player player, List<Item> items)
         {
@@ -908,6 +1145,34 @@ namespace Server.Inventory
             {
                 return false;
             }
+        }
+
+
+        //játékos 20.000 gramm (20 kg)
+        //többi dolgot még át kell gondolni
+        public static uint GetInventoryWeight(int OwnerType, uint OwnerID)
+        {
+            if (Inventories.ContainsKey(new Tuple<int, uint>(OwnerType, OwnerID)))
+            {
+                //létezik az inventory
+                uint weight = 0;
+                foreach (var item in GetInventory(OwnerType,OwnerID))
+                {
+                    weight += ItemList.GetItemWeight(item.ItemID);
+                }
+                return weight;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        public static uint GetInventoryCapacity(int OwnerType)
+        {
+            //TODO: kitalálni hogy mi alapján kapjon kapacitást
+            //le lehet küldeni majd a GetInventoryWeight - meg ennek a függvénynek az eredményét grafikus nézet miatt
+            return 0;
         }
 
         public static bool HasItemWithValue(Player player, uint itemid, string itemvalue)
@@ -949,7 +1214,6 @@ namespace Server.Inventory
                     target.SendChatMessage("Kaptál " + amount + " db " + ItemList.GetItemName(i.ItemID) + " tárgyat " + player.Name + " -tól!");
                 }, 500);
             }
-
             //Item newitem = new Item(0, charid, 0, itemid, itemvalue, amount, false, -1);
         }
 
@@ -1075,7 +1339,6 @@ namespace Server.Inventory
             return null;
         }
 
-
         public Item[] GetItemsByItemID(Player player, uint itemid)
         {
             List<Item> items = new List<Item>();
@@ -1088,7 +1351,6 @@ namespace Server.Inventory
             }
             return items.ToArray();
         }
-
 
         public Vehicle GetVehicleByID(ushort entityid)
         {
@@ -1116,6 +1378,7 @@ namespace Server.Inventory
                 {
                     if (!IsInventoryInUse(2, vehid))//más nem használja a tárolót
                     {
+                        PlayerCloseContainer(player);
                         Chat.Commands.ChatEmoteME(player, "belenéz egy jármű csomagtartójába. ((" + vehid + "))");
                         if (IsInventoryLoaded(2, vehid))//be van töltve, vissza tudjuk adni neki
                         {
@@ -1136,16 +1399,39 @@ namespace Server.Inventory
         }
 
         [RemoteEvent("server:ClosedContainer")]
-        public void PlayerCloseContainer(Player player)//bezárta a tárolót, tehát bezárjuk szerver oldalon is
+        public async void PlayerCloseContainer(Player player)//bezárta a tárolót, tehát bezárjuk szerver oldalon is
         {
-            int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-            uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+            if (player.HasData("player:OpenedContainerOwnerType"))
+            {
+                int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
+                uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                switch (container_ownertype)
+                {
+                    case 1:
+                        Item i = await GetItemByDbId(container_targetid);
+                        if (i != null)
+                        {
+                            i.InUse = false;
+                            Chat.Commands.ChatEmoteME(player, "bezár egy tárolót. ((" + i.DBID + "))");
+                        }
+                        break;
+                    case 2:
+                        Chat.Commands.ChatEmoteME(player, "bezár egy csomagtartót. ((" + container_targetid + "))");
+                        break;
+                    case 3:
+                        Chat.Commands.ChatEmoteME(player, "bezár egy kesztyűtartót. ((" + container_targetid + "))");
+                        break;
+                    case 4:
+                        break;
+                    default:
+                        break;
+                }
+                player.ResetData("player:OpenedContainerOwnerType");
+                player.ResetData("player:OpenedContainerID");
+                SetInventoryInUse(container_ownertype, container_targetid, false);
+            }
 
-            player.ResetData("player:OpenedContainerOwnerType");
-            player.ResetData("player:OpenedContainerID");
-            SetInventoryInUse(container_ownertype, container_targetid, false);
         }
-
 
         public async Task<bool> HasAccessToItem(Player player, Item item)
         {
@@ -1178,6 +1464,7 @@ namespace Server.Inventory
                     if(!IsInventoryInUse(3, vehid))
                     {
                         Chat.Commands.ChatEmoteME(player, "belenéz egy jármű kesztyűtartójába. ((" + vehid + "))");
+                        PlayerCloseContainer(player);
                         if (IsInventoryLoaded(3, vehid))//be van töltve, vissza tudjuk adni neki
                         {
                             SendContainerToPlayer(player, 3, vehid, GetInventory(3, vehid).ToArray());
@@ -1286,7 +1573,7 @@ namespace Server.Inventory
             //bezárjuk ha van megnyitott tároló
             player.ResetData("player:OpenedContainerOwnerType");
             player.ResetData("player:OpenedContainerID");
-            SetInventoryInUse(container_ownertype, container_targetid, false);
+            SetInventoryInUse(container_ownertype, container_targetid, true);
 
             Chat.Commands.ChatEmoteME(player, "megnyit egy tárolót. ((" + containeritem.DBID + "))");
             if (IsInventoryLoaded(1, containeritem.DBID))//be van töltve, vissza tudjuk adni neki
@@ -1299,11 +1586,11 @@ namespace Server.Inventory
             }
         }
 
-        public void CloseContainer(Player player)
+        public void CloseContainer(Player player, Item closedcontainer)
         {
             int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
             uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
-
+            Chat.Commands.ChatEmoteME(player, "bezár egy tárolót. ((" + closedcontainer.DBID + "))");
             player.ResetData("player:OpenedContainerOwnerType");
             player.ResetData("player:OpenedContainerID");
             SetInventoryInUse(container_ownertype, container_targetid, false);
@@ -1334,63 +1621,124 @@ namespace Server.Inventory
             {
                 if (await HasAccessToItem(player, i))//ha hozzáfér az itemhez
                 {
-                    Player target = Admin.Commands.GetPlayerById(target_id);
-                    //átadjuk a másiknak
-                    if (amount == i.ItemAmount)//teljes itemet adunk át
+                    if (i.InUse == false)// nincs használatban(kézben fegyver, felvett ruha, stb)
+                        {
+                            Player target = Admin.Commands.GetPlayerById(target_id);
+                            if (Vector3.Distance(player.Position, target.Position) < 5f)//elég közel vannak egymáshoz
+                            {
+                                //átadjuk a másiknak
+                                int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
+                                uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                                if (container_ownertype == 1 && container_targetid == i.DBID)//ha item tároló van megnyitva és az amit épp átadunk akkor bezárjuk
+                                {
+                                    CloseContainer(player, i);
+                                }
+                                if (amount == i.ItemAmount)//teljes itemet adunk át
+                                {
+                                    uint charid = target.GetData<UInt32>("player:charID");
+                                    i.OwnerType = 0;
+                                    i.OwnerID = charid;
+                                    List<Item> playerinv = GetPlayerInventory(player);
+                                    playerinv.Remove(i);
+                                    SetPlayerInventory(player, playerinv);
+
+                                    List<Item> targetinv = GetPlayerInventory(target);
+                                    targetinv.Add(i);
+                                    SetPlayerInventory(target, targetinv);
+
+                                    player.TriggerEvent("client:RemoveItem", i.DBID);
+
+                                    string json = NAPI.Util.ToJson(i);
+                                    target.TriggerEvent("client:AddItemToInventory", json);
+                                    Chat.Commands.ChatEmoteME(player, "átad " + amount + " db " + ItemList.GetItemName(i.ItemID) + " tárgyat " + target.Name + "-nak.");
+                                }
+                                else//csak egy részét adjuk át
+                                {
+
+                                }
+                            }
+                            else
+                            {
+                                player.SendChatMessage(target.Name + " túl messze van tőled.");
+                            }
+                        }
+                    else
                     {
-                        uint charid = target.GetData<UInt32>("player:charID");
-                        i.OwnerType = 0;
-                        i.OwnerID = charid;
-                        List<Item> playerinv = GetPlayerInventory(player);
-                        playerinv.Remove(i);
-                        SetPlayerInventory(player, playerinv);
-
-                        List<Item> targetinv = GetPlayerInventory(target);
-                        targetinv.Add(i);
-                        SetPlayerInventory(target, targetinv);
-
-                        player.TriggerEvent("client:RemoveItem", i.DBID);
-
-                        string json = NAPI.Util.ToJson(i);
-                        target.TriggerEvent("client:AddItemToInventory", json);
-                        Chat.Commands.ChatEmoteME(player, "átad " + amount + " db " + ItemList.GetItemName(i.ItemID) + " tárgyat " + target.Name + "-nak.");
+                        player.SendChatMessage(ItemList.GetItemName(i.ItemID) + " használatban van, ezért nem tudod átadni!");
                     }
-                    else//csak egy részét adjuk át
-                    {
+                   
 
-                    }
                 }
             }
         }
 
         [RemoteEvent("server:DropItem")]
-        public async void DropItem(Player player, uint item_dbid, float ground)
+        public async void DropItem(Player player, uint item_dbid, float groundZ, float objRotX, float objRotY, float objRotZ)
         {
-            Item i = await GetItemByDbId(player, item_dbid);
+            Item i = await GetItemByDbId(item_dbid);
 
             if (i != null)
             {
                 if(await HasAccessToItem(player, i))
                 {
-                    if (i.ItemID == 5 || i.ItemID == 18)
+                    if (i.InUse == false)
                     {
-                        Vector3 pos = player.Position;
-                        pos.Z = ground;
-                        //
-                        GTANetworkAPI.Object obj = NAPI.Object.CreateObject(NAPI.Util.GetHashKey("prop_ld_tshirt_02"), pos, player.Rotation, 255, player.Dimension);
-                        player.SendChatMessage("Póló eldobva");
+                        string itemObj = ItemList.GetItemObject(i.ItemID);
+                        if (itemObj != "-1" && itemObj != "")//létezik mert nem -1 (nem található item) és nem üres string (nincs object -> nem eldobható)
+                        {
+
+                            int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
+                            uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                            if (container_ownertype == 1 && container_targetid == i.DBID)//ha item tároló van megnyitva és az amit épp eldobunk akkor bezárjuk
+                            {
+                                CloseContainer(player, i);
+                            }
+
+                            Vector3 pos = player.Position;
+                            Vector3 rot = new Vector3(objRotX, objRotY, objRotZ);
+                            pos.Z = groundZ;
+                            uint charid = player.GetData<UInt32>("player:charID");
+                            //
+                            GroundItem gi = new GroundItem(0, i.DBID, pos, rot, player.Dimension, DateTime.Now, charid);
+                            gi.CreateObject(itemObj);
+
+                            uint id = await AddGroundItemToDatabase(gi);
+                            gi.ID = id;
+                            RemoveItemFromInventory(i.OwnerType, i.OwnerID, i);
+                            i.OwnerType = 6;
+                            i.OwnerID = 0;
+
+                            if (await UpdateItem(i))
+                            {
+                                NAPI.Task.Run(() =>
+                                {
+                                    player.TriggerEvent("client:RemoveItem", i.DBID);
+                                    player.SendChatMessage(ItemList.GetItemName(i.ItemID) + " eldobva. (" + id + ")");
+                                });
+                            }
+                            else
+                            {
+                                Database.Log.Log_Server("ITEM ELDOBÁS HIBA! DBID: " + i.DBID + " ELDOBOTT ID: " + id);
+                            }
+
+                        }
+                        else
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.SendChatMessage(ItemList.GetItemName(i.ItemID) + " nem dobható el.");
+                            }, 100);
+
+                        }
                     }
-                    else if (i.ItemID == 27)
+                    else
                     {
-                        Vector3 pos = player.Position;
-                        pos.Z = ground;
-                        //
-                        GTANetworkAPI.Object obj = NAPI.Object.CreateObject(NAPI.Util.GetHashKey("v_ret_ta_gloves"), pos, player.Rotation, 255, player.Dimension);
-                        player.SendChatMessage("Kesztyű eldobva");
+                        NAPI.Task.Run(() =>
+                        {
+                            player.SendChatMessage("Használatban lévő tárgy nem dobható el.");
+                        }, 100);
                     }
                 }
-                
-
             }
         }
 
@@ -1406,7 +1754,7 @@ namespace Server.Inventory
                     if (IsItemContainer(i.ItemID))//megnézzük hogy tároló-e
                     {
                         int draw = -1;
-                        if (i.ItemID == 5)//póló esetén máshogy kell az itemvalue
+                        if (i.ItemID == 5 || i.ItemID == 18)//póló esetén máshogy kell az itemvalue
                         {
                             Top t = NAPI.Util.FromJson<Top>(i.ItemValue);
                             draw = t.Drawable;
@@ -1425,10 +1773,11 @@ namespace Server.Inventory
                                 uint target_owner_id = player.GetData<uint>("player:OpenedContainerID");
                                 if (target_owner_type == 1 && target_owner_id == item_dbid)//már meg van nyitva a tároló, be akarja zárni
                                 {
-                                    CloseContainer(player);
+                                    CloseContainer(player, i);
                                 }
                                 else if (!IsInventoryInUse(1, item_dbid))//nincs használatban a tároló
                                 {
+                                    PlayerCloseContainer(player);
                                     OpenContainer(player, i);
                                 }
                                 else
@@ -1443,10 +1792,11 @@ namespace Server.Inventory
                             uint target_owner_id = player.GetData<uint>("player:OpenedContainerID");
                             if (target_owner_type == 1 && target_owner_id == item_dbid)//már meg van nyitva a tároló, be akarja zárni
                             {
-                                CloseContainer(player);
+                                CloseContainer(player, i);
                             }
                             else if (!IsInventoryInUse(1, item_dbid))//nincs használatban a tároló
                             {
+                                PlayerCloseContainer(player);
                                 OpenContainer(player, i);
                             }
                             else
@@ -1470,11 +1820,65 @@ namespace Server.Inventory
                     {
                         switch (i.ItemID)
                         {
-                            case 18:
-                                UseHandgun(player, "weapon_pistol", i);
+                            case 31:
+                                UseMeleeWeapon(player, "weapon_dagger", i);
                                 break;
-                            case 20:
-                                UseHandgun(player, "weapon_combatpistol", i);
+                            case 32:
+                                UseMeleeWeapon(player, "weapon_bat", i);
+                                break;
+                            case 33:
+                                UseMeleeWeapon(player, "weapon_bottle", i);
+                                break;
+                            case 34:
+                                UseMeleeWeapon(player, "weapon_crowbar", i);
+                                break;
+                            case 35:
+                                UseMeleeWeapon(player, "weapon_flashlight", i);
+                                break;
+                            case 36:
+                                UseMeleeWeapon(player, "weapon_golfclub", i);
+                                break;
+                            case 37:
+                                UseMeleeWeapon(player, "weapon_hammer", i);
+                                break;
+                            case 38:
+                                UseMeleeWeapon(player, "weapon_Hatchet", i);
+                                break;
+                            case 39:
+                                UseMeleeWeapon(player, "weapon_knuckle", i);
+                                break;
+                            case 40:
+                                UseMeleeWeapon(player, "weapon_knife", i);
+                                break;
+                            case 41:
+                                UseMeleeWeapon(player, "weapon_machete", i);
+                                break;
+                            case 42:
+                                UseMeleeWeapon(player, "weapon_switchblade", i);
+                                break;
+                            case 43:
+                                UseMeleeWeapon(player, "weapon_nightstick", i);
+                                break;
+                            case 44:
+                                UseMeleeWeapon(player, "weapon_wrench", i);
+                                break;
+                            case 45:
+                                UseMeleeWeapon(player, "weapon_battleaxe", i);
+                                break;
+                            case 46:
+                                UseMeleeWeapon(player, "weapon_poolcue", i);
+                                break;
+                            case 47:
+                                UseMeleeWeapon(player, "weapon_stone_hatchet", i);
+                                break;
+                            case 48:
+                                UseMeleeWeapon(player, "weapon_candycane", i);
+                                break;
+                            case 49:
+                                UseHandgun(player, "weapon_pistol", i, 0);
+                                break;
+                            case 51:
+                                UseHandgun(player, "weapon_combatpistol", i, 0);
                                 break;
                             default:
                                 break;
@@ -1517,13 +1921,33 @@ namespace Server.Inventory
                     }
 
                 }
-
-
             }
         }
 
-        private async void UseHandgun(Player player, string namehash, Item i)
+        private async void UseMeleeWeapon(Player player, string namehash, Item i)
         {
+            if (i.InUse)
+            {
+                player.TriggerEvent("client:ChangeItemInUse", i.DBID, i.InUse);
+                Server.Chat.Commands.ChatEmoteME(player, "eltesz egy fegyver. (" + ItemList.GetItemName(i.ItemID) + ")");
+                NAPI.Player.SetPlayerCurrentWeapon(player, NAPI.Util.GetHashKey("weapon_unarmed"));
+                NAPI.Player.RemoveAllPlayerWeapons(player);
+                i.InUse = false;
+                player.TriggerEvent("client:ChangeItemInUse", i.DBID, i.InUse);
+            }
+            else
+            {
+                NAPI.Player.GivePlayerWeapon(player, NAPI.Util.GetHashKey(namehash), 1);
+                NAPI.Player.SetPlayerCurrentWeapon(player, NAPI.Util.GetHashKey(namehash));
+                i.InUse = true;
+                player.TriggerEvent("client:ChangeItemInUse", i.DBID, i.InUse);
+                Server.Chat.Commands.ChatEmoteME(player, "elővesz egy fegyver. (" + ItemList.GetItemName(i.ItemID) + ")");
+            }
+        }
+
+        private async void UseHandgun(Player player, string namehash, Item i, uint ammo_itemid)
+        {
+            //ha ammo_itemid = 0 akkor nem kell hozzá ammo
             if (i.InUse)
             {
                 Item[] tarak = GetItemsByItemID(player, 19);
@@ -1542,7 +1966,7 @@ namespace Server.Inventory
                 //NAPI.Player.RemovePlayerWeapon(player, NAPI.Util.GetHashKey("weapon_pistol"));
                 i.InUse = false;
                 player.TriggerEvent("client:ChangeItemInUse", i.DBID, i.InUse);
-                Server.Chat.Commands.ChatEmoteME(player, "eltesz egy fegyver. (" + ItemList.GetItemName(i.ItemID) + ")");
+                Server.Chat.Commands.ChatEmoteME(player, "eltesz egy pisztolyt. (" + ItemList.GetItemName(i.ItemID) + ")");
 
                 player.PlayAnimation("reaction@intimidation@1h", "outro", 49);
                 NAPI.Task.Run(() =>
@@ -1572,7 +1996,7 @@ namespace Server.Inventory
                 NAPI.Player.SetPlayerCurrentWeapon(player, NAPI.Util.GetHashKey(namehash));
                 i.InUse = true;
                 player.TriggerEvent("client:ChangeItemInUse", i.DBID, i.InUse);
-                Server.Chat.Commands.ChatEmoteME(player, "elővesz egy fegyver. (" + ItemList.GetItemName(i.ItemID) + ")");
+                Server.Chat.Commands.ChatEmoteME(player, "elővesz egy pisztolyt. (" + ItemList.GetItemName(i.ItemID) + ")");
 
                 player.PlayAnimation("reaction@intimidation@1h", "intro", 49);
                 NAPI.Task.Run(() =>

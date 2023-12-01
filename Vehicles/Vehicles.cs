@@ -61,7 +61,7 @@ namespace Server.Vehicles
         static Dictionary<int,Vehicle> vehicles = new Dictionary<int,Vehicle>();
         static Dictionary<Player, Vehicle> dealership = new Dictionary<Player, Vehicle>();
         int tempIndex = -1;
-        ColShape dealer;
+        //ColShape dealer;
 
         public Vehicles()
         {
@@ -76,7 +76,7 @@ namespace Server.Vehicles
         public void InitiateLoading()
         {
             //dealer = NAPI.ColShape.Create2DColShape(-52.5f, -1102.5f, 25.5f, 15f);
-            dealer = NAPI.ColShape.CreateSphereColShape(new Vector3(-44.2f, -1098f, 26.5f), 8f);
+            //dealer = NAPI.ColShape.CreateSphereColShape(new Vector3(-44.2f, -1098f, 26.5f), 8f);
             
             //dealer = NAPI.ColShape.Create3DColShape(new Vector3(-35f, -1108f, 20f), new Vector3(-51f, -1089f, 31f),0);
         }
@@ -165,6 +165,7 @@ namespace Server.Vehicles
         [ServerEvent(Event.PlayerEnterColshape)]
         public void EnterCheckpoint(ColShape cp, Player player)
         {
+            /*
             player.SendChatMessage("beleléptél a colshapeba");
             if (cp == dealer && player.Position.Z > 20f && player.Position.Z < 31f)//belépet a dealership-be
             {
@@ -174,11 +175,13 @@ namespace Server.Vehicles
                 Vehicle preview = NAPI.Vehicle.CreateVehicle(vHash, new Vector3(-44f, -1097.75f, 26f), 150f, 0, 0, "DEALER", 255, false, false, player.Dimension);
                 dealership[player] = preview;
             }
+            */
         }
 
         [ServerEvent(Event.PlayerExitColshape)]
         public void ExitCheckpoint(ColShape cp, Player player)
         {
+            /*
             if (cp == dealer)//kilépett a dealership-ből
             {
                 player.Dimension = 0;
@@ -189,32 +192,33 @@ namespace Server.Vehicles
                 }
                 
             }
+            */
         }
 
-        /*
+
+
+        
         [Command("dealership")]
         public void OpenDealership(Player player)
         {
             player.Dimension = Convert.ToUInt32(player.Id+1);
+            player.Position = new Vector3(-42.3f, -1104f, 26.4f);
             
-            Vector3 offset = new Vector3(1f, 1f, 0f);
-            
-            player.Position = v.Position + offset;
-            player.SendChatMessage("Ideiglenes jármű létrehozva: " + "elegy" + " (" + tempIndex + ")");
             player.SetSharedData("player:Frozen", true);
             player.SetSharedData("player:Invisible", true);
-            vehicles[tempIndex] = v;
-            tempIndex--;
+            
+            Vehicle v = NAPI.Vehicle.CreateVehicle(NAPI.Util.GetHashKey("elegy"), new Vector3(-44.7f, -1098.1f, 26.2f), 150f, 0, 0, "", 255, true, false, player.Dimension);
+
+            v.EngineStatus = true;
+            
             NAPI.Task.Run(() =>
             {
-                NAPI.Player.SetPlayerIntoVehicle(player, v, 0);
-                NAPI.Task.Run(() =>
-                {
-                    player.TriggerEvent("client:DealershipCamera");
-                }, 250);
-            }, 750);
+                vehicles[tempIndex] = v;
+                player.TriggerEvent("client:OpenDealership", v.Id, tempIndex);
+                tempIndex--;
+            }, 500);
         }
-        */
+        
 
         [Command("flipveh", Alias = "flipcar")]
         public void FlipVehicle(Player player, int id = 0)

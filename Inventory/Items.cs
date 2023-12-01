@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using GTANetworkAPI;
 using MySql.Data.MySqlClient;
@@ -786,8 +787,35 @@ namespace Server.Inventory
                 }
             }
         }
+        public int GetCorrectAccessory(bool gender, int component, int drawable)//ha negatív szám akkor visszaadja a jó drawablet
+        {
+            if (gender)//férfi
+            {
+                if (drawable < 0)//negatív, modolt -> offset + abszolút érték
+                {
+                    return MaleAccessoryOffsets[component] + Math.Abs(drawable);
+                }
+                else
+                {
+                    return drawable;
+                }
+            }
+            else
+            {
+                if (drawable < 0)//negatív, modolt -> offset + abszolút érték
+                {
+                    return FemaleAccessoryOffsets[component] + Math.Abs(drawable);
+                }
+                else
+                {
+                    return drawable;
+                }
+            }
+        }
 
-        public int DrawableToModded(bool gender, int component, int drawable)
+
+
+        public int DrawableToModdedClothing(bool gender, int component, int drawable)
         {
             if (gender)//férfi
             {
@@ -805,6 +833,32 @@ namespace Server.Inventory
                 if (drawable > FemaleClothingOffsets[component])
                 {
                     return -(drawable - FemaleClothingOffsets[component]);
+                }
+                else
+                {
+                    return drawable;
+                }
+            }
+        }
+
+        public int DrawableToModdedAccessory(bool gender, int component, int drawable)
+        {
+            if (gender)//férfi
+            {
+                if (drawable > MaleAccessoryOffsets[component])
+                {
+                    return -(drawable - MaleAccessoryOffsets[component]);
+                }
+                else
+                {
+                    return drawable;
+                }
+            }
+            else
+            {
+                if (drawable > FemaleAccessoryOffsets[component])
+                {
+                    return -(drawable - FemaleAccessoryOffsets[component]);
                 }
                 else
                 {
@@ -1090,7 +1144,7 @@ namespace Server.Inventory
         }
 
 
-            public async static Task AddItemToInventory(Player player, int OwnerType, uint OwnerID, Item item)
+        public async static Task AddItemToInventory(Player player, int OwnerType, uint OwnerID, Item item)
         {
             foreach (var inv in Inventories)
             {
@@ -1672,6 +1726,60 @@ namespace Server.Inventory
             }
         }
 
+        [RemoteEvent("server:PickUpItem")]
+        public async void PickUpItem(Player player, uint grounditem_id)
+        {
+            player.SendChatMessage("pickup item server " + grounditem_id);
+            GroundItem gi = GroundItems.Where((i) => i.ID == grounditem_id).FirstOrDefault();
+            if (Vector3.Distance(player.Position,gi.Object.Position) < 3f)//ha elég közel van hozzánk
+            {
+                Item i = await LoadItemFromGround(gi.Item_DBID);
+                if (i != null)//létezik az eldobott item és tényleg el van dobva (ownertype = 6)
+                {
+                    uint charid = player.GetData<UInt32>("player:charID");
+                    GroundItems.Remove(gi);
+                    gi.PickUpTime = DateTime.Now;
+                    gi.PickedUpBy = charid;
+                    i.Priority = 1000;
+                    i.OwnerType = 0;
+                    i.OwnerID = charid;
+                    NAPI.Task.Run(() =>
+                    {
+                        string json = NAPI.Util.ToJson(i);
+                        player.TriggerEvent("client:AddItemToInventory", json);
+                        Chat.Commands.ChatEmoteME(player, "felvesz egy tárgyat a földről. ((" + i.DBID + "))");
+                        gi.Object.Delete();
+                        gi.Label.Delete();
+                    });
+
+                    await AddItemToInventory(player, 0, charid, i);//hozzáadjuk a tárolójához és meghívjuk CEF-et is
+                    if (!await UpdateItem(i))
+                    {
+                        Database.Log.Log_Server("ADATBÁZIS HIBA! ITEM DBID: " + i.DBID + " nem került mentésre.");
+                    }
+                    if(!await PickupGroundItem(gi))
+                    {
+                        Database.Log.Log_Server("ADATBÁZIS HIBA! GROUND ITEM ID: " + gi.ID + " nem került felvételre.");
+                    }
+                }
+                else
+                {
+                    NAPI.Task.Run(() =>
+                    {
+                        player.SendChatMessage("Hiba! Ez a tárgy nem létezik. ID:"+gi.ID);
+                        Database.Log.Log_Server("HIBA! " + player.Name + " megpróbált felvenni egy tárgyat de az nem létezik. ID:" + gi.ID + " ITEM ADATBÁZIS ID: " + gi.Item_DBID);
+                    });
+                    
+                }
+
+
+            }
+            else
+            {
+                player.SendChatMessage("Túl távol vagy a a tárgy felvételéhez!");
+            }
+        }
+
         [RemoteEvent("server:DropItem")]
         public async void DropItem(Player player, uint item_dbid, float groundZ, float objRotX, float objRotY, float objRotZ)
         {
@@ -1704,16 +1812,17 @@ namespace Server.Inventory
 
                             uint id = await AddGroundItemToDatabase(gi);
                             gi.ID = id;
+                            GroundItems.Add(gi);
                             RemoveItemFromInventory(i.OwnerType, i.OwnerID, i);
                             i.OwnerType = 6;
                             i.OwnerID = 0;
-
+                            
                             if (await UpdateItem(i))
                             {
                                 NAPI.Task.Run(() =>
                                 {
                                     player.TriggerEvent("client:RemoveItem", i.DBID);
-                                    player.SendChatMessage(ItemList.GetItemName(i.ItemID) + " eldobva. (" + id + ")");
+                                    Chat.Commands.ChatEmoteME(player, "eldob egy tárgyat a földre. ((" + i.DBID + "))");
                                 });
                             }
                             else
@@ -2914,8 +3023,9 @@ namespace Server.Inventory
                     int[] slots = GetDefaultClothes(i1.ItemID);
                     t = new Top(slots[0], slots[1], slots[3], slots[4], slots[2]);//beállítjuk az alapértékekre a felsőjét
                 }
+                int correctDrawable = GetCorrectClothing(gender, clothing_id, t.Drawable);
 
-                player.SetClothes(clothing_id, t.Drawable, t.Texture);
+                player.SetClothes(clothing_id, correctDrawable, t.Texture);
                 player.SetClothes(8, t.UndershirtDrawable, t.UndershirtTexture);
                 //KESZTYŰ KEZELÉSE
                 Item GloveItem = GetClothingOnSlot(player, 27);//lekérjük a kesztyűjét
@@ -2989,9 +3099,10 @@ namespace Server.Inventory
                                 t = new Top(slots[0], slots[1], slots[3], slots[4], slots[2]);//beállítjuk az alapértékekre a felsőjét
                             }
                         }
-
-                        player.SetClothes(clothing_id, t.Drawable, t.Texture);
-                        player.SetClothes(8, t.UndershirtDrawable, t.UndershirtTexture);
+                        int correctDrawable = GetCorrectClothing(gender, clothing_id, t.Drawable);
+                        int correctUndershirtDrawable = GetCorrectClothing(gender, 8, t.UndershirtDrawable);
+                        player.SetClothes(clothing_id, correctDrawable, t.Texture);
+                        player.SetClothes(8, correctUndershirtDrawable, t.UndershirtTexture);
                         //KESZTYŰ KEZELÉSE
                         Item GloveItem = GetClothingOnSlot(player, 27);//lekérjük a kesztyűjét
                         if (GloveItem != null)//van rajta kesztyű
@@ -3176,7 +3287,9 @@ namespace Server.Inventory
                     //player.TriggerEvent("client:RemoveItem", i1.DBID);
                     //player.TriggerEvent("client:RemoveItem", i2.DBID);
                     Clothing c = NAPI.Util.FromJson<Clothing>(i1.ItemValue);
-                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
+                    bool gender = player.GetData<bool>("player:gender");
+                    int correctDrawable = GetCorrectClothing(gender, clothing_id, c.Drawable);
+                    player.SetClothes(clothing_id, correctDrawable, c.Texture);
 
                     string json = NAPI.Util.ToJson(i1);
                     player.TriggerEvent("client:AddItemToClothing", json);
@@ -3212,7 +3325,11 @@ namespace Server.Inventory
 
                     //player.TriggerEvent("client:RemoveItem", i.DBID);
                     Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                    player.SetClothes(clothing_id, c.Drawable, c.Texture);
+
+                    bool gender = player.GetData<bool>("player:gender");
+                    int correctDrawable = GetCorrectClothing(gender, clothing_id, c.Drawable);
+                    player.SetClothes(clothing_id, correctDrawable, c.Texture);
+
                     string json = NAPI.Util.ToJson(i);
                     player.TriggerEvent("client:AddItemToClothing", json);
                     player.TriggerEvent("client:RefreshInventoryPreview");
@@ -3237,7 +3354,10 @@ namespace Server.Inventory
                     //player.TriggerEvent("client:RemoveItem", i1.DBID);
                     //player.TriggerEvent("client:RemoveItem", i2.DBID);
                     Clothing c = NAPI.Util.FromJson<Clothing>(i1.ItemValue);
-                    player.SetAccessories(clothing_id, c.Drawable, c.Texture);
+
+                    bool gender = player.GetData<bool>("player:gender");
+                    int correctDrawable = GetCorrectAccessory(gender, clothing_id, c.Drawable);
+                    player.SetAccessories(clothing_id, correctDrawable, c.Texture);
 
                     string json = NAPI.Util.ToJson(i1);
                     player.TriggerEvent("client:AddItemToClothing", json);
@@ -3272,7 +3392,9 @@ namespace Server.Inventory
                     AddItemToInventory(player, i.OwnerType, i.OwnerID, i);
                     //player.TriggerEvent("client:RemoveItem", i.DBID);
                     Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                    player.SetAccessories(clothing_id, c.Drawable, c.Texture);
+                    bool gender = player.GetData<bool>("player:gender");
+                    int correctDrawable = GetCorrectAccessory(gender, clothing_id, c.Drawable);
+                    player.SetAccessories(clothing_id, correctDrawable, c.Texture);
 
                     string json = NAPI.Util.ToJson(i);
                     player.TriggerEvent("client:AddItemToClothing", json);
@@ -3302,6 +3424,45 @@ namespace Server.Inventory
                 }
             }
                 return null;
+        }
+
+        public static async Task<Item> LoadItemFromGround(uint dbid)
+        {
+            string query = $"SELECT * FROM `items` WHERE `DbID` = @DatabaseID AND `ownerType` = 6";
+            Item item = null;
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                try
+                {
+                    await con.OpenAsync();
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("@DatabaseID", dbid);
+                        cmd.Prepare();
+                        try
+                        {
+                            using (var reader = await cmd.ExecuteReaderAsync())
+                            {
+                                while (await reader.ReadAsync())
+                                {
+                                    item = new Item(Convert.ToUInt32(reader["DbID"]), Convert.ToUInt32(reader["ownerID"]), Convert.ToInt32(reader["ownerType"]), Convert.ToUInt32(reader["itemID"]), reader["itemValue"].ToString(), Convert.ToInt32(reader["itemAmount"]), Convert.ToBoolean(reader["inUse"]), Convert.ToBoolean(reader["duty"]), Convert.ToInt32(reader["priority"]));
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Database.Log.Log_Server(ex.ToString());
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+                await con.CloseAsync();
+                return item;
+            }
         }
 
         public static async Task<Item[]> LoadPlayerInventory(uint charid)

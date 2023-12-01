@@ -47,6 +47,7 @@ namespace Server.Chat
             foreach (Player item in nearbyPlayers)
             {
                 item.SendChatMessage(player.Name + " mondja: " + message);
+                item.TriggerEvent("client:LogMessage", player.Name + " mondja: " + message);
             }
         }
 
@@ -58,6 +59,7 @@ namespace Server.Chat
             foreach(Player item in nearbyPlayers)
                 {
                 item.SendChatMessage("!{#c2a2da}*** " + player.Name + " " + message);
+                item.TriggerEvent("client:LogMessage", "*** " + player.Name + " " + message);
             }
         }
 
@@ -68,6 +70,7 @@ namespace Server.Chat
             foreach (Player item in nearbyPlayers)
             {
                 item.SendChatMessage("!{#ff2850}* " + message + " ((" + player.Name + "))");
+                item.TriggerEvent("client:LogMessage", "* " + message + " ((" + player.Name + "))");
             }
         }
 
@@ -75,10 +78,12 @@ namespace Server.Chat
         public void HitByBeanbag(Player player)
         {
             player.SendChatMessage("Eltaláltak egy babzsák sörétes puskával! Kérlek ügyelj a karakteredhez illő szerepjátékra.");
+            player.TriggerEvent("client:LogMessage", "Eltaláltak egy babzsák sörétes puskával! Kérlek ügyelj a karakteredhez illő szerepjátékra.");
             var nearbyPlayers = NAPI.Player.GetPlayersInRadiusOfPlayer(10.0, player);
             foreach (Player item in nearbyPlayers)
             {
                 item.SendChatMessage("!{#ff2850}* A földre esik. ((" + player.Name + "))");
+                item.TriggerEvent("client:LogMessage", "* A földre esik. ((" + player.Name + "))");
             }
         }
 
@@ -89,6 +94,7 @@ namespace Server.Chat
             foreach (Player item in nearbyPlayers)
             {
                 item.SendChatMessage("!{#8362A2}> " + player.Name +" " + message);
+                item.TriggerEvent("client:LogMessage", "> " + player.Name + " " + message);
             }
         }
 

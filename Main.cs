@@ -20,7 +20,6 @@ namespace Server
             NAPI.Server.SetCommandErrorMessage("!{#ffffff}[!{##a83232}Hiba!{#ffffff}] Parancs nem található!");
             NAPI.Server.SetGlobalServerChat(false);
             NAPI.Server.SetAutoSpawnOnConnect(false);
-            
             NAPI.Server.SetAutoRespawnAfterDeath(false);
             NAPI.World.SetWeather(Weather.EXTRASUNNY);
             //NAPI.Server.SetGlobalServerChat(true);

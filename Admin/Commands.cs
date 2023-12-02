@@ -178,6 +178,13 @@ namespace Server.Admin
         }
 
 
+        [Command("sprint")]
+        public void SetSprint(Player player, float value)
+        {
+            player.TriggerEvent("client:SetRunning", value);
+        }
+
+
         [Command("helicam")]
         public void GetId(Player player)
         {

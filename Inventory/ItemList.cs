@@ -165,5 +165,24 @@ namespace Server.Inventory
             return 0;
         }
 
+        public static bool IsItemStackable(uint itemid)
+        {
+            foreach (var item in itemList)
+            {
+                if (item.ItemID == itemid)
+                {
+                    if (item.Stackable)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+            return false;
+        }
+
     }
 }

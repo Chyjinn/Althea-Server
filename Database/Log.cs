@@ -22,9 +22,13 @@ namespace Database
         public static void Log_Server(string message)
         {
             DateTime now = DateTime.Now;
-            NAPI.Util.ConsoleOutput($"[{now.Hour}:{now.Minute}:{now.Second}] {message}");
-            File.AppendAllText(ServerLogPath, $"[{now.Hour}:{now.Minute}:{now.Second}] {message}");
-            return;
+            NAPI.Task.Run(() =>
+            {
+                NAPI.Util.ConsoleOutput($"[{now.Hour}:{now.Minute}:{now.Second}] {message}");
+                File.AppendAllText(ServerLogPath, $"[{now.Hour}:{now.Minute}:{now.Second}] {message}");
+                return;
+            });
+
         }
     }
 }

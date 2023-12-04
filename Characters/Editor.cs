@@ -158,7 +158,7 @@ namespace Server.Characters
         [RemoteEvent("server:PlayTPose")]
         public static void TPose(Player player)
         {
-            player.PlayAnimation("nm@hands", "hands_up", 2);
+            player.PlayAnimation("nm@hands", "hands_up", 1);
         }
 
         [RemoteEvent("server:RotateCharRight")]

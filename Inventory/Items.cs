@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Asn1.X509;
+using Server.Characters;
 
 namespace Server.Inventory
 {
@@ -1458,11 +1459,10 @@ namespace Server.Inventory
         public async void SetupItemPictures(Player player, float offset, float fov)
         {
             player.Dimension = 9873;
-            player.Position = new Vector3(228.6f, -989.3f, -98f);
+            player.SetSharedData("player:Frozen", true);
+            player.Position = new Vector3(228.6f, -989.3f, -98.5f);
             player.Rotation = new Vector3(0f, 0f, 0f);
             player.TriggerEvent("client:TakeItemPictures", offset, fov);
-            player.SetSharedData("player:Frozen", true);
-            
         }
 
         [Command("takepicture")]
@@ -1786,7 +1786,7 @@ namespace Server.Inventory
                 switch (ownertype)
                 {
                     case 1:
-                        containername = "Tároló ((" + ownerid + "))";
+                        containername = "Tároló [" + ownerid + "]";
                         break;
                     case 2:
                         containername = Vehicles.Vehicles.GetVehicleById(Convert.ToInt32(ownerid)).NumberPlate + " | Csomagtér [" + ownerid + "]";

@@ -29,6 +29,7 @@ namespace Server
                 Admin.Levels.LoadAcmds();
                 Inventory.ItemList.InitiateItemList();
                 Inventory.Items.PopulateGroundItems();
+                Characters.Clothing.LoadClothingShops();
                 //Interior.Interiors.InitiateInteriors();
             },10000);
             //SetServerTime();

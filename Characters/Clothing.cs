@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Server.Characters
 {
@@ -107,17 +108,6 @@ namespace Server.Characters
             DecalHigh = decalhigh;
         }
 
-        public Checkpoint CreateShop()
-        {
-            if (Blip != -1)
-            {
-                ActualBlip = NAPI.Blip.CreateBlip(Blip, Position, 0.5f, BlipColor, Name, 255, 0, false, 0, Dimension);
-            }
-            
-            Checkpoint = NAPI.Checkpoint.CreateCheckpoint(CheckpointType.Cyclinder, Position, new Vector3(0f, 0f, 0f), 0.5f, new Color(255, 255, 255, 200), Dimension);
-            Checkpoint.SetData("Clothingshop:ID", ID);
-            return Checkpoint;
-        }
     }
 
     class ClothingItem
@@ -141,9 +131,9 @@ namespace Server.Characters
 
     internal class Clothing : Script
     {
-        List<ClothingShop> ClothingShops = new List<ClothingShop>();
+        static List<ClothingShop> ClothingShops = new List<ClothingShop>();
 
-        public async Task LoadClothingShops()
+        public static async Task LoadClothingShops()
         {
             string query = $"SELECT * FROM `clothingshops`";
             using (MySqlConnection con = new MySqlConnection())
@@ -176,8 +166,20 @@ namespace Server.Characters
                                        Convert.ToBoolean(reader["armorLow"]), Convert.ToBoolean(reader["armorMed"]), Convert.ToBoolean(reader["armorHigh"]),
                                        Convert.ToBoolean(reader["decalLow"]), Convert.ToBoolean(reader["decalMed"]), Convert.ToBoolean(reader["decalHigh"]));
 
-                                    shop.CreateShop();
-                                    ClothingShops.Add(shop);
+                                    NAPI.Task.Run(() =>
+                                    {
+                                        if (shop.Blip != -1)
+                                        {
+                                            shop.ActualBlip = NAPI.Blip.CreateBlip(shop.Blip, shop.Position, 0.75f, shop.BlipColor, shop.Name, 255, 0, true, 0, shop.Dimension);
+                                        }
+
+                                        shop.Checkpoint = NAPI.Checkpoint.CreateCheckpoint(CheckpointType.Cyclinder3, shop.Position, new Vector3(0f, 0f, 0f), 0.75f, new Color(255, 255, 255, 200), shop.Dimension);
+                                        shop.Checkpoint.SetData("ClothingShop:ID", shop.ID);
+                                        ClothingShops.Add(shop);
+                                    });
+                                    
+
+                                    
                                 }
                                 
                             }
@@ -208,6 +210,23 @@ namespace Server.Characters
                     items.Add(item);
                 }
             }
+            /*
+             PROP-ok a sima ruhák után beszúrva
+             sapka 12
+            szemcsi 13
+            füles 14
+            óra 15
+            karkötő 16
+
+            maszk 1
+            láb 4
+            táska 5
+            cipő 6
+            kieg 7
+            armor 9
+            decal 10
+            top 11
+             */
 
             if (shop.MaskMed)
             {
@@ -244,7 +263,7 @@ namespace Server.Characters
                     items.Add(item);
                 }
             }
-
+            
             if (shop.PantsHigh)
             {
                 List<ClothingItem> tempItems = await GetClothingItemsByComponentAndType(4, 3, gender);
@@ -253,6 +272,7 @@ namespace Server.Characters
                     items.Add(item);
                 }
             }
+
             if (shop.BagLow)
             {
                 List<ClothingItem> tempItems = await GetClothingItemsByComponentAndType(5, 1, gender);
@@ -279,6 +299,7 @@ namespace Server.Characters
                     items.Add(item);
                 }
             }
+
             if (shop.ShoesLow)
             {
                 List<ClothingItem> tempItems = await GetClothingItemsByComponentAndType(6, 1, gender);
@@ -359,6 +380,7 @@ namespace Server.Characters
                     items.Add(item);
                 }
             }
+
             if (shop.DecalLow)
             {
                 List<ClothingItem> tempItems = await GetClothingItemsByComponentAndType(10, 1, gender);
@@ -601,32 +623,63 @@ namespace Server.Characters
         [ServerEvent(Event.ResourceStart)]
         public void CreateClothingCP()
         {
-            Checkpoint cp = NAPI.Checkpoint.CreateCheckpoint(CheckpointType.Cyclinder3, new Vector3(428f, -800f, 28.5f), new Vector3(0, 1f, 0), 1f, new Color(255, 0, 0, 100), 0);
-            NAPI.Blip.CreateBlip(73, new Vector3(428f, -800f, 150f), 0.5f, 0, "Ruhabolt", 255, 0, true, 0, 0);
-            NAPI.Blip.CreateBlip(149, new Vector3(103.7f, -1939.2f, 50f), 0.5f, 85, "N?", 255, 0, true, 0, 0);
+            //Checkpoint cp = NAPI.Checkpoint.CreateCheckpoint(CheckpointType.Cyclinder3, new Vector3(428f, -800f, 28.5f), new Vector3(0, 1f, 0), 1f, new Color(255, 0, 0, 100), 0);
+            //NAPI.Blip.CreateBlip(149, new Vector3(103.7f, -1939.2f, 50f), 0.5f, 85, "N?", 255, 0, true, 0, 0);
         }
 
 
         [ServerEvent(Event.PlayerEnterCheckpoint)]
-        public void OnPlayerEnterCheckpoint(Checkpoint checkpoint, Player player)
+        public async void OnPlayerEnterCheckpoint(Checkpoint checkpoint, Player player)
         {
-            if (checkpoint.HasData("Clothingshop:ID"))
+            if(checkpoint.HasData("ClothingShop:ID"))
             {
-                uint shopid = checkpoint.GetData<uint>("Clothingshop:ID");
-                player.SetData("player:ClothingShop", shopid);
-                //shopid alapján betöltjük az itemeket
-                //a betöltött itemeket elküldjük a playernek
-
+                uint shopid = checkpoint.GetData<uint>("ClothingShop:ID");
+                foreach (var item in ClothingShops)
+                {
+                    if (item.ID == shopid)
+                    {
+                        bool gender = player.GetData<bool>("player:gender");
+                        List<ClothingItem> clothes = await GetClothingShopItems(item, gender);
+                        NAPI.Task.Run(() =>
+                        {
+                            string json = NAPI.Util.ToJson(clothes);
+                            player.TriggerEvent("client:LoadClothingShop", json);
+                            player.SendChatMessage(json);
+                        });
+                        break;
+                    }
+                }
             }
+            else
+            {
+                player.SendChatMessage("nincs data");
+            }
+            /*
+            foreach (var item in ClothingShops)
+            {
+                if (checkpoint == item.Checkpoint)
+                {
+                    bool gender = player.GetData<bool>("player:gender");
+                    List<ClothingItem> clothes = await GetClothingShopItems(item, gender);
+                    NAPI.Task.Run(() =>
+                    {
+                        string json = NAPI.Util.ToJson(clothes);
+                        player.TriggerEvent("client:LoadClothingShop", json);
+                        player.SendChatMessage(json);
+                    });
+                    break;
+                }
+            }*/
         }
 
         [ServerEvent(Event.PlayerExitCheckpoint)]
         public void OnPlayerExitCheckpoint(Checkpoint checkpoint, Player player)
         {
-            if (checkpoint.HasData("Clothingshop:ID"))
+            if (checkpoint.HasData("ClothingShop:ID"))
             {
-                player.SetData("player:ClothingShop", 0);
+                player.TriggerEvent("client:CloseClothingShop");
             }
+
         }
 
 
@@ -643,21 +696,41 @@ namespace Server.Characters
 
 
         [Command("clothingshop", Alias = "clothes")]
-        public async void Clothes(Player player, bool state)
+        public async void Clothes(Player player, uint shopid)
         {
+            bool gender = player.GetData<bool>("player:gender");
+            ClothingShop shop = ClothingShops.Where((i) => i.ID == shopid).FirstOrDefault();
+            
+            List<ClothingItem> clothes = await GetClothingShopItems(shop, gender);
+            NAPI.Task.Run(() =>
+            {
+                string json = NAPI.Util.ToJson(clothes);
+                player.TriggerEvent("client:LoadClothingShop", json);
+                player.SendChatMessage(json);
+            });
+
+            /*
             if (player.HasData("player:ClothingShop"))
             {
+                
+                NAPI.Task.Run(() =>
+                {
+                    player.SendChatMessage("ruhaboltban van");
+                });
                 uint shopid = player.GetData<uint>("player:ClothingShop");
                 if (shopid != 0)
                 {
-                    ClothingShop shop = ClothingShops.Where((i) => i.ID == shopid).FirstOrDefault();
-                    bool gender = player.GetData<bool>("player:gender");
-                    List<ClothingItem> clothes = await GetClothingShopItems(shop, gender);
-                    string json = NAPI.Util.ToJson(clothes);
-                    player.TriggerEvent("client:LoadClothingShop", json);
+                    
 
                 }
             }
+            else
+            {
+                NAPI.Task.Run(() =>
+                {
+                    player.SendChatMessage("nincs ruhaboltban");
+                });
+            }*/
         }
 
 

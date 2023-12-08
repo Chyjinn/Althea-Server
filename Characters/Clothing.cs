@@ -15,7 +15,7 @@ namespace Server.Characters
         public uint ID { get; set; }
         public string Name { get; set; }
         public Vector3 Position { get; set; }
-        public Checkpoint Checkpoint { get; set; }
+        public ColShape CollisionShape { get; set; }
         public Blip ActualBlip { get; set; }
         public uint Dimension { get; set; }
         public int Blip { get; set; }
@@ -114,18 +114,22 @@ namespace Server.Characters
     {
         public uint ID { get; set; }
         public bool Gender { get; set; }
+        public string Name { get; set; }
         public uint Component { get; set; }
         public uint Category { get; set; }
         public string ItemValue { get; set; }
         public uint Price { get; set; }
-        public ClothingItem(uint id, bool gender, uint component, uint category, string itemValue, uint price)
+        public string Image { get; set; }
+        public ClothingItem(uint id, bool gender, string name, uint component, uint category, string itemValue, uint price, string image)
         {
             ID = id;
             Gender = gender;
+            Name = name;
             Component = component;
             Category = category;
             ItemValue = itemValue;
             Price = price;
+            Image = image;  
         }
     }
 
@@ -172,14 +176,10 @@ namespace Server.Characters
                                         {
                                             shop.ActualBlip = NAPI.Blip.CreateBlip(shop.Blip, shop.Position, 0.75f, shop.BlipColor, shop.Name, 255, 0, true, 0, shop.Dimension);
                                         }
-
-                                        shop.Checkpoint = NAPI.Checkpoint.CreateCheckpoint(CheckpointType.Cyclinder3, shop.Position, new Vector3(0f, 0f, 0f), 0.75f, new Color(255, 255, 255, 200), shop.Dimension);
-                                        shop.Checkpoint.SetData("ClothingShop:ID", shop.ID);
+                                        shop.CollisionShape = NAPI.ColShape.CreateCylinderColShape(shop.Position, 5f, 10f, shop.Dimension);
+                                        shop.CollisionShape.SetData("ClothingShop:ID", shop.ID);
                                         ClothingShops.Add(shop);
                                     });
-                                    
-
-                                    
                                 }
                                 
                             }
@@ -598,7 +598,7 @@ namespace Server.Characters
                             {
                                 while (await reader.ReadAsync())
                                 {
-                                    ClothingItem item = new ClothingItem(Convert.ToUInt32(reader["id"]), Convert.ToBoolean(reader["gender"]), Convert.ToUInt32(reader["component"]), Convert.ToUInt32(reader["category"]), Convert.ToString(reader["itemValue"]), Convert.ToUInt32(reader["price"]));
+                                    ClothingItem item = new ClothingItem(Convert.ToUInt32(reader["id"]), Convert.ToBoolean(reader["gender"]), Convert.ToString(reader["name"]), Convert.ToUInt32(reader["component"]), Convert.ToUInt32(reader["category"]), Convert.ToString(reader["itemValue"]), Convert.ToUInt32(reader["price"]), Convert.ToString(reader["image"]));
                                     items.Add(item);
                                 }
 
@@ -628,31 +628,14 @@ namespace Server.Characters
         }
 
 
-        [ServerEvent(Event.PlayerEnterCheckpoint)]
-        public async void OnPlayerEnterCheckpoint(Checkpoint checkpoint, Player player)
+        [ServerEvent(Event.PlayerEnterColshape)]
+        public void OnPlayerEnterColShape(ColShape colshape, Player player)
         {
-            if(checkpoint.HasData("ClothingShop:ID"))
+            if (colshape.HasData("ClothingShop:ID"))
             {
-                uint shopid = checkpoint.GetData<uint>("ClothingShop:ID");
-                foreach (var item in ClothingShops)
-                {
-                    if (item.ID == shopid)
-                    {
-                        bool gender = player.GetData<bool>("player:gender");
-                        List<ClothingItem> clothes = await GetClothingShopItems(item, gender);
-                        NAPI.Task.Run(() =>
-                        {
-                            string json = NAPI.Util.ToJson(clothes);
-                            player.TriggerEvent("client:LoadClothingShop", json);
-                            player.SendChatMessage(json);
-                        });
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                player.SendChatMessage("nincs data");
+                uint shopid = colshape.GetData<uint>("ClothingShop:ID");
+                player.SendChatMessage("Beléptél egy ruhaboltba. Használ a /ruhabolt parancsot a választék megtekintéséhez!");
+                player.SetData("ClothingShop:ID", shopid);
             }
             /*
             foreach (var item in ClothingShops)
@@ -672,27 +655,147 @@ namespace Server.Characters
             }*/
         }
 
-        [ServerEvent(Event.PlayerExitCheckpoint)]
-        public void OnPlayerExitCheckpoint(Checkpoint checkpoint, Player player)
+        [ServerEvent(Event.PlayerExitColshape)]
+        public void OnPlayerExitCheckpoint(ColShape colshape, Player player)
         {
-            if (checkpoint.HasData("ClothingShop:ID"))
+            if (colshape.HasData("ClothingShop:ID"))
             {
-                player.TriggerEvent("client:CloseClothingShop");
+                
+                if (player.HasData("Player:InClothingShop"))
+                {
+                    bool state = player.GetData<bool>("Player:InClothingShop");
+                    if (state)//ha benne van a boltban akkor nem töröljük a dolgait
+                    {
+                        //benne van a boltban tehát nem kell töröljük, mert majd ez alapján dobjuk őt vissza a boltba
+                    }
+                    else
+                    {
+                        player.ResetData("ClothingShop:ID");
+                        player.ResetData("Player:InClothingShop");
+                        player.SendChatMessage("Elhagytad a ruhaboltot.");
+                    }
+                }
+            }
+        }
+
+        [Command("ruhabolt")]
+        public async void OpenClothingShop(Player player)
+        {
+            if (player.HasData("Player:InClothingShop"))
+            {
+                bool state = player.GetData<bool>("Player:InClothingShop");
+                if (state)//be akarja zárni a boltot
+                {
+                    uint shopid = player.GetData<uint>("ClothingShop:ID");
+                    foreach (var item in ClothingShops)
+                    {
+                        if (item.ID == shopid)
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.TriggerEvent("client:SkyCam", true);
+                                player.TriggerEvent("client:CloseClothingShop");
+                                NAPI.Task.Run(() =>
+                                {
+                                    
+                                    player.SetSharedData("player:Frozen", false);
+                                    player.TriggerEvent("client:DeleteCamera", true);
+                                    player.SetData("Player:InClothingShop", false);
+
+
+                                    player.Dimension = item.Dimension;
+                                    player.Position = item.Position;
+
+                                    player.TriggerEvent("client:SkyCam", false);
+                                    player.StopAnimation();
+                                }, 2000);
+                            });
+
+                            
+
+                            Items.SetWornClothing(player);
+                            break;
+                        }
+                    }
+                }
+                else if(player.HasData("ClothingShop:ID"))//nincs boltban de cp-ben van
+                {
+                    uint shopid = player.GetData<uint>("ClothingShop:ID");
+                    foreach (var item in ClothingShops)
+                    {
+                        if (item.ID == shopid)
+                        {
+                            bool gender = player.GetData<bool>("player:gender");
+                            List<ClothingItem> clothes = await GetClothingShopItems(item, gender);
+                            NAPI.Task.Run(() =>
+                            {
+                                player.TriggerEvent("client:SkyCam", true);
+                                NAPI.Task.Run(() =>
+                                {
+                                    player.SetSharedData("player:Frozen", true);
+                                    player.SetData("Player:InClothingShop", true);
+
+                                    player.Dimension = Convert.ToUInt32(player.Id + 1);
+                                    player.Position = new Vector3(-812.2f, 175f, 76.75f);
+                                    player.Rotation = new Vector3(0f, 0f, 110f);
+
+                                    player.TriggerEvent("client:SkyCam", false);
+                                    player.TriggerEvent("client:EditorCamera");
+
+
+                                    string json = NAPI.Util.ToJson(clothes);
+                                    player.TriggerEvent("client:LoadClothingShop", json);
+                                    player.PlayAnimation("nm@hands", "hands_up", 1);
+                                }, 2000);
+                            });
+                            break;
+                        }
+                    }
+                }
+            }
+            else if (player.HasData("ClothingShop:ID"))
+            {
+                uint shopid = player.GetData<uint>("ClothingShop:ID");
+                foreach (var item in ClothingShops)
+                {
+                    if (item.ID == shopid)
+                    {
+                        bool gender = player.GetData<bool>("player:gender");
+                        List<ClothingItem> clothes = await GetClothingShopItems(item, gender);
+                        
+                        NAPI.Task.Run(() =>
+                        {
+                            player.TriggerEvent("client:SkyCam", true);
+                            NAPI.Task.Run(() =>
+                            {
+                                player.SetSharedData("player:Frozen", true);
+                                player.SetData("Player:InClothingShop", true);
+
+                                player.Dimension = Convert.ToUInt32(player.Id + 1);
+                                player.Position = new Vector3(-812.2f, 175f, 76.75f);
+                                player.Rotation = new Vector3(0f, 0f, 110f);
+
+                                player.TriggerEvent("client:SkyCam", false);
+                                player.TriggerEvent("client:EditorCamera");
+
+
+                                string json = NAPI.Util.ToJson(clothes);
+                                player.TriggerEvent("client:LoadClothingShop", json);
+                                player.PlayAnimation("nm@hands", "hands_up", 1);
+                            }, 2000);
+                        });
+
+
+
+                        break;
+                    }
+                }
             }
 
         }
 
 
-        /*
-        if (clothingCpList.Contains(checkpoint))//ruha cp
-        {
-            Random r = new Random();
-            player.Dimension = Convert.ToUInt32(r.Next(0, 5000));
 
-            player.TriggerEvent("client:ClothingShop", true);
-            player.SetSharedData("player:Frozen", true);
-            player.TriggerEvent("client:EditorCamera", true);
-        }*/
 
 
         [Command("clothingshop", Alias = "clothes")]

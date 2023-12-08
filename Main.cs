@@ -35,6 +35,27 @@ namespace Server
             //SetServerTime();
         }
 
+        [ServerEvent(Event.VehicleDamage)]
+        public void VehicleDamage(Vehicle v, float bodyhp, float enginehp)
+        {
+            Database.Log.Log_Server(v.DisplayName + " HP: " + NAPI.Vehicle.GetVehicleHealth(v.Handle) + " ;Body: " + NAPI.Vehicle.GetVehicleBodyHealth(v.Handle) + " loss: " + bodyhp + " ;Engine: " + NAPI.Vehicle.GetVehicleEngineHealth(v.Handle)  + " loss: "+ enginehp);
+        }
+
+        [Command("vehdamage")]
+        public void VehDamage(Player player, float veh, float engine, float body)
+        {
+            player.Vehicle.SetSharedData("Vehicle:EngineHealth", engine);
+            player.Vehicle.SetSharedData("Vehicle:BodyHealth", body);
+
+            player.SendChatMessage("Server HP: " +NAPI.Vehicle.GetVehicleHealth(player.Vehicle.Handle) + " Engine: " + NAPI.Vehicle.GetVehicleEngineHealth(player.Vehicle.Handle) + " Body: " + NAPI.Vehicle.GetVehicleBodyHealth(player.Vehicle.Handle));
+        }
+
+        [Command("deformveh")]
+        public void DeformVeh(Player player, float offsetX, float offsetY, float offsetZ, float damage, float radius , bool focusonmodel)
+        {
+            player.TriggerEvent("client:DamageVehicle", offsetX, offsetY, offsetZ, damage, radius, focusonmodel);
+        }
+
 
 
         public async void SetServerTime()

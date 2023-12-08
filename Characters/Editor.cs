@@ -51,10 +51,10 @@ namespace Server.Characters
                     NAPI.Task.Run(() =>
                     {
                         Appearance.HandleCharacterAppearance(player, c);
-                        player.Position = new Vector3(-811.5f, 175.2f, 76.75f);
-                        player.Rotation = new Vector3(0f, 0f, 107f);
+                        player.Position = new Vector3(-812.2f, 175f, 76.75f);
+                        player.Rotation = new Vector3(0f, 0f, 110f);
 
-                        
+
                         player.TriggerEvent("client:SkyCam", false);
 
                         NAPI.Task.Run(() =>
@@ -94,8 +94,8 @@ namespace Server.Characters
 
                 NAPI.Task.Run(() =>
                 {
-                    player.Position = new Vector3(-811.5f, 175.2f, 76.75f);
-                    player.Rotation = new Vector3(0f, 0f, 107f);
+                    player.Position = new Vector3(-812.2f, 175f, 76.75f);
+                    player.Rotation = new Vector3(0f, 0f, 110f);
 
 
                     player.TriggerEvent("client:SkyCam", false);

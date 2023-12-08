@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Threading.Tasks;
 using GTANetworkAPI;
@@ -1424,6 +1425,8 @@ namespace Server.Inventory
             return false;
         }
 
+
+
         [Command("giveitem")]
         public async static void GiveItem(Player player, int targetid, uint itemid, string itemvalue, int amount)
         {
@@ -1456,23 +1459,26 @@ namespace Server.Inventory
 
 
         [Command("greenscreen")]
-        public async void SetupItemPictures(Player player, float offset, float fov)
+        public async void SetupItemPictures(Player player, bool gender)
         {
             player.Dimension = 9873;
             player.SetSharedData("player:Frozen", true);
+            player.SetSharedData("player:Invisible", true);
             player.Position = new Vector3(228.6f, -989.3f, -98.5f);
             player.Rotation = new Vector3(0f, 0f, 0f);
-            player.TriggerEvent("client:TakeItemPictures", offset, fov);
+            player.TriggerEvent("client:TakeItemPictures", gender);
         }
 
         [Command("takepicture")]
         public async void TakeCharacterPicture(Player player)
         {
+            player.SetSharedData("player:Frozen", true);
+            player.SetSharedData("player:Invisible", true);
             player.Dimension = Convert.ToUInt32(player.Id+1);
             player.Position = new Vector3(221.45f, -984.5f, -99f);
             player.Rotation = new Vector3(0f, 0f, -90f);
             player.TriggerEvent("client:TakeIDPicture");
-            player.SetSharedData("player:Frozen", true);
+
             player.StopAnimation();
         }
 
@@ -1822,31 +1828,33 @@ namespace Server.Inventory
 
         public async Task OpenContainer(Player player, Item containeritem)
         {
-            int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-            uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
-            //bezárjuk ha van megnyitott tároló
-            player.ResetData("player:OpenedContainerOwnerType");
-            player.ResetData("player:OpenedContainerID");
-
-            if (!IsInventoryInUse(1, containeritem.DBID))
+            if (IsItemContainer(containeritem.ItemID))
             {
-                SetInventoryInUse(container_ownertype, container_targetid, true);
+                int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
+                uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                //bezárjuk ha van megnyitott tároló
+                player.ResetData("player:OpenedContainerOwnerType");
+                player.ResetData("player:OpenedContainerID");
 
-                Chat.Commands.ChatEmoteME(player, "megnyit egy tárolót. ((" + containeritem.DBID + "))");
-                if (IsInventoryLoaded(1, containeritem.DBID))//be van töltve, vissza tudjuk adni neki
+                if (!IsInventoryInUse(1, containeritem.DBID))
                 {
-                    SendContainerToPlayer(player, 1, containeritem.DBID, GetInventory(1, containeritem.DBID).ToArray());
+                    SetInventoryInUse(container_ownertype, container_targetid, true);
+
+                    Chat.Commands.ChatEmoteME(player, "megnyit egy tárolót. ((" + containeritem.DBID + "))");
+                    if (IsInventoryLoaded(1, containeritem.DBID))//be van töltve, vissza tudjuk adni neki
+                    {
+                        SendContainerToPlayer(player, 1, containeritem.DBID, GetInventory(1, containeritem.DBID).ToArray());
+                    }
+                    else//nincs betöltve a tároló, be kell tölteni és utána visszaadni
+                    {
+                        await RefreshContainer(player, containeritem.DBID);
+                    }
                 }
-                else//nincs betöltve a tároló, be kell tölteni és utána visszaadni
+                else
                 {
-                    await RefreshContainer(player, containeritem.DBID);
+                    player.SendChatMessage("Valaki más már használja ezt a tárolót.");
                 }
             }
-            else
-            {
-                player.SendChatMessage("Valaki más már használja ezt a tárolót.");
-            }
-
         }
 
         public void CloseContainer(Player player, Item closedcontainer)
@@ -2914,7 +2922,7 @@ namespace Server.Inventory
         }
 
         [RemoteEvent("server:SetWornClothing")]
-        public async void SetWornClothing(Player player)
+        public static async void SetWornClothing(Player player)
         {
             bool gender = player.GetData<bool>("player:gender");
 
@@ -3380,7 +3388,7 @@ namespace Server.Inventory
         });
     }
 
-        public async void ItemValueToTop(Player player, Item i, int clothing_id, bool gender)
+        public static async void ItemValueToTop(Player player, Item i, int clothing_id, bool gender)
         {
                 NAPI.Task.Run(() =>
                 {
@@ -3519,7 +3527,7 @@ namespace Server.Inventory
             });
         }
 
-        public async void ItemValueToGlove(Player player, Item i, int clothing_id, bool gender)
+        public static async void ItemValueToGlove(Player player, Item i, int clothing_id, bool gender)
         {
             NAPI.Task.Run(() =>
             {
@@ -3624,7 +3632,7 @@ namespace Server.Inventory
         }
 
 
-        public async void ItemValueToClothing(Player player, Item i, int clothing_id)
+        public static async void ItemValueToClothing(Player player, Item i, int clothing_id)
         {
             NAPI.Task.Run(() =>
             {
@@ -3691,7 +3699,7 @@ namespace Server.Inventory
         }
 
 
-        public async void ItemValueToAccessory(Player player, Item i, int clothing_id)
+        public static async void ItemValueToAccessory(Player player, Item i, int clothing_id)
         {
             i.InUse = true;
             NAPI.Task.Run(() =>

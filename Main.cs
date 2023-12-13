@@ -31,6 +31,7 @@ namespace Server
                 Inventory.Items.PopulateGroundItems();
                 Characters.Clothing.LoadClothingShops();
                 Interior.Interiors.InitiateInteriors();
+                Auth.Auth.DeleteTokens();
             },10000);
             //SetServerTime();
         }

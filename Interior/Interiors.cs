@@ -111,7 +111,7 @@ namespace Server.Interior
 
         public async static Task<bool> LoadInteriors()
         {
-            string query = $"SELECT * FROM `interiors`";
+            string query = $"SELECT * FROM `properties`";
             using (MySqlConnection con = new MySqlConnection())
             {
                 try

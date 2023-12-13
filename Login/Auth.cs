@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using GTANetworkAPI;
 using MySql.Data.MySqlClient;
+using Server.Inventory;
 
 namespace Server.Auth
 {
@@ -56,7 +57,51 @@ namespace Server.Auth
             }
 
             }
+
+
+        public static async void DeleteTokens()
+        {
+            DateTime timestamp1 = DateTime.Now;
+            
+            int deleted = await DeleteExpiredTokens();
+
+            DateTime timestamp2 = DateTime.Now;
+
+            TimeSpan LoadTime = timestamp2 - timestamp1;
+
+            NAPI.Util.ConsoleOutput(deleted + " db lejárt token törölve " + LoadTime.Milliseconds + " ms alatt.");
+        }
+
+        public async static Task<int> DeleteExpiredTokens()
+        {
+            int rows = 0;
+            string query = $"DELETE FROM `tokens` WHERE `tokens`.`expiration` < @Now";
+            //string query2 = $"UPDATE `characters` SET `characterName` = @CharacterName, `dob` = @DOB, `pob` = @POB WHERE `appearanceId` = @AppearanceID";
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
+                {
+                    command.Parameters.AddWithValue("@Now", DateTime.Now);
+                    command.Prepare();
+                    try
+                    {
+                        rows = await command.ExecuteNonQueryAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+                await con.CloseAsync();
+            }
+            
+            return rows;
+        }
         
+
         public static async Task<bool> SaveGeneratedToken(uint AccountID, string token, DateTime expiration)//token mentése amit GenerateNewToken-el szereztünk
         {
             string query = $"INSERT INTO `tokens` (accountId,token,expiration) VALUES (@accID,@Token,@Expiration)";

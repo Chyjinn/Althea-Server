@@ -941,13 +941,13 @@ namespace Server.Inventory
 
             TimeSpan LoadTime = timestamp2 - timestamp1;
 
-            NAPI.Util.ConsoleOutput("Eldobott tárgyak betöltve " + LoadTime.Milliseconds + " ms alatt.");
+            NAPI.Util.ConsoleOutput(GroundItems.Count + " db eldobott item betöltve " + LoadTime.Milliseconds + " ms alatt.");
             //TODO: indításnál ellenőrizze mióta van a földön az adott object és vegye fel ha régóta
         }
 
 
 
-        public async static Task<bool> LoadGroundItems()
+        public async static Task LoadGroundItems()
         {
             string query = $"SELECT * FROM `grounditems` WHERE `pickupBy` IS NULL";//csak azokat választjuk ki amik nem lettek még felszedve, tehát aktívak
             GroundItems.Clear();
@@ -956,7 +956,7 @@ namespace Server.Inventory
                 try
                 {
                     con.ConnectionString = await Database.DBCon.GetConString();
-                    con.Open();
+                    await con.OpenAsync();
 
                     using (MySqlCommand cmd = new MySqlCommand(query, con))
                     {
@@ -993,10 +993,9 @@ namespace Server.Inventory
                     Database.Log.Log_Server(ex.ToString());
                 }
 
-                con.Close();
+                await con.CloseAsync();
 
             }
-            return true;
         }
 
 
@@ -1009,7 +1008,7 @@ namespace Server.Inventory
                 try
                 {
                     con.ConnectionString = await Database.DBCon.GetConString();
-                    con.Open();
+                    await con.OpenAsync();
 
                     using (MySqlCommand cmd = new MySqlCommand(query, con))
                     {
@@ -1031,7 +1030,7 @@ namespace Server.Inventory
                     Database.Log.Log_Server(ex.ToString());
                 }
 
-                con.Close();
+                con.CloseAsync();
 
             }
             return loaded_itemid;
@@ -1115,6 +1114,7 @@ namespace Server.Inventory
                     }
 
                 }
+                con.CloseAsync();
             }
             return GroundItemID;
         }

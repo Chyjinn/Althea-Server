@@ -30,7 +30,7 @@ namespace Server
                 Inventory.ItemList.InitiateItemList();
                 Inventory.Items.PopulateGroundItems();
                 Characters.Clothing.LoadClothingShops();
-                //Interior.Interiors.InitiateInteriors();
+                Interior.Interiors.InitiateInteriors();
             },10000);
             //SetServerTime();
         }
@@ -42,12 +42,26 @@ namespace Server
         }
 
         [Command("vehdamage")]
-        public void VehDamage(Player player, float veh, float engine, float body)
+        public void VehDamage(Player player, int hp, float engine, float body)
         {
-            player.Vehicle.SetSharedData("Vehicle:EngineHealth", engine);
-            player.Vehicle.SetSharedData("Vehicle:BodyHealth", body);
+            player.Vehicle.SetSharedData("vehicle:Health", hp);
+            player.Vehicle.SetSharedData("vehicle:EngineHealth", engine);
+            player.Vehicle.SetSharedData("vehicle:BodyHealth", body);
+        }
 
-            player.SendChatMessage("Server HP: " +NAPI.Vehicle.GetVehicleHealth(player.Vehicle.Handle) + " Engine: " + NAPI.Vehicle.GetVehicleEngineHealth(player.Vehicle.Handle) + " Body: " + NAPI.Vehicle.GetVehicleBodyHealth(player.Vehicle.Handle));
+
+        [Command("wiregame")]
+        public void WireMinigame(Player player)
+        {
+            player.TriggerEvent("client:ShowWireGame");
+        }
+
+
+
+        [Command("getvehiclehp")]
+        public void showHP(Player player)
+        {
+            player.SendChatMessage("ENGINE: " + NAPI.Vehicle.GetVehicleEngineHealth(player.Vehicle) + " ; BODY: " + NAPI.Vehicle.GetVehicleBodyHealth(player.Vehicle));
         }
 
         [Command("deformveh")]

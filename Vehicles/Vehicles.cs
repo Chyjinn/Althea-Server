@@ -28,11 +28,13 @@ namespace Server.Vehicles
         public byte Pearlescent { get; set; }
         public bool Locked { get; set; }
         public bool Engine { get; set; }
+        public float EngineHealth { get; set; }
+        public float BodyHealth { get; set; }
         public string NumberPlateText { get; set; }
         public byte NumberPlateType { get; set; }
         public uint Dimension { get; set; }
 
-        public Jarmu(uint id, uint ownertype, uint ownerid, string model, Vector3 pos, Vector3 rot, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2, byte pearl, bool locked, bool engine, string numberplate, byte numberplatetype, uint dim)
+        public Jarmu(uint id, uint ownertype, uint ownerid, string model, Vector3 pos, Vector3 rot, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2, byte pearl, bool locked, bool engine, float enginehp, float bodyhp, string numberplate, byte numberplatetype, uint dim)
         {
             ID = id;
             OwnerType = ownertype;
@@ -49,6 +51,8 @@ namespace Server.Vehicles
             Pearlescent = pearl;
             Locked = locked;
             Engine = engine;
+            EngineHealth = enginehp;
+            BodyHealth = bodyhp;
             NumberPlateText = numberplate;
             NumberPlateType = numberplatetype;
             Dimension = dim;
@@ -111,15 +115,17 @@ namespace Server.Vehicles
             NAPI.Vehicle.SetVehicleCustomPrimaryColor(v, red1, green1, blue1);
             NAPI.Vehicle.SetVehicleCustomSecondaryColor(v, red2, green2, blue2);
             NAPI.Vehicle.SetVehiclePearlescentColor(v, pearlescent);
-            Jarmu j = new Jarmu(0, 0, charid, model, v.Position, v.Rotation ,red1, green1, blue1, red2, green2, blue2, pearlescent, false, false, plate, 0, 0);
+            Jarmu j = new Jarmu(0, 0, charid, model, v.Position, v.Rotation ,red1, green1, blue1, red2, green2, blue2, pearlescent, false, false, 1000f, 1000f, plate, 0, 0);
             uint id = await AddVehicleToDatabase(j, player.Name);
             if (id != 0)
             {
                 NAPI.Task.Run(() =>
                 {
                     v.SetData("vehicle:ID", id);
+                    v.SetSharedData("vehicle:EngineHealth", j.EngineHealth);
+                    v.SetSharedData("vehicle:BodyHealth", j.BodyHealth);
                     vehicles[Convert.ToInt32(id)] = v;
-                    player.SendChatMessage("Jármű létrehozva: " + model.ToLower() + " (" + id + ")");
+                    player.SendChatMessage("Jármű létrehozva: " + model.ToLower() + " [" + id + "]");
                     //Inventory.Items.GiveItem(player, player.Id, 15, id.ToString(), 1);
                 }, 250);
 
@@ -269,7 +275,7 @@ namespace Server.Vehicles
                 if(player.Vehicle.HasData("vehicle:ID"))//van id-je
                 {
                     uint vehid = player.Vehicle.GetData<uint>("vehicle:ID");
-                    if (Inventory.Items.HasItemWithValue(player, 15, vehid.ToString()))//van neki járműkulcs iteme (15) és az itemvalue az id-je
+                    if (Inventory.Items.HasItemWithValue(player, 28, vehid.ToString()))//van neki járműkulcs iteme (15) és az itemvalue az id-je
                     {
                         player.Vehicle.EngineStatus = !player.Vehicle.EngineStatus;
                     }
@@ -294,7 +300,7 @@ namespace Server.Vehicles
             if (player.Vehicle != null)//járműben ül
             {
                 uint vehid = player.Vehicle.GetData<uint>("vehicle:ID");
-                if (Inventory.Items.HasItemWithValue(player, 15, vehid.ToString()))//van neki járműkulcs iteme (15) és az itemvalue az id-je
+                if (Inventory.Items.HasItemWithValue(player, 28, vehid.ToString()))//van neki járműkulcs iteme (15) és az itemvalue az id-je
                 {
                     player.Vehicle.EngineStatus = !player.Vehicle.EngineStatus;
                 }
@@ -500,7 +506,7 @@ namespace Server.Vehicles
                             {
                                 Vector3 pos = new Vector3(Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"]));
                                 Vector3 rot = new Vector3(Convert.ToSingle(reader["rotX"]), Convert.ToSingle(reader["rotY"]), Convert.ToSingle(reader["rotZ"]));
-                                Jarmu j = new Jarmu(Convert.ToUInt32(reader["id"]), Convert.ToUInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]),reader["model"].ToString(), pos, rot, Convert.ToByte(reader["red1"]), Convert.ToByte(reader["green1"]), Convert.ToByte(reader["blue1"]), Convert.ToByte(reader["red2"]), Convert.ToByte(reader["green2"]), Convert.ToByte(reader["blue2"]), Convert.ToByte(reader["pearlescent"]), Convert.ToBoolean(reader["locked"]), Convert.ToBoolean(reader["engine"]), reader["numberPlateText"].ToString(), Convert.ToByte(reader["numberPlateType"]), Convert.ToUInt32(reader["dimension"]));
+                                Jarmu j = new Jarmu(Convert.ToUInt32(reader["id"]), Convert.ToUInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]),reader["model"].ToString(), pos, rot, Convert.ToByte(reader["red1"]), Convert.ToByte(reader["green1"]), Convert.ToByte(reader["blue1"]), Convert.ToByte(reader["red2"]), Convert.ToByte(reader["green2"]), Convert.ToByte(reader["blue2"]), Convert.ToByte(reader["pearlescent"]), Convert.ToBoolean(reader["locked"]), Convert.ToBoolean(reader["engine"]), Convert.ToSingle(reader["engineHealth"]), Convert.ToSingle(reader["bodyHealth"]), reader["numberPlateText"].ToString(), Convert.ToByte(reader["numberPlateType"]), Convert.ToUInt32(reader["dimension"]));
                                 jarmuvek.Add(j);
                                 //public Jarmu(uint id, int ownertype, uint ownerid, string model, Vector3 pos, Vector3 rot, byte r1, byte g1, byte b1, byte r2, byte g2, byte b2, byte pearl, bool locked, bool engine, string numberplate, byte numberplatetype, uint dim)
                             }
@@ -541,6 +547,8 @@ namespace Server.Vehicles
                         v.SetData("vehicle:ID", item.ID);
                         v.SetData("vehicle:OwnerType", item.OwnerType);
                         v.SetData("vehicle:OwnerID", item.OwnerID);
+                        v.SetSharedData("vehicle:EngineHealth", item.EngineHealth);
+                        v.SetSharedData("vehicle:BodyHealth", item.BodyHealth);
                         player.SendChatMessage("Jámű betöltve! " + item.Model + " (" + item.ID + ")");
                         vehicles[Convert.ToInt32(item.ID)] = v;
                     }, 1000);

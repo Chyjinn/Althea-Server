@@ -2,6 +2,7 @@
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Asn1.X509;
 using Server.Inventory;
+using Server.Vehicles;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -82,6 +83,17 @@ namespace Server.Interior
             }
             return null;
         }
+
+        [Command("createinterior", Alias = "makeinterior")]
+        public async void CreateInterior(Player player, int interiorID, string name)
+        {
+            Vector3 pos = player.Position;
+            float heading = player.Rotation.Z;
+            player.TriggerEvent("client:CreateInterior", interiorID, pos.X, pos.Y, pos.Z, heading, name);
+        }
+
+
+
         //CHAR: -811.68, 175.2, 76.74, 0, 0, 109.73
         //CAM: -813.95, 174.2, 76.78, 0, 0, -69
         public async static void InitiateInteriors()

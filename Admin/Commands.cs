@@ -434,6 +434,13 @@ namespace Server.Admin
             }
         }
 
+        [Command("objectmover")]
+        public void ObjectMover(Player player, string objectname)
+        {
+            player.TriggerEvent("client:PlaceObject", objectname);
+            player.SendChatMessage(objectname + " elhelyezése.");
+        }
+
         [Command("ipl")]
         public void LoadIplForPlayer(Player player, string ipl)
         {

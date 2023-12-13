@@ -85,6 +85,7 @@ namespace Server.Inventory
             NAPI.Task.Run(() =>
             {
                 Object = NAPI.Object.CreateObject(NAPI.Util.GetHashKey(objectname), Position, Rotation, 255, Dimension);
+                Object.Rotation = Rotation;
                 Vector3 labelPos = Position;
                 labelPos.Z += 0.2f;
 
@@ -96,6 +97,8 @@ namespace Server.Inventory
                 }, 500);
             }, 250);
         }
+
+        [ServerEvent(Event.Update)]
 
         public async Task CreateObject(string objectname, string szoveg, uint itemid)
         { 

@@ -1,6 +1,7 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using Org.BouncyCastle.Bcpg.Sig;
+using Server.Interior;
 using Server.Inventory;
 using System;
 using System.Collections.Generic;
@@ -122,6 +123,7 @@ namespace Server.Characters
                     NAPI.Task.Run(() =>
                     {
                         NAPI.Player.SpawnPlayer(player, new Vector3(c.posX, c.posY, c.posZ), c.Rot);
+                        Interiors.SendPropertiesToPlayer(player);
                         player.TriggerEvent("client:SkyCam", false);
                         player.SetSharedData("player:Frozen", false);
                         player.SetData<string>("player:CharacterSelector", null);

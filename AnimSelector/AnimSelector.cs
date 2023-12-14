@@ -134,7 +134,7 @@ namespace Server.AnimSelector
                     }
                     catch (Exception ex)
                     {
-                        Database.Log.Log_Server(ex.ToString());
+                        Server.Database.Log.Log_Server(ex.ToString());
                     }
 
                 }

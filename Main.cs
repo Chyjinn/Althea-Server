@@ -5,7 +5,6 @@ using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
 
 namespace Server
 {
@@ -32,6 +31,9 @@ namespace Server
                 Characters.Clothing.LoadClothingShops();
                 Interior.Interiors.InitiateInteriors();
                 Auth.Auth.DeleteTokens();
+
+                
+            
             },10000);
             //SetServerTime();
         }

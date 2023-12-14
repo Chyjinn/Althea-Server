@@ -1,14 +1,10 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
-using Org.BouncyCastle.Asn1.X509;
 using Server.Inventory;
-using Server.Vehicles;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
+using System.Xml.Linq;
 
 namespace Server.Interior
 {
@@ -16,55 +12,83 @@ namespace Server.Interior
     {
         public uint ID { get; set; }
         public string Name { get; set; }
+        public byte Category { get; set; }
+        public Vector3 Position { get; set; }
+        public float Heading { get; set; }
+        public string IPL { get; set; }
+
+        public Interior(uint id, string name, byte cat, Vector3 position, float heading, string ipl)
+        {
+            NAPI.Task.Run(() =>
+            {
+                ID = id;
+                Name = name;
+                Category = cat;
+                Position = position;
+                Heading = heading;
+                IPL = ipl;
+            });
+
+        }
+
+    }
+    public class Property
+    {
+        public uint ID { get; set; }
+        public byte PropertyType { get; set; }
+        public string Name { get; set; }
         public uint OwnerType { get; set; }
         public uint OwnerID { get; set; }
         public string OwnerName { get; set; }
+        public uint Postal { get; set; }
+        public string StreetName { get; set; }
+        public uint StreetNumber { get; set; }
         public Vector3 EntrancePos { get; set; }
-        public Vector3 EntranceHeading { get; set; }
+        public float EntranceHeading { get; set; }
         public uint EntranceDimension { get; set; }
-        public ColShape Entrance { get; set; }
         public Vector3 ExitPos { get; set; }
-        public Vector3 ExitHeading { get; set; }
+        public float ExitHeading { get; set; }
         public uint ExitDimension { get; set; }
-        public ColShape Exit { get; set; }
         public string IPL { get; set; }
-        public Interior(uint id, string name, uint ownertype, uint ownerid, Vector3 entrancepos, Vector3 entranceheading, uint entrancedim, Vector3 exitpos, Vector3 exitheading, uint exitdim, string ipl) 
+        public bool Locked { get; set; }
+        public int Price { get; set; }
+        public Property(uint id, byte proptype, string name, uint ownertype, uint ownerid, Vector3 entrancepos, float entranceheading, uint entrancedim, Vector3 exitpos, float exitheading, uint exitdim, string ipl, bool locked, int price, uint postal, string streetname, uint streetnumber) 
         {
-            ID = id;
-            Name = name;
-            OwnerType = ownertype;
-            OwnerID = ownerid;
-            EntrancePos = entrancepos;
-            EntranceHeading = entranceheading;
-            EntranceDimension = entrancedim;
-            ExitPos = exitpos;
-            ExitHeading = exitheading;
-            ExitDimension = exitdim;
-            IPL = ipl;
             NAPI.Task.Run(() =>
             {
-                Entrance = NAPI.ColShape.CreateCylinderColShape(EntrancePos, 1f, 1f, EntranceDimension); //.CreateCheckpoint(CheckpointType.Cyclinder3, EntrancePos, EntranceHeading, 1f, new Color(255, 255, 255, 100), EntranceDimension);
-                Exit = NAPI.ColShape.CreateCylinderColShape(ExitPos, 1f, 1f, ExitDimension); // NAPI.Checkpoint.CreateCheckpoint(CheckpointType.Cyclinder3, ExitPos, ExitHeading, 1f, new Color(255, 255, 255, 100), ExitDimension);
-                NAPI.TextLabel.CreateTextLabel(Name, EntrancePos,3f, 1f, 1, new Color(89,173,235,210),false, EntranceDimension);
-                NAPI.TextLabel.CreateTextLabel("Kijárat", ExitPos, 3f, 1f, 1, new Color(255, 255, 255,255), false, ExitDimension);
-            }, 500);
-        }
-        public void SetOwnerName(string name)
-        {
-            OwnerName = name;
+                ID = id;
+                PropertyType = proptype;
+                Name = name;
+                OwnerType = ownertype;
+                OwnerID = ownerid;
+                EntrancePos = entrancepos;
+                EntranceHeading = entranceheading;
+                EntranceDimension = entrancedim;
+                ExitPos = exitpos;
+                ExitHeading = exitheading;
+                ExitDimension = exitdim;
+                IPL = ipl;
+                Locked = locked;
+                Price = price;
+                Postal = postal;
+                StreetName = streetname;
+                StreetNumber = streetnumber;
+            });
+
         }
     }
+
+
     internal class Interiors : Script
     {
-        static List<Interior> interiors = new List<Interior>();
+        static List<Property> Properties = new List<Property>();
 
-       
-        public Interior GetInteriorByExit(ColShape cp)
+
+        public async Task<Property> GetPropertyByID(uint id)
         {
-            foreach (var item in interiors)
+            foreach (var item in Properties)
             {
-                if (item.Exit == cp
-)
+                if (item.ID == id)
                 {
                     return item;
                 }
@@ -72,30 +96,220 @@ namespace Server.Interior
             return null;
         }
 
-        public Interior GetInteriorByEntrance(ColShape cp)
+
+        [Command("getground")]
+        public void GetGroundZ(Player player)
         {
-            foreach (var item in interiors)
-            {
-                if (item.Entrance == cp)
-                {
-                    return item;
-                }
-            }
-            return null;
+            player.TriggerEvent("client:GetGroundZ");
         }
+
 
         [Command("createinterior", Alias = "makeinterior")]
-        public async void CreateInterior(Player player, int interiorID, string name)
+        public async void CreateInterior(Player player, byte propType, uint interiorID, string name, int price)
         {
+            //tehát: kell a groundZ pozíciója a adott pontra tehát át kell majd küldeni elsőként kliensre ezt megszerezni
+            //aztán: visszajön a koordináta, illetve az utcanév esetleg postalcode is
+            //megvizsgáljuk hogy az adott utcában hány darab ház van már, a házszám mindig a szám +1 lesz
+            //nevet bármit adhatunk neki
+            //az entrance a játékos pozíciója lesz (plusz groundZ) hogy a földre tegye a marker-t, colshape-t, stb
+            //az exit pedig a megadott interiorID alapján kerül kinyerésre, ahogy az IPL is, az exitDIM az interior ID-je lesz
             Vector3 pos = player.Position;
+
+            player.TriggerEvent("client:CreateInterior", name, pos.X, pos.Y, pos.Z, interiorID, propType, price);
+        }
+
+        public async static Task<uint> AddPropertyToDatabase(byte PropertyType, string Name, string StreetName, uint StreetNumber, Vector3 EntrancePos, float EntranceHeading, uint EntranceDimension, Vector3 ExitPos, float ExitHeading, string IPL, int Price, string creator)//létrehozunk egy új itemet az adatbázisban
+        {
+            uint PropID = 0;
+            string query = $"INSERT INTO `properties` " +
+                $"(`propType`, `name`, `postal`, `streetName`, `streetNumber`, `entranceX`, `entranceY`, `entranceZ`, `entranceHeading`, `entranceDimension`, `exitX`, `exitY`, `exitZ`, `exitHeading`, `IPL`, `createdBy`, `price`)" +
+                $" VALUES " +
+                $"(@PropType, @Name, @Postal, @StreetName, @StreetNumber, @EntranceX, @EntranceY, @EntranceZ, @EntranceHeading, @EntranceDim, @ExitX, @ExitY, @ExitZ, @ExitHeading, @IPL, @CreatedBy, @Price)";
+
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
+                {
+                    command.Parameters.AddWithValue("@PropType", PropertyType);
+                    command.Parameters.AddWithValue("@Name", Name);
+                    command.Parameters.AddWithValue("@Postal", 1);
+                    command.Parameters.AddWithValue("@StreetName", StreetName);
+                    command.Parameters.AddWithValue("@StreetNumber", StreetNumber);
+                    command.Parameters.AddWithValue("@EntranceX", EntrancePos.X);
+                    command.Parameters.AddWithValue("@EntranceY", EntrancePos.Y);
+                    command.Parameters.AddWithValue("@EntranceZ", EntrancePos.Z);
+                    command.Parameters.AddWithValue("@EntranceHeading", EntranceHeading);
+                    command.Parameters.AddWithValue("@EntranceDim", EntranceDimension);
+                    command.Parameters.AddWithValue("@ExitX", ExitPos.X);
+                    command.Parameters.AddWithValue("@ExitY", ExitPos.Y);
+                    command.Parameters.AddWithValue("@ExitZ", ExitPos.Z);
+                    command.Parameters.AddWithValue("@ExitHeading", ExitHeading);
+                    command.Parameters.AddWithValue("@IPL", IPL);
+                    command.Parameters.AddWithValue("@CreatedBy", creator);
+                    command.Parameters.AddWithValue("@Price", Price);
+                    command.Prepare();
+                    try
+                    {
+                        int rows = await command.ExecuteNonQueryAsync();
+
+                        if (rows > 0)
+                        {
+                            long lastid = command.LastInsertedId;
+                            PropID = Convert.ToUInt32(lastid);
+
+                            string query2 = $"UPDATE `properties` SET `exitDimension` = @ExitDim WHERE `properties`.`id` = @ID";
+
+                            using (MySqlConnection con2 = new MySqlConnection())
+                            {
+                                con2.ConnectionString = await Database.DBCon.GetConString();
+                                await con2.OpenAsync();
+                                //executereader kell majd mert insert + select, kell az utolsó id
+
+                                using (MySqlCommand command2 = new MySqlCommand(query2, con2))
+                                {
+                                    command2.Parameters.AddWithValue("@ExitDim", PropID);
+                                    command2.Parameters.AddWithValue("@ID", PropID);
+                                    try
+                                    {
+                                        command2.ExecuteNonQueryAsync();
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Database.Log.Log_Server(ex.ToString());
+                                    }
+
+                                }
+                                con2.CloseAsync();
+                            }
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+
+                }
+            }
+            return PropID;
+        }
+
+        [RemoteEvent("server:CreateInterior")]
+        public async void ProcessInteriorCreation(Player player, uint interiorID, byte propType, string name, float posZ, string streetName, int price)
+        {
+            uint dim = player.Dimension;
+            string playerName = player.Name;
+            Vector3 pos = player.Position;
+            Vector3 entrance = new Vector3(player.Position.X, player.Position.Y, posZ);
             float heading = player.Rotation.Z;
-            player.TriggerEvent("client:CreateInterior", interiorID, pos.X, pos.Y, pos.Z, heading, name);
+
+            Interior i = await GetInteriorByID(interiorID);
+            if (i != null)//érvényes interior ID-t adott meg
+            { 
+                uint currentNumber = await GetLastStreetNumber(streetName);
+                uint id = await AddPropertyToDatabase(propType, name, streetName, currentNumber + 1, entrance, heading, dim, i.Position, i.Heading, i.IPL, price, playerName);
+                if (id != 0)//ha sikerült beilleszteni
+                {
+                    Property p = new Property(id, propType, name, 0, 0, entrance, heading, player.Dimension, i.Position, i.Heading, id, i.IPL, true, price, 1, streetName, currentNumber+1);
+                    Properties.Add(p);
+                    NAPI.Task.Run(() =>
+                    {
+                        foreach (var item in NAPI.Pools.GetAllPlayers())
+                        {
+                            //minden játékosnak újraküldjük az interiorokat
+                            SendPropertiesToPlayer(item);
+                        }
+                    }, 50);
+                }
+
+
+
+                //az interior alapján állítjuk be a property exit-et
+
+
+
+
+
+            }
+            else
+            {
+                NAPI.Task.Run(() =>
+                {
+                    player.SendChatMessage("Érvénytelen Interior ID!");
+                });
+                
+            }
+            //megvan a bejárat pozíciója, meg akarjuk szerezni az interior ID alapján a kijárat adatait
+        }
+
+        public async static void SendPropertiesToPlayer(Player player)
+        {
+            player.TriggerEvent("client:ReloadProperties", NAPI.Util.ToJson(Properties));
+            player.SendChatMessage(NAPI.Util.ToJson(Properties));
+        }
+
+        public async static Task<string> GetOwnerName(Property p)
+        {
+            string res = null;
+            string query = "";
+            switch (p.OwnerType)
+            {
+                case 0://null avagy 0, nincs tulajdonosa -> lehet hogy eladó ház, de az is lehet hogy kiadó lakás, stb
+                    return "Nincs";
+                case 1:
+                    query = $"SELECT `characterName` FROM `characters` WHERE `id` LIKE @ID LIMIT 1";
+                    break;
+                case 2:
+                    break;
+                case 3:
+                    break;
+            }
+
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                try
+                {
+                    con.ConnectionString = await Database.DBCon.GetConString();
+                    await con.OpenAsync();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("@ID", p.OwnerID);
+                        cmd.Prepare();
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                switch (p.OwnerType)
+                                {
+                                    case 1:
+                                        res = Convert.ToString(reader["characterName"]);
+                                        break;
+                                    default:
+                                        break;
+                                }
+                                
+                            }
+
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+
+                con.CloseAsync();
+            }
+            return res;
         }
 
 
 
-        //CHAR: -811.68, 175.2, 76.74, 0, 0, 109.73
-        //CAM: -813.95, 174.2, 76.78, 0, 0, -69
         public async static void InitiateInteriors()
         {
             DateTime timestamp1 = DateTime.Now;
@@ -106,12 +320,52 @@ namespace Server.Interior
 
             TimeSpan LoadTime = timestamp2 - timestamp1;
 
-            NAPI.Util.ConsoleOutput("Interiorok betöltve " + LoadTime.Milliseconds + " ms alatt.");
+            NAPI.Util.ConsoleOutput(Properties.Count + " db interior betöltve " + LoadTime.Milliseconds + " ms alatt.");
+            //Database.Log.Log_Server(Properties.Count + " db interior betöltve " + LoadTime.Milliseconds + " ms alatt.");
+        }
+
+        //
+
+        public async Task<uint> GetLastStreetNumber(string StreetName)
+        {
+            uint current = 0;
+            string query = $"SELECT `streetName`, COUNT(id) AS `number` FROM `properties` WHERE `streetName` LIKE @StreetName GROUP BY `streetName` LIMIT 1";
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                try
+                {
+                    con.ConnectionString = await Database.DBCon.GetConString();
+                    await con.OpenAsync();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("@StreetName", StreetName);
+                        cmd.Prepare();
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                current = Convert.ToUInt32(reader["number"]);
+                            }
+
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+
+                await con.CloseAsync();
+
+            }
+            return current;
         }
 
         public async static Task<bool> LoadInteriors()
         {
-            string query = $"SELECT * FROM `properties`";
+            string query = $"SELECT * FROM `properties` WHERE `deleteDate` IS NULL";
             using (MySqlConnection con = new MySqlConnection())
             {
                 try
@@ -127,11 +381,10 @@ namespace Server.Interior
                         {
                             while (await reader.ReadAsync())
                             {
-                                Interior i = new Interior(Convert.ToUInt32(reader["id"]), reader["name"].ToString(), Convert.ToUInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]), new Vector3(Convert.ToSingle(reader["entranceX"]), Convert.ToSingle(reader["entranceY"]), Convert.ToSingle(reader["entranceZ"])), new Vector3(0f, 0f, Convert.ToSingle(reader["entranceHeading"])), Convert.ToUInt32(reader["entranceDimension"]), new Vector3(Convert.ToSingle(reader["exitX"]), Convert.ToSingle(reader["exitY"]), Convert.ToSingle(reader["exitZ"])), new Vector3(0f, 0f, Convert.ToSingle(reader["exitHeading"])), Convert.ToUInt32(reader["exitDimension"]), reader["ipl"].ToString());
-                                i.OwnerName = "Nigga bigga";
-                                interiors.Add(i);
+                                Property p = new Property(Convert.ToUInt32(reader["id"]), Convert.ToByte(reader["propType"]), reader["name"].ToString(), Convert.ToUInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]), new Vector3(Convert.ToSingle(reader["entranceX"]), Convert.ToSingle(reader["entranceY"]), Convert.ToSingle(reader["entranceZ"])), Convert.ToSingle(reader["entranceHeading"]), Convert.ToUInt32(reader["entranceDimension"]), new Vector3(Convert.ToSingle(reader["exitX"]), Convert.ToSingle(reader["exitY"]), Convert.ToSingle(reader["exitZ"])), Convert.ToSingle(reader["exitHeading"]), Convert.ToUInt32(reader["exitDimension"]), reader["ipl"].ToString(), Convert.ToBoolean(reader["locked"]), Convert.ToInt32(reader["price"]), Convert.ToUInt32(reader["postal"]), Convert.ToString(reader["streetName"]), Convert.ToUInt32(reader["streetNumber"]));
+                                p.OwnerName = await GetOwnerName(p);
+                                Properties.Add(p);
                             }
-
                         }
                     }
                 }
@@ -145,81 +398,68 @@ namespace Server.Interior
             }
             return true;
         }
-
-        [ServerEvent(Event.PlayerEnterColshape)]
-        public void EnterCheckpoint(ColShape cp, Player player)
+        
+        
+        public async Task<Interior> GetInteriorByID(uint id)
         {
-            Interior entrance = GetInteriorByEntrance(cp);
-            if (entrance != null)//bejárat
+            Interior i = null;
+            string query = $"SELECT * FROM `interiors` WHERE `id` LIKE @ID LIMIT 1";
+            using (MySqlConnection con = new MySqlConnection())
             {
-                player.SetData("player:entranceCP", entrance);
-                player.SendChatMessage("INTERIOR: " + entrance.Name +"\nBelépéshez használd a /enter parancsot.");
-            }
-            else//kijárat lehet
-            {
-                Interior exit = GetInteriorByExit(cp);
-                if (exit != null)//létezik és kijárat
+                try
                 {
-                    player.SetData("player:exitCP", exit);
-                    player.SendChatMessage("INTERIOR: " + exit.Name + "\nKilépéshez használd a /exit parancsot.");
+                    con.ConnectionString = await Database.DBCon.GetConString();
+                    await con.OpenAsync();
+
+                    using (MySqlCommand cmd = new MySqlCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("@ID", id);
+                        cmd.Prepare();
+
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                i = new Interior(Convert.ToUInt32(reader["id"]), Convert.ToString(reader["name"]), Convert.ToByte(reader["category"]), new Vector3(Convert.ToSingle(reader["posX"]), Convert.ToSingle(reader["posY"]), Convert.ToSingle(reader["posZ"])), Convert.ToSingle(reader["heading"]), Convert.ToString(reader["ipl"]));
+                            }
+
+                        }
+                    }
                 }
+                catch (Exception ex)
+                {
+                    Database.Log.Log_Server(ex.ToString());
+                }
+
+                con.CloseAsync();
+
             }
+            return i;
         }
 
-        [ServerEvent(Event.PlayerExitColshape)]
-        public void ExitCheckpoint(ColShape cp, Player player)
+
+
+        [Command("marker")]
+        public void CreateMarker(Player player, int type, float dirX, float dirY, float dirZ, float rotX, float rotY, float rotZ, float scale, bool move)
         {
-            player.ResetData("player:entranceCP");
-            player.ResetData("player:exitCP");
+            //ROTX = 180, scale 0.4f kültéren, beltéren 0.2f
+            NAPI.Marker.CreateMarker(type, player.Position, new Vector3(dirX, dirY, dirZ), new Vector3(rotX, rotY, rotZ), scale, new Color(255, 255, 255, 255), move, player.Dimension);
         }
 
-
-        [Command("enter", Alias="exit")]
-        public void EnterInterior(Player player)
+        [Command("markertype")]
+        public void SetMarkerType(Player player, int type)
         {
-            if (player.HasData("player:entranceCP"))
-            {
-                Interior i = player.GetData<Interior>("player:entranceCP");
-                player.Position = i.ExitPos;
-                player.Rotation = i.ExitHeading;
-                player.Dimension = i.ExitDimension;
-                player.SendChatMessage("Beléptél az interiorba.");
-            }
-            else if (player.HasData("player:exitCP"))
-            {
-                Interior i = player.GetData<Interior>("player:exitCP");
-                player.Position = i.EntrancePos;
-                player.Rotation = i.EntranceHeading;
-                player.Dimension = i.EntranceDimension;
-                player.SendChatMessage("Kiléptél az interiorból.");
-            }
+            //ROTX = 180, scale 0.4f kültéren, beltéren 0.2f
+            player.TriggerEvent("client:SetMarkerType", type);
         }
 
-
-        [Command("createinterior")]
-        public void InteriorTest(Player player, uint interiorid)
-        {
-            player.TriggerEvent("client:GetCPHeight");
-            Vector3 cpPos = player.Position;
-            Vector3 cpRot = player.Rotation;
-            uint cpDim = player.Dimension;
-            NAPI.Task.Run(() =>
-            {
-                float cpZ = player.GetData<float>("interior:CPheight");
-            }, 2000);
-
-            
-        }
 
 
         [Command("interior")]
         public void InteriorTest(Player player, float scale)
         {
             player.TriggerEvent("client:GetCPHeight");
-            NAPI.Task.Run(() =>
-            {
 
-            }, 2000);
 
             float cpZ = player.GetData<float>("interior:CPheight");
             
@@ -234,5 +474,58 @@ namespace Server.Interior
             player.SetData("interior:CPheight", height);
         }
 
+
+        [RemoteEvent("server:EnterProperty")]
+        public async void EnterProperty(Player player, uint propid)
+        {
+            Property p = await GetPropertyByID(propid);
+            if (p != null)//ha létezik az interior
+            {
+                if (p.Locked == false)//elsőként ellenőrizzük hogy zárva van-e, hiszen akkor nem kell dimenziót és távolságot néznünk amúgy sem
+                {
+                    if (player.Dimension == p.EntranceDimension)//megfelelő dimenziókban vannak
+                    {
+                        if (Vector3.Distance(player.Position, p.EntrancePos) < 2f)//elég közel van a belépéshez a player
+                        {
+
+                            player.TriggerEvent("client:RequestIPL", p.IPL);
+                            //betöltjük az IPL-t a játékosnak (ha van) és beléptetjük őt
+                            player.Dimension = p.ExitDimension;
+                            player.Position = p.ExitPos;
+                            player.Heading = p.ExitHeading;
+                        }
+                    }
+                }
+            }
+        }
+        
+
+        [RemoteEvent("server:ExitProperty")]
+        public async void ExitProperty(Player player, uint propid)
+        {
+            Property p = await GetPropertyByID(propid);
+            if (p != null)//ha létezik az interior
+            {
+                if (p.Locked == false)
+                {
+                    if (player.Dimension == p.ExitDimension)//megfelelő dimenziókban vannak
+                    {
+                        if (Vector3.Distance(player.Position, p.ExitPos) < 2f)//elég közel van a belépéshez a player
+                        {
+                            //betöltjük az IPL-t a játékosnak (ha van) és beléptetjük őt
+                            player.Dimension = p.EntranceDimension;
+                            player.Position = p.EntrancePos;
+                            player.Heading = p.EntranceHeading;
+                            player.TriggerEvent("client:RemoveIPL", p.IPL);
+                        }
+                    }
+                }
+            }
+        }
+
+
+
     }
+
+
 }

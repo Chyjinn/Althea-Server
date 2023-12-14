@@ -6,7 +6,7 @@ using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using Server;
 
-namespace Database
+namespace Server.Database
 {
     static class DBCon
     {

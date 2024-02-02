@@ -95,7 +95,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
             }
             
             return rows;
@@ -130,7 +130,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                         }
                     }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
             
@@ -164,7 +164,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
             
@@ -205,7 +205,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
         }
@@ -246,7 +246,7 @@ namespace Server.Auth
                 {
                     Database.Log.Log_Server(ex.ToString());
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return res;
             }
         }
@@ -283,7 +283,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return res;
             }
         }
@@ -318,7 +318,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return res;
             }
         }
@@ -350,7 +350,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
         }
@@ -382,7 +382,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
         }
@@ -417,7 +417,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return res;
             }
             
@@ -451,7 +451,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
             
@@ -486,7 +486,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return res;
             }
         }
@@ -519,7 +519,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return res;
             }
         }
@@ -556,7 +556,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
         }
@@ -592,7 +592,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
         }
@@ -628,7 +628,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
         }
@@ -661,7 +661,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return res;
             }
         }
@@ -696,7 +696,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
         }
@@ -732,7 +732,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
         }
@@ -770,7 +770,7 @@ namespace Server.Auth
                         Database.Log.Log_Server(ex.ToString());
                     }
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return state;
             }
         }

@@ -5,6 +5,7 @@ using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Security.AccessControl;
 
 namespace Server
 {
@@ -50,6 +51,24 @@ namespace Server
             player.Vehicle.SetSharedData("vehicle:Health", hp);
             player.Vehicle.SetSharedData("vehicle:EngineHealth", engine);
             player.Vehicle.SetSharedData("vehicle:BodyHealth", body);
+        }
+        List<GTANetworkAPI.Object> objects = new List<GTANetworkAPI.Object>();
+
+        [Command("objecttest")]
+        public void ObjectTest(Player player, string objectname)
+        {
+            for (int i = -5; i <= 5; i++)
+            {
+                for (int j = -5; j <= 5; j++)
+                {
+                    Vector3 placement = new Vector3(player.Position.X + i * 1f, player.Position.Y + j * 1f, player.Position.Z);
+                    GTANetworkAPI.Object obj = NAPI.Object.CreateObject(NAPI.Util.GetHashKey(objectname), placement,new Vector3(0f,0f,0f), 255, player.Dimension);
+                    
+                    objects.Add(obj);
+                }
+            }
+            player.SendChatMessage("Objectszám: " + objects.Count);
+            player.TriggerEvent("client:StreamServerObjects");
         }
 
 

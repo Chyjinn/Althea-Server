@@ -431,7 +431,7 @@ namespace Server.Characters
                 {
                     Database.Log.Log_Server(ex.ToString());
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return items.ToArray();
             }
         }

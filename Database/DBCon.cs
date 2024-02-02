@@ -16,7 +16,7 @@ namespace Server.Database
             string username = "root";
             string password = "";
             string database = "althea";
-            return $"SERVER={host};PASSWORD={password};UID={username};DATABASE={database};default command timeout=20;";
+            return $"SERVER={host};PASSWORD={password};UID={username};DATABASE={database};Minimum Pool Size=0;";
         }
 
     }

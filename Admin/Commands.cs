@@ -444,8 +444,15 @@ namespace Server.Admin
         [Command("ipl")]
         public void LoadIplForPlayer(Player player, string ipl)
         {
-            player.TriggerEvent("client:LoadIPL", ipl);
+            player.TriggerEvent("client:RequestIPL", ipl);
         }
+        [Command("removeipl")]
+        public void RemoveIplForPlayer(Player player, string ipl)
+        {
+            player.TriggerEvent("client:RemoveIPL", ipl);
+        }
+
+
 
         [Command("gotopos", Alias ="gotoxyz")]
         public void GotoPlayer(Player player, float x, float y, float z)

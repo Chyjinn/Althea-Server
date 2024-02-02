@@ -56,7 +56,7 @@ namespace Server.Database
                     inline = false
                 }
                 };
-            Database.Discord.SendMessage("https://discord.com/api/webhooks/1184745746042470420/t0TFci5kauo7lyhYIncyT8qTGBMDcUSMiSPUqsPfIC0YlCKvL_dmgd5Q9xQNdj38uO-S", "https://i.gyazo.com/6d931477b98988b8418d1acdbf8f973e.png", https://media.tenor.com/pPKOYQpTO8AAAAAM/monkey-developer.gif", "", "", fields, "red");
+            Database.Discord.SendMessage("https://discord.com/api/webhooks/1184745746042470420/t0TFci5kauo7lyhYIncyT8qTGBMDcUSMiSPUqsPfIC0YlCKvL_dmgd5Q9xQNdj38uO-S", "https://i.gyazo.com/6d931477b98988b8418d1acdbf8f973e.png", "https://media.tenor.com/pPKOYQpTO8AAAAAM/monkey-developer.gif", "", "", fields, "red");
 
 
         }

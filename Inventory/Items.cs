@@ -993,7 +993,7 @@ namespace Server.Inventory
                     Database.Log.Log_Server(ex.ToString());
                 }
 
-                await con.CloseAsync();
+                con.CloseAsync();
 
             }
         }
@@ -1361,7 +1361,7 @@ namespace Server.Inventory
                 {
                     Database.Log.Log_Server(ex.ToString());
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 //kiszámoljuk az inventory súlyát
 
                 foreach (var item in items)
@@ -3821,7 +3821,7 @@ namespace Server.Inventory
                 {
                     Database.Log.Log_Server(ex.ToString());
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return items.ToArray();
             }
         }
@@ -3861,7 +3861,7 @@ namespace Server.Inventory
                 {
                     Database.Log.Log_Server(ex.ToString());
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return items.ToArray();
             }
         }
@@ -3901,7 +3901,7 @@ namespace Server.Inventory
                 {
                     Database.Log.Log_Server(ex.ToString());
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return items.ToArray();
             }
         }
@@ -3941,7 +3941,7 @@ namespace Server.Inventory
                 {
                     Database.Log.Log_Server(ex.ToString());
                 }
-                await con.CloseAsync();
+                con.CloseAsync();
                 return items.ToArray();
             }
         }

@@ -1,6 +1,9 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Asn1.Cms;
+using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Bcpg.Sig;
+using Server.Admin;
 using Server.Interior;
 using Server.Inventory;
 using System;
@@ -109,6 +112,7 @@ namespace Server.Characters
             Character c = await Data.GetCharacterDataByID(player, charid);
             if (await Data.IsCharacterOwner(accID, charid))
             {
+                AdminJail aj = await Admin.Commands.GetPlayerAdminJail(accID);
                 NAPI.Task.Run(() =>
                 {
                     player.TriggerEvent("client:SkyCam", true);
@@ -120,11 +124,30 @@ namespace Server.Characters
                     player.SetSharedData("player:VisibleName",c.Name);
                     player.Dimension = 0;
                     player.Name = c.Name;
+
                     NAPI.Task.Run(() =>
                     {
-                        NAPI.Player.SpawnPlayer(player, new Vector3(c.posX, c.posY, c.posZ), c.Rot);
+                        if (aj != null)//ha adminjailben van
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                player.SetData("AdminJail:OriginalPos", new Vector3(c.posX,c.posY,c.posZ));
+                                player.SetData("AdminJail:Remaining", aj.Remaining);
+                                player.SetData("AdminJail:ID", aj.ID);
+                                NAPI.Player.SpawnPlayer(player, new Vector3(1395.5f, 1147.2f, 114.3f), -90f);
+                                player.Dimension = player.Id;
+                                player.SendChatMessage("[AdminJail] " + aj.AdminNick + " bebörtönzött téged " + aj.Time + " percre. Hátravan még: "+aj.Remaining+" perc. Indok: " + aj.Reason);
+                                player.TriggerEvent("client:SkyCam", false);
+                            });
+                        }
+                        else
+                        {
+                            NAPI.Player.SpawnPlayer(player, new Vector3(c.posX, c.posY, c.posZ), c.Rot);
+                            player.TriggerEvent("client:SkyCam", false);
+                        }
+
                         Interiors.SendPropertiesToPlayer(player);
-                        player.TriggerEvent("client:SkyCam", false);
+                        
                         player.SetSharedData("player:Frozen", false);
                         player.SetData<string>("player:CharacterSelector", null);
                         player.TriggerEvent("client:Chat", true);

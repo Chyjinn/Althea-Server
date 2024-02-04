@@ -26,8 +26,7 @@ namespace Server.Database
             {
                 NAPI.Util.ConsoleOutput($"{now.ToString("yyyy/MM/dd HH:mm:ss")} {message}");
                 File.AppendAllText(ServerLogPath, $"{now.ToString("yyyy/MM/dd HH:mm:ss")} {message}");
-                return;
-            });
+            
 
             List<object> fields = new List<object>
                 {
@@ -57,7 +56,7 @@ namespace Server.Database
                 }
                 };
             Database.Discord.SendMessage("https://discord.com/api/webhooks/1184745746042470420/t0TFci5kauo7lyhYIncyT8qTGBMDcUSMiSPUqsPfIC0YlCKvL_dmgd5Q9xQNdj38uO-S", "https://i.gyazo.com/6d931477b98988b8418d1acdbf8f973e.png", "https://media.tenor.com/pPKOYQpTO8AAAAAM/monkey-developer.gif", "", "", fields, "red");
-
+            });
 
         }
     }

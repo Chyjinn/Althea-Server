@@ -73,7 +73,6 @@ namespace Server.Admin
 
         public static bool IsPlayerAdmin(string command, int adminlevel)
         {
-            return true;//placeholder, bejelentkezésig maradhat így
             if (acmds.ContainsKey(command))
             {
                 acmds.TryGetValue(command, out int requiredlevel);
@@ -113,17 +112,49 @@ namespace Server.Admin
                     {
                         Database.Log.Log_Server(ex.ToString());
                     }
+                    con.CloseAsync();
                 }
             }
 
             return false;
         }
 
+        public static async Task<bool> SetAdminNick(uint accid, string adminnick)
+        {
+            bool state = false;
+            string query = $"UPDATE `accounts` SET `adminNick` = @AdminNick WHERE `accounts`.`id` = @AccID;";
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
+                {
+                    command.Parameters.AddWithValue("@AdminNick", adminnick);
+                    command.Parameters.AddWithValue("@AccID", accid);
+                    command.Prepare();
+                    try
+                    {
+                        int rows = await command.ExecuteNonQueryAsync();
+                        if (rows > 0)
+                        {
+                            state = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+                await con.CloseAsync();
+            }
+            return state;
+        }
 
 
         public static async Task<bool> SetAdminLevel(uint accid, int adminlevel)
         {
-
+            bool state = false;
             string query = $"UPDATE `accounts` SET `adminLevel` = @AdminLevel WHERE `accounts`.`id` = @AccID;";
             using (MySqlConnection con = new MySqlConnection())
             {
@@ -140,17 +171,18 @@ namespace Server.Admin
                         int rows = await command.ExecuteNonQueryAsync();
                         if (rows > 0)
                         {
-                            return true;
+                            state = true;
                         }
                     }
                     catch (Exception ex)
                     {
                         Database.Log.Log_Server(ex.ToString());
                     }
+                    await con.CloseAsync();
                 }
             }
 
-            return false;
+            return state;
         }
 
 

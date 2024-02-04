@@ -1855,7 +1855,10 @@ namespace Server.Inventory
                 }
                 else
                 {
-                    player.SendChatMessage("Valaki más már használja ezt a tárolót.");
+                    NAPI.Task.Run(() =>
+                    {
+                        player.SendChatMessage("Valaki más már használja ezt a tárolót.");
+                    });
                 }
             }
         }
@@ -2001,9 +2004,7 @@ namespace Server.Inventory
                                 {
                                     player.SendChatMessage("Nincs elég helyed felvenni.");
                                 });
-
                             }
-
                         }
                         else
                         {
@@ -2012,23 +2013,30 @@ namespace Server.Inventory
                                 player.SendChatMessage("Hiba! Ez a tárgy nem létezik. ID:" + gi.ID);
                                 Database.Log.Log_Server("HIBA! " + player.Name + " megpróbált felvenni egy tárgyat de az nem létezik. ID:" + gi.ID + " ITEM ADATBÁZIS ID: " + gi.Item_DBID);
                             });
-
                         }
-
                     }
                     else
                     {
-                        player.SendChatMessage("Valaki más használja ezt a tárolót.");
+                        NAPI.Task.Run(() =>
+                        {
+                            player.SendChatMessage("Valaki más használja ezt a tárolót.");
+                        });
                     }
                 }
                 else
                 {
-                    player.SendChatMessage("Túl távol vagy a a tárgy felvételéhez!");
+                    NAPI.Task.Run(() =>
+                    {
+                        player.SendChatMessage("Túl távol vagy a a tárgy felvételéhez!");
+                    });
                 }
             }
             else
             {
-                player.SendChatMessage("Nem létezik ez a tárgy.");
+                NAPI.Task.Run(() =>
+                {
+                    player.SendChatMessage("Nem létezik ez a tárgy.");
+                });
             }
         }
 
@@ -2048,14 +2056,12 @@ namespace Server.Inventory
                             string itemObj = ItemList.GetItemObject(i.ItemID);
                             if (itemObj != "-1" && itemObj != "")//létezik mert nem -1 (nem található item) és nem üres string (nincs object -> nem eldobható)
                             {
-
                                 int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
                                 uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
                                 if (container_ownertype == 1 && container_targetid == i.DBID)//ha item tároló van megnyitva és az amit épp eldobunk akkor bezárjuk
                                 {
                                     CloseContainer(player, i);
                                 }
-
 
                                 Vector3 pos = player.Position;
                                 Vector3 rot = new Vector3(objRotX, objRotY, objRotZ);
@@ -2094,7 +2100,6 @@ namespace Server.Inventory
                                 {
                                     Database.Log.Log_Server("ITEM ELDOBÁS HIBA! DBID: " + i.DBID + " ELDOBOTT ID: " + id);
                                 }
-
                             }
                             else
                             {

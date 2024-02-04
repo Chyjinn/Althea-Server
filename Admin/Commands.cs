@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
 using System.Linq;
-using Google.Protobuf.WellKnownTypes;
+using System.Threading.Tasks;
 using GTANetworkAPI;
+using MySql.Data.MySqlClient;
+using Org.BouncyCastle.Asn1.Cms;
 using Org.BouncyCastle.Asn1.X509;
+using Server.Inventory;
+using Server.Vehicles;
 
 namespace Server.Admin
 {
@@ -22,13 +25,473 @@ namespace Server.Admin
         }
     }
 
-    class Commands : Script
+    class AdminJail
+    {
+        public long ID { get; set; }
+        public int TargetAccID { get; set; }
+        public int AdminAccID { get; set; }
+        public string AdminNick { get; set; }
+        public string Reason { get; set; }
+        public int Time { get; set; }
+        public int Remaining { get; set; }
+        public DateTime Date { get; set; }
+        public DateTime ServedDate { get; set; }
+        public AdminJail(long id, int targetAccID, int adminAccID, string adminnick, string reason, int time, int remaining, DateTime date)
+        {
+            ID = id;
+            TargetAccID = targetAccID;
+            AdminAccID = adminAccID;
+            AdminNick = adminnick;
+            Reason = reason;
+            Time = time;
+            Remaining = remaining;
+            Date = date;
+        }
+    }
+
+        class Commands : Script
     {
         List<AdminCommand> acmds = new List<AdminCommand>();
+
+        public Commands()
+        {
+            CountAdminJailTime();
+        }
 
         private bool checkAdmin()
         {
             return true;
+        }
+
+        //SELECT * FROM `adminjail` WHERE `targetAccountId` LIKE 1 AND `servedDate` IS NULL
+
+        public static async Task<AdminJail> GetPlayerAdminJail(uint accID)
+        {
+            AdminJail aj = null;
+            string query = $"SELECT * FROM `adminjail` WHERE `targetAccountId` = @AccountID AND `servedDate` IS NULL AND `unjailBy` IS NULL LIMIT 1";//nem is töltötte le és nem vette ki senki őt a börtönből
+
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand cmd = new MySqlCommand(query, con))
+                {
+                    cmd.Parameters.AddWithValue("@AccountID", accID);
+                    cmd.Prepare();
+                    try
+                    {
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                aj = new AdminJail(Convert.ToInt64(reader["id"]), Convert.ToInt32(reader["targetAccountId"]), Convert.ToInt32(reader["adminAccountId"]), Convert.ToString(reader["adminNick"]), Convert.ToString(reader["reason"]), Convert.ToInt32(reader["time"]), Convert.ToInt32(reader["remaining"]), Convert.ToDateTime(reader["date"]));
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+                await con.CloseAsync();
+            }
+            return aj;
+        }
+
+        public async static Task<long> InsertAdminJailIntoDb(uint targetaccid, uint adminaccid, string adminnick, string reason, int time)//adminjail insert adatbázisba
+        {
+            long id = -1;
+            string query = $"INSERT INTO `adminjail` " +
+                $"(`targetAccountId`, `adminAccountId`, `adminNick`, `reason`, `time`, `remaining`)" +
+                $" VALUES " +
+                $"(@TargetAccID, @AdminAccID, @AdminNick, @Reason, @Time, @Remaining)";
+
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
+                {
+
+                    command.Parameters.AddWithValue("@TargetAccID", targetaccid);
+                    command.Parameters.AddWithValue("@AdminAccID", adminaccid);
+                    command.Parameters.AddWithValue("@AdminNick", adminnick);
+                    command.Parameters.AddWithValue("@Reason", reason);
+                    command.Parameters.AddWithValue("@Time", time);
+                    command.Parameters.AddWithValue("@Remaining", time);
+
+                    command.Prepare();
+                    try
+                    {
+                        int rows = await command.ExecuteNonQueryAsync();
+                        if (rows > 0)
+                        {
+                            id = command.LastInsertedId;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+
+                }
+                await con.CloseAsync();
+            }
+            return id;
+        }
+
+
+        public static async Task<bool> UpdateAdminJailRemaining(long jailid)
+        {
+            bool state = false;
+            string query = $"UPDATE `adminjail` SET `remaining` = `remaining`-1 WHERE `adminjail`.`id` = @JailID;";
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
+                {
+                    command.Parameters.AddWithValue("@JailID", jailid);
+                    command.Prepare();
+                    try
+                    {
+                        int rows = await command.ExecuteNonQueryAsync();
+                        if (rows > 0)
+                        {
+                            state = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                    
+                }
+                await con.CloseAsync();
+            }
+            return state;
+        }
+
+        public static async Task<bool> UpdateAdminJailServed(long jailid)
+        {
+            bool state = false;
+            string query = $"UPDATE `adminjail` SET `servedDate` = @ServedDate WHERE `adminjail`.`id` = @JailID;";
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
+                {
+                    command.Parameters.AddWithValue("@ServedDate", DateTime.Now);
+                    command.Parameters.AddWithValue("@JailID", jailid);
+                    command.Prepare();
+                    try
+                    {
+                        int rows = await command.ExecuteNonQueryAsync();
+                        if (rows > 0)
+                        {
+                            state = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+                await con.CloseAsync();
+            }
+            return state;
+        }
+
+        public static async Task<bool> UpdateAdminUnJail(long jailid, uint adminid)
+        {
+            bool state = false;
+            string query = $"UPDATE `adminjail` SET `unjailBy` = @AdminID WHERE `adminjail`.`id` = @JailID;";
+            using (MySqlConnection con = new MySqlConnection())
+            {
+                con.ConnectionString = await Database.DBCon.GetConString();
+                await con.OpenAsync();
+
+                using (MySqlCommand command = new MySqlCommand(query, con))
+                {
+                    command.Parameters.AddWithValue("@AdminID", adminid);
+                    command.Parameters.AddWithValue("@JailID", jailid);
+                    command.Prepare();
+                    try
+                    {
+                        int rows = await command.ExecuteNonQueryAsync();
+                        if (rows > 0)
+                        {
+                            state = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Database.Log.Log_Server(ex.ToString());
+                    }
+                }
+                await con.CloseAsync();
+            }
+            return state;
+        }
+
+
+        public async void CountAdminJailTime()
+        {
+            foreach (var item in NAPI.Pools.GetAllPlayers())
+            {
+                if (item.HasData("AdminJail:Remaining"))
+                {
+                    int remaining = item.GetData<int>("AdminJail:Remaining");
+                    
+                    if (remaining <= 0)
+                    {
+                        long ajid = item.GetData<long>("AdminJail:ID");
+                        if(await UpdateAdminJailServed(ajid))//lejárt a jail, kivesszük őt
+                        {
+                            
+                            NAPI.Task.Run(() =>
+                            {
+                                item.ResetData("AdminJail:Remaining");
+                                Vector3 originalpos = item.GetData<Vector3>("AdminJail:OriginalPos");
+                                item.Position = originalpos;
+                                item.ResetData("AdminJail:OriginalPos");
+                                item.ResetData("AdminJail:ID");
+                                item.SendChatMessage("[AdminJail] Letöltötted a büntetésed.");
+                                Database.Log.Log_Server("[AdminJail] " + item.Name + " letöltötte a börtönidejét. ");
+                            });
+                        }
+                        else
+                        {
+                            Database.Log.Log_Server("[AdminJail] HIBA! " + item.Name + " letöltötte a büntetését de nem sikerült az adatbázis mentés.");
+                        }
+      
+
+                    }
+                    else
+                    {
+                        long ajid = item.GetData<long>("AdminJail:ID");
+                        if(await UpdateAdminJailRemaining(ajid))//sikerült frissíteni adatbázisban a fennmaradó időt
+                        {
+                            NAPI.Task.Run(() =>
+                            {
+                                item.SetData("AdminJail:Remaining", remaining - 1);
+                                item.SendChatMessage("[AdminJail] Hátralévő idő: " + remaining + " perc.");
+                            });
+                        }
+                        else
+                        {
+                            Database.Log.Log_Server("[AdminJail] HIBA! " + item.Name + " börtönideje nem került levonásra.");
+                        }
+                    }
+                }
+                }
+
+            NAPI.Task.Run(() =>
+            {
+                CountAdminJailTime();
+            }, 60000);
+        }
+
+        [Command("adminduty", Alias = "aduty", Hide = true)]
+        public void Adminduty(Player player)
+        {
+            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+
+            if (Levels.IsPlayerAdmin("adminduty", adminlevel))
+            {
+                if (player.HasSharedData("player:AdminDuty"))
+                {
+                    string adminnick = player.GetSharedData<string>("player:AdminNick");
+                    bool state = player.GetSharedData<bool>("player:AdminDuty");
+                    player.SetSharedData("player:AdminDuty", !state);
+                    if (!state)
+                    {
+                        NAPI.Chat.SendChatMessageToAll(adminnick + " adminszolgálatba lépett.");
+                    }
+                    else
+                    {
+                        NAPI.Chat.SendChatMessageToAll(adminnick + " kilépett az adminszolgálatból.");
+                    }
+                }
+                else
+                {
+                    string adminnick = player.GetSharedData<string>("player:AdminNick");
+                    player.SetSharedData("player:AdminDuty", true);
+                    NAPI.Chat.SendChatMessageToAll(adminnick + " adminszolgálatba lépett.");
+                }
+                
+
+
+            }
+        }
+
+
+        [Command("unjail", Alias = "unaj", Hide = true)]
+        public async void UnJail(Player player, int targetid = -1)
+        {
+            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+
+            if (Levels.IsPlayerAdmin("unjail", adminlevel))
+            {
+                if (targetid != -1)
+                {
+                    Player target = GetPlayerById(targetid);
+                    if (target != null)
+                    {
+                        uint AdminAccID = player.GetData<uint>("player:accID");
+                        string adminnick = player.GetSharedData<string>("player:AdminNick");
+                        //1395.5, 1147.2, 114.3, -90
+                        //kell neki egy set data hogy jailben van, ne frissítse a kari poziját mentésnél
+                        //ha belép és van jailje akkor is dobja be és ugyan ez fusson le
+                        int remaining = target.GetData<int>("AdminJail:Remaining");
+                        long ajid = target.GetData<long>("AdminJail:ID");
+
+                        if (await UpdateAdminUnJail(ajid, AdminAccID))
+                        {
+                           
+                            NAPI.Task.Run(() =>
+                            {
+                                Database.Log.Log_Server("[AdminJail] " + adminnick + " kivette a börtönből " + target.Name + " játékost. Maradék idő: " + remaining + " [AJ-ID: " + ajid + "]");
+                                player.SendChatMessage("[AdminJail] Kivetted a börtönből " + target.Name + " játékost. Maradék idő: " + remaining);
+                                target.SendChatMessage("[AdminJail] " + adminnick + " kivett a börtönből.");
+
+                                target.ResetData("AdminJail:Remaining");
+                                Vector3 originalpos = target.GetData<Vector3>("AdminJail:OriginalPos");
+                                target.Position = originalpos;
+                                target.ResetData("AdminJail:OriginalPos");
+                                target.ResetData("AdminJail:ID");
+                            });
+
+                        }
+                    }
+                    else
+                    {
+                        player.SendChatMessage("[HASZNÁLAT]: /unjail [játékos id]");
+                    }
+                }
+                else
+                {
+                    player.SendChatMessage("[HASZNÁLAT]: /unjail [játékos id]");
+                }
+
+            }
+        }
+
+
+
+        [Command("adminjail", Alias ="aj", GreedyArg = true, Hide = true)]
+        public async void AdminJail(Player player, string parameters = "")
+        {
+            
+            //1395.5, 1147.2, 114.3, -90
+            //kell neki egy set data hogy jailben van, ne frissítse a kari poziját mentésnél
+            //ha belép és van jailje akkor is dobja be és ugyan ez fusson le
+            
+            
+
+            
+                //ha jailben van akkor törölje az előzőt neki és írjon egy figyelmeztetést/logot -> visszaélés ellen
+
+                int targetid;
+            int time;
+            string reason = "";
+            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+
+            if (Levels.IsPlayerAdmin("adminjail", adminlevel))
+            {
+                string[] p = parameters.Split(' ');
+
+                if (p.Length >= 3)//legalább 3 részből áll a parancs, 1. targetid, 2. idő, 3. indok egy szó legalább
+                {
+                    if (Int32.TryParse(p[0], out targetid) && Int32.TryParse(p[1], out time))//az elsőt is tudjuk parse-olni és a másodikat is
+                    {
+                        //összeállítjuk az indokot
+                        time = time++;
+                        for (int i = 1; i < p.Length-1; i++)
+                        {
+                            reason += p[i+1] + " ";
+                        }
+
+                        Player target = GetPlayerById(targetid);
+                        if (true)//player != target)
+                        {
+                            if (target.HasData("player:charID") && target.HasData("player:accID"))//ha be van jelentkezve és karakterben is van
+                            {
+                                uint adminaccid = player.GetData<uint>("player:accID");
+                                uint targetaccid = target.GetData<uint>("player:accID");
+                                string adminnick = player.GetSharedData<string>("player:AdminNick");
+
+
+                                if (target.HasData("AdminJail:ID"))
+                                {
+                                    long oldajid = target.GetData<long>("AdminJail:ID");
+                                    int remaining = target.GetData<int>("AdminJail:Remaining");
+                                    if (await UpdateAdminUnJail(oldajid, adminaccid))
+                                    {
+                                        NAPI.Task.Run(() =>
+                                        {
+                                            Database.Log.Log_Server("[AdminJail] " + adminnick + " újra börtönbe helyezte " + target.Name + " játékost " + time + " percre. Maradék ideje "+ remaining +" perc volt. [RÉGI AJ ID: "+oldajid+"] Indok: " + reason);
+                                        });
+                                    }
+                                }
+
+                                
+                                //1395.5, 1147.2, 114.3, -90
+                                //kell neki egy set data hogy jailben van, ne frissítse a kari poziját mentésnél
+                                //ha belép és van jailje akkor is dobja be és ugyan ez fusson le
+
+                                long ajid = await InsertAdminJailIntoDb(targetaccid, adminaccid, adminnick, reason, time);
+                                NAPI.Task.Run(() =>
+                                {
+                                    target.SetData("AdminJail:ID", ajid);
+                                    Database.Log.Log_Server("[AdminJail] " + adminnick + " bebörtönözte " + target.Name + " játékost " + time + " percre. Indok: " + reason);
+
+                                    player.SendChatMessage("[AdminJail] Bebörtönözted " + target.Name + " játékos " + time + " percre. Indok: " + reason);
+                                    target.SendChatMessage("[AdminJail] " + adminnick + " bebörtönzött téged " + time + " percre. Indok: " + reason);
+
+                                    target.SetData("AdminJail:OriginalPos", target.Position);
+                                    target.SetData("AdminJail:Remaining", time);
+
+                                    target.Position = new Vector3(1395.5f, 1147.2f, 114.3f);
+                                    target.Rotation = new Vector3(0, 0, -90f);
+                                    target.Dimension = target.Id;
+                                });
+                            }
+                            else
+                            {
+                                player.SendChatMessage("[AdminJail] A játékos nincs bejelentkezve.");
+                            }
+
+                        }
+                        else
+                        {
+                            player.SendChatMessage("[AdminJail] Saját magadat nem tudod börtönbe helyezni.");
+                        }
+                    }
+                    else
+                    {
+                        player.SendChatMessage("[HASZNÁLAT]: /adminjail [játékos id] [idő (perc)] [indok]");
+                    }
+
+
+                }
+                else
+                {
+                    player.SendChatMessage("[HASZNÁLAT]: /adminjail [játékos id] [idő (perc)] [indok]");
+                }
+            }
+
+
+
+            if (Levels.IsPlayerAdmin("adminjail", adminlevel))
+            {
+
+            }
         }
 
         [Command("makeup")]
@@ -64,7 +527,7 @@ namespace Server.Admin
         [Command("reloadacmds")]
         public void ReloadAdminCommands(Player player)
         {
-            int adminlevel = player.GetData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
             if (Levels.IsPlayerAdmin("reloadacmds", adminlevel))
             {
                 Admin.Levels.LoadAcmds();
@@ -75,7 +538,7 @@ namespace Server.Admin
         [Command("setcommandlevel", Alias = "setacmd", GreedyArg = true, Hide = true)]
         public async void SetAdminCommandLevel(Player player, string parameters = "")
         {
-            int adminlevel = player.GetData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
 
             if (Levels.IsPlayerAdmin("setcommandlevel", adminlevel))
             {
@@ -98,12 +561,63 @@ namespace Server.Admin
             }
         }
 
+        [Command("setadminnick", Alias = "setanick", GreedyArg = true, Hide = true)]
+        public async void SetPlayerAdminNick(Player player, string parameters = "")
+        {
+            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+
+            if (Levels.IsPlayerAdmin("setadminnick", adminlevel))
+            {
+                Player target = null;
+                string[] p = parameters.Split(' ');
+
+                if (p.Length == 2)
+                {
+
+                    if (p[0] == "*")
+                    {
+                        target = player;
+                    }
+                    else
+                    {
+                        if (Int32.TryParse(p[0], out int targetid) == true)
+                        {
+                            target = GetPlayerById(targetid);
+                        }
+                        else
+                        {
+                            player.SendChatMessage("Játékos nem található!");
+                        }
+                    }
+
+                    //megkeressük a target játékost
+                    if (target != null)
+                    {
+                        string targetnick = p[1];
+                        int targetoriginalnick = target.GetSharedData<int>("player:AdminNick");
+                        string adminnick = player.GetSharedData<string>("player:AdminNick");
+                        target.SetSharedData("player:AdminNick", targetnick);
+                        uint accid = target.GetData<uint>("player:accID");
+                        NAPI.Chat.SendChatMessageToAll(adminnick + " átállította " + target.Name + " admin nevét. [" + targetoriginalnick + "->" + targetnick + "]");
+                        await Admin.Levels.SetAdminNick(accid, targetnick);
+                    }
+                    else
+                    {
+                        player.SendChatMessage("Játékos nem található");
+                    }
+                    
+                }
+                else
+                {
+                    player.SendChatMessage("[HASZNÁLAT]: /setadminlevel [játékos ID] [admin szint]");
+                }
+            }
+        }
+
         [Command("setadminlevel",Alias = "setalevel", GreedyArg = true, Hide = true)]
         public async void SetPlayerAdminLevel(Player player, string parameters = "")
         {
-
-
-            int adminlevel = player.GetData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
             
             if (Levels.IsPlayerAdmin("setadminlevel", adminlevel))
             {
@@ -112,8 +626,6 @@ namespace Server.Admin
 
                 if (p.Length == 2)
                 {
-
-                
 
                 if (p[0] == "*")
                 {
@@ -136,9 +648,11 @@ namespace Server.Admin
                         //megkeressük a target játékost
                         if (target != null)
                         {
-                            target.SetData("player:AdminLevel", targetlevel);
+                            int targetoriginallevel = target.GetSharedData<int>("player:AdminLevel");
+                            string adminnick = player.GetSharedData<string>("player:AdminNick");
+                            target.SetSharedData("player:AdminLevel", targetlevel);
                             uint accid = target.GetData<uint>("player:accID");
-                            NAPI.Chat.SendChatMessageToAll(player.Name + " átállította " + target.Name + " admin szintjét. [" + adminlevel + "->" + targetlevel+"]");
+                            NAPI.Chat.SendChatMessageToAll(adminnick + " átállította " + target.Name + " admin szintjét. [" + targetoriginallevel + "->" + targetlevel+"]");
                             await Admin.Levels.SetAdminLevel(accid, targetlevel);
                         }
                         else
@@ -152,7 +666,6 @@ namespace Server.Admin
                     player.SendChatMessage("[HASZNÁLAT]: /setadminlevel [játékos ID] [admin szint]");
                 }
             }
-            
         }
 
 
@@ -347,27 +860,10 @@ namespace Server.Admin
         }
 
 
-        [Command("adminduty", Alias = "aduty")]
-        public void AdminDuty(Player player)
-        {
-            if (player.HasSharedData("player:AdminDuty"))
-            {
-                bool state = player.GetSharedData<bool>("player:AdminDuty");
-                player.SetSharedData("player:AdminDuty", !state);
-                player.SendChatMessage("AdminDuty " + state);
-            }
-            else
-            {
-                player.SetSharedData("player:AdminDuty", true);
-                player.SendChatMessage("AdminDuty true");
-            }
-
-        }
-
         [Command("setdimension", Alias = "setdim", GreedyArg = true, Hide = true)]
         public void SetDimension(Player player, string parameters = "")
         {
-            int adminlevel = player.GetData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
 
             if (Levels.IsPlayerAdmin("setdimension", adminlevel))
             {
@@ -415,7 +911,7 @@ namespace Server.Admin
         [Command("admin")]
         public void GetAdminLevel(Player player)
         {
-            int adminlevel = player.GetData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
             player.SendChatMessage("Admin szinted: " + adminlevel);
         }
 
@@ -460,7 +956,7 @@ namespace Server.Admin
             player.Position = new Vector3(x, y, z);
         }
 
-        [Command("get")]
+        [Command("get", Alias ="gethere")]
         public void GetPlayer(Player player, int targetid)
         {
             Player target = GetPlayerById(targetid);
@@ -577,7 +1073,7 @@ namespace Server.Admin
         [Command("fly", Alias ="freecam")]
         public void ToggleFly(Player player)
         {
-            int adminlevel = player.GetData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
 
             if (Levels.IsPlayerAdmin("fly", adminlevel))
             {

@@ -138,10 +138,15 @@ namespace Server
             if (player.HasData("player:charID"))
             {
                 uint charid = player.GetData<uint>("player:charID");
-                if (!await SavePlayerPosition(charid, pos.X, pos.Y, pos.Z, rot.Z))
+
+                if (player.HasData("AdminJail:Remaining") == false)//nem ül adminjailben, tehát menthetjük a poziját
                 {
-                    Database.Log.Log_Server(player.Name + " nem lett mentve!");
+                    if (!await SavePlayerPosition(charid, pos.X, pos.Y, pos.Z, rot.Z))
+                    {
+                        Database.Log.Log_Server(player.Name + " nem lett mentve!");
+                    }
                 }
+
             }
         }
 

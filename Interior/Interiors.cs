@@ -33,6 +33,7 @@ namespace Server.Interior
         }
 
     }
+
     public class Property
     {
         public uint ID { get; set; }

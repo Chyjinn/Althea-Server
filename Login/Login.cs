@@ -1,6 +1,7 @@
 ﻿using GTANetworkAPI;
 using MySql.Data.MySqlClient;
 using MySqlX.XDevAPI;
+using Server.Admin;
 using Server.Characters;
 using System;
 using System.Diagnostics.Tracing;
@@ -100,7 +101,6 @@ namespace Server.Auth
                                 if (await Auth.DeleteUsedToken(token))//töröljük a felhasznált tokent az adatbázisból
                                 {
                                     Tuple<int, string> adminData = await Auth.GetAdminData(id);
-
                                     //Token Login sikeres, töröljük a bejelentkezési formot és tovább küldjük a playert a karakter választóba
                                     //mentjük az új tokent kliens oldalon
                                     NAPI.Task.Run(() =>
@@ -111,9 +111,9 @@ namespace Server.Auth
                                         player.TriggerEvent("client:DestroyAuthForm");
                                         Selector.ProcessCharScreen(player);
 
-                                        player.SetData("player:AdminLevel", adminData.Item1);
-                                        player.SetData("player:AdminNick", adminData.Item2);
-
+                                        player.SetSharedData("player:AdminLevel", adminData.Item1);
+                                        player.SetSharedData("player:AdminNick", adminData.Item2);
+                                        player.SetSharedData("player:AdminDuty", false);
                                     });
                                 }
                             }

@@ -1043,7 +1043,7 @@ namespace Server.Admin
         public void WeaponTint(Player player, int tint)
         {
             player.SendChatMessage("Tint átállítva");
-            player.SetSharedData("player:WeaponTint", tint);
+            player.SetSharedData("Player:WeaponTint", tint);
             
         }
 
@@ -1146,14 +1146,14 @@ namespace Server.Admin
         [RemoteEvent("server:ToggleCrouching")]
         public void ToggleCrouching(Player player)
         {
-            if (player.HasSharedData("player:Crouching"))
+            if (player.HasSharedData("Player:Crouching"))
             {
-                bool state = player.GetSharedData<bool>("player:Crouching");
-                player.SetSharedData("player:Crouching", !state);
+                bool state = player.GetSharedData<bool>("Player:Crouching");
+                player.SetSharedData("Player:Crouching", !state);
             }
             else
             {
-                player.SetSharedData("player:Crouching", true);
+                player.SetSharedData("Player:Crouching", true);
             }
         }
 

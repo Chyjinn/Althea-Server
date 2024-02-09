@@ -492,7 +492,7 @@ namespace Server.Characters
 
         public static async Task<Character> GetCharacterDataByID(Player player, uint charid)//karakter ID alapján egy karaktert ad vissza
         {
-            Character[] characters = NAPI.Util.FromJson<Character[]>(player.GetData<string>("player:CharacterSelector"));
+            Character[] characters = NAPI.Util.FromJson<Character[]>(player.GetData<string>("Player:CharacterSelector"));
             for (int i = 0; i < characters.Length; i++)
             {
                 if (characters[i].Id == charid)

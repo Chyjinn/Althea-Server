@@ -65,7 +65,7 @@ namespace Server.Characters
                     NAPI.Player.SpawnPlayer(player, coords[0], coords[1].Z);
 
                     string json = NAPI.Util.ToJson(characters);
-                    player.SetData("player:CharacterSelector", json);
+                    player.SetData("Player:CharacterSelector", json);
 
                     player.TriggerEvent("client:SkyCam", false);
                     
@@ -119,9 +119,9 @@ namespace Server.Characters
                     player.TriggerEvent("client:DeleteCamera");
                     player.TriggerEvent("client:hideCharScreen");
                     player.SetData("Player:CharID",charid);
-                    player.SetData("player:gender", c.Appearance.Gender);
-                    player.SetSharedData("player:CharacterName",c.Name);
-                    player.SetSharedData("player:VisibleName",c.Name);
+                    player.SetData("Player:Gender", c.Appearance.Gender);
+                    player.SetSharedData("Player:CharacterName",c.Name);
+                    player.SetSharedData("Player:VisibleName",c.Name);
                     player.Dimension = 0;
                     player.Name = c.Name;
 
@@ -149,7 +149,7 @@ namespace Server.Characters
                         Properties.SendPropertiesToPlayer(player);
                         
                         player.SetSharedData("player:Frozen", false);
-                        player.SetData<string>("player:CharacterSelector", null);
+                        player.SetData<string>("Player:CharacterSelector", null);
                         player.TriggerEvent("client:Chat", true);
                         player.TriggerEvent("client:HUD", true);
                         player.TriggerEvent("client:BindKeys", true);

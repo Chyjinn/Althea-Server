@@ -41,7 +41,7 @@ namespace Server.Characters
             if (player.HasData("Player:AccID"))
             {
                 uint characternum = await Data.GetNumberOfCharacters(accID);
-                if (player.GetData<uint>("player:charSlots") > characternum)
+                if (player.GetData<uint>("Player:CharSlots") > characternum)
                 {
                     Character c = new Character(0, "", DateTime.Now, "", 0, 0f, 0f, 0f, 0f);
                     Appearance a = new Appearance(0, true, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 50, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -71,7 +71,7 @@ namespace Server.Characters
                 {
                     NAPI.Task.Run(() =>
                     {
-                        player.SendChatMessage("AccID: "+accID+" - Betelt a karakter slotod. "+ player.GetData<uint>("player:charSlots").ToString() + " < " + characternum.ToString());
+                        player.SendChatMessage("AccID: "+accID+" - Betelt a karakter slotod. "+ player.GetData<uint>("Player:CharSlots").ToString() + " < " + characternum.ToString());
                         player.TriggerEvent("client:CharEdit", false);
                         player.TriggerEvent("client:DeleteCamera");
                         player.TriggerEvent("client:SkyCam", false);

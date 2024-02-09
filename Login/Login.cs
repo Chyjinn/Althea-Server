@@ -107,7 +107,7 @@ namespace Server.Auth
                                     {
                                         player.TriggerEvent("client:SaveToken", id, newtoken, expiration.ToString());
                                         player.SetData("Player:AccID", id);
-                                        player.SetData("player:charSlots", characterSlots);
+                                        player.SetData("Player:CharSlots", characterSlots);
                                         player.TriggerEvent("client:DestroyAuthForm");
                                         Selector.ProcessCharScreen(player);
 
@@ -201,7 +201,7 @@ namespace Server.Auth
                             NAPI.Task.Run(() =>
                             {
                                 player.SetData("Player:AccID", id);
-                                player.SetData("player:charSlots", characterSlots);
+                                player.SetData("Player:CharSlots", characterSlots);
                                 player.TriggerEvent("client:DestroyAuthForm");
                                 Selector.ProcessCharScreen(player);
 

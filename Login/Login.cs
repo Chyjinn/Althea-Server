@@ -106,7 +106,7 @@ namespace Server.Auth
                                     NAPI.Task.Run(() =>
                                     {
                                         player.TriggerEvent("client:SaveToken", id, newtoken, expiration.ToString());
-                                        player.SetData("player:accID", id);
+                                        player.SetData("Player:AccID", id);
                                         player.SetData("player:charSlots", characterSlots);
                                         player.TriggerEvent("client:DestroyAuthForm");
                                         Selector.ProcessCharScreen(player);
@@ -200,7 +200,7 @@ namespace Server.Auth
                             //Külön beléptetjük a játékost akár sikerült menteni az új tokent akár nem
                             NAPI.Task.Run(() =>
                             {
-                                player.SetData("player:accID", id);
+                                player.SetData("Player:AccID", id);
                                 player.SetData("player:charSlots", characterSlots);
                                 player.TriggerEvent("client:DestroyAuthForm");
                                 Selector.ProcessCharScreen(player);

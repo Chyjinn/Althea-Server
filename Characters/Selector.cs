@@ -34,7 +34,7 @@ namespace Server.Characters
             player.TriggerEvent("client:Chat", false);
             player.TriggerEvent("client:BindKeys", false);
 
-            uint accID = player.GetData<uint>("player:accID");
+            uint accID = player.GetData<uint>("Player:AccID");
             player.Dimension = Convert.ToUInt32(accID);
             player.TriggerEvent("client:SkyCam", true);
             player.SetSharedData("player:Frozen", false);
@@ -108,7 +108,7 @@ namespace Server.Characters
     [RemoteEvent("server:CharSelect")]
     public async void SetPlayerCharacter(Player player, uint charid)//kiválasztotta a karakterét és be szeretne lépni
     {
-            uint accID = player.GetData<uint>("player:accID");
+            uint accID = player.GetData<uint>("Player:AccID");
             Character c = await Data.GetCharacterDataByID(player, charid);
             if (await Data.IsCharacterOwner(accID, charid))
             {
@@ -118,7 +118,7 @@ namespace Server.Characters
                     player.TriggerEvent("client:SkyCam", true);
                     player.TriggerEvent("client:DeleteCamera");
                     player.TriggerEvent("client:hideCharScreen");
-                    player.SetData("player:charID",charid);
+                    player.SetData("Player:CharID",charid);
                     player.SetData("player:gender", c.Appearance.Gender);
                     player.SetSharedData("player:CharacterName",c.Name);
                     player.SetSharedData("player:VisibleName",c.Name);
@@ -146,7 +146,7 @@ namespace Server.Characters
                             player.TriggerEvent("client:SkyCam", false);
                         }
 
-                        Interiors.SendPropertiesToPlayer(player);
+                        Properties.SendPropertiesToPlayer(player);
                         
                         player.SetSharedData("player:Frozen", false);
                         player.SetData<string>("player:CharacterSelector", null);

@@ -343,7 +343,7 @@ namespace Server.Admin
                     Player target = GetPlayerById(targetid);
                     if (target != null)
                     {
-                        uint AdminAccID = player.GetData<uint>("player:accID");
+                        uint AdminAccID = player.GetData<uint>("Player:AccID");
                         string adminnick = player.GetSharedData<string>("player:AdminNick");
                         //1395.5, 1147.2, 114.3, -90
                         //kell neki egy set data hogy jailben van, ne frissítse a kari poziját mentésnél
@@ -420,11 +420,11 @@ namespace Server.Admin
                         Player target = GetPlayerById(targetid);
                         if (true)//player != target)
                         {
-                            if (target.HasData("player:charID") && target.HasData("player:accID"))//ha be van jelentkezve és karakterben is van
+                            if (target.HasData("Player:CharID") && target.HasData("Player:AccID"))//ha be van jelentkezve és karakterben is van
                             {
-                                uint adminaccid = player.GetData<uint>("player:accID");
-                                uint targetaccid = target.GetData<uint>("player:accID");
-                                string adminnick = player.GetSharedData<string>("player:AdminNick");
+                                uint adminaccid = player.GetData<uint>("Player:AccID");
+                                uint targetaccid = target.GetData<uint>("Player:AccID");
+                                string adminnick = player.GetSharedData<string>("Player:AdminNick");
 
 
                                 if (target.HasData("AdminJail:ID"))
@@ -594,10 +594,10 @@ namespace Server.Admin
                     if (target != null)
                     {
                         string targetnick = p[1];
-                        int targetoriginalnick = target.GetSharedData<int>("player:AdminNick");
+                        string targetoriginalnick = target.GetSharedData<string>("player:AdminNick");
                         string adminnick = player.GetSharedData<string>("player:AdminNick");
                         target.SetSharedData("player:AdminNick", targetnick);
-                        uint accid = target.GetData<uint>("player:accID");
+                        uint accid = target.GetData<uint>("Player:AccID");
                         NAPI.Chat.SendChatMessageToAll(adminnick + " átállította " + target.Name + " admin nevét. [" + targetoriginalnick + "->" + targetnick + "]");
                         await Admin.Levels.SetAdminNick(accid, targetnick);
                     }
@@ -651,7 +651,7 @@ namespace Server.Admin
                             int targetoriginallevel = target.GetSharedData<int>("player:AdminLevel");
                             string adminnick = player.GetSharedData<string>("player:AdminNick");
                             target.SetSharedData("player:AdminLevel", targetlevel);
-                            uint accid = target.GetData<uint>("player:accID");
+                            uint accid = target.GetData<uint>("Player:AccID");
                             NAPI.Chat.SendChatMessageToAll(adminnick + " átállította " + target.Name + " admin szintjét. [" + targetoriginallevel + "->" + targetlevel+"]");
                             await Admin.Levels.SetAdminLevel(accid, targetlevel);
                         }
@@ -743,6 +743,7 @@ namespace Server.Admin
             {
                 if (player.Dead == true)
                 {
+                    player.WarpOutOfVehicle();
                     Vector3 pos = player.Position;
                     NAPI.Player.SpawnPlayer(player, pos);
                     player.Health = hp;
@@ -761,6 +762,7 @@ namespace Server.Admin
                 {
                     if (target.Dead == true)
                     {
+                        player.WarpOutOfVehicle();
                         Vector3 pos = target.Position;
                         NAPI.Player.SpawnPlayer(target, pos);
                         player.Health = hp;

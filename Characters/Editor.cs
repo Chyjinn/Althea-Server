@@ -12,9 +12,9 @@ namespace Server.Characters
         [RemoteEvent("server:NewChar")]
         public static void NewChar(Player player)//új karakter
         {
-            if (player.HasData("player:accID"))
+            if (player.HasData("Player:AccID"))
             {
-                uint accID = player.GetData<uint>("player:accID");
+                uint accID = player.GetData<uint>("Player:AccID");
                 player.TriggerEvent("client:DeleteCamera");
                 player.TriggerEvent("client:hideCharScreen");
                 player.TriggerEvent("client:SkyCam", true);
@@ -26,9 +26,9 @@ namespace Server.Characters
         [RemoteEvent("server:CharEdit")]
         public static void EditChar(Player player, uint charID)//meglévő karakter
         {
-            if (player.HasData("player:accID"))
+            if (player.HasData("Player:AccID"))
             {
-                uint accID = player.GetData<uint>("player:accID");
+                uint accID = player.GetData<uint>("Player:AccID");
                 player.TriggerEvent("client:DeleteCamera");
                 player.TriggerEvent("client:hideCharScreen");
                 player.TriggerEvent("client:SkyCam", true);
@@ -38,7 +38,7 @@ namespace Server.Characters
 
         public async static void SetupCharEditor(Player player, uint accID)//új karakter létrehozása
         {
-            if (player.HasData("player:accID"))
+            if (player.HasData("Player:AccID"))
             {
                 uint characternum = await Data.GetNumberOfCharacters(accID);
                 if (player.GetData<uint>("player:charSlots") > characternum)
@@ -86,7 +86,7 @@ namespace Server.Characters
 
         public async static void SetupCharEditor(Player player, uint accID, uint charID)//meglévő karakter betöltése
         {
-            if (player.HasData("player:accID"))
+            if (player.HasData("Player:AccID"))
             {
                 Character c = await Data.LoadCharacterData(accID, charID);
                 Appearance a = await Data.LoadCharacterAppearance(c);
@@ -115,7 +115,7 @@ namespace Server.Characters
         [RemoteEvent("server:FinishEditing")]
         public async void FinishEditing(Player player, string c)
         {
-            uint accID = player.GetData<uint>("player:accID");
+            uint accID = player.GetData<uint>("Player:AccID");
             player.TriggerEvent("client:CharEdit", false);
             player.TriggerEvent("client:DeleteCamera");
             player.TriggerEvent("client:SkyCam", true);

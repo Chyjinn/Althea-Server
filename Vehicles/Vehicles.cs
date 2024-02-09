@@ -111,7 +111,7 @@ namespace Server.Vehicles
             uint vHash = NAPI.Util.GetHashKey(model);
             Vehicle v = NAPI.Vehicle.CreateVehicle(vHash, new Vector3(player.Position.X, player.Position.Y + 2.0, player.Position.Z), 0f, 1, 1, plate);
             v.Dimension = player.Dimension;
-            uint charid = player.GetData<uint>("player:charID");
+            uint charid = player.GetData<uint>("Player:CharID");
             NAPI.Vehicle.SetVehicleCustomPrimaryColor(v, red1, green1, blue1);
             NAPI.Vehicle.SetVehicleCustomSecondaryColor(v, red2, green2, blue2);
             NAPI.Vehicle.SetVehiclePearlescentColor(v, pearlescent);
@@ -121,7 +121,7 @@ namespace Server.Vehicles
             {
                 NAPI.Task.Run(() =>
                 {
-                    v.SetData("vehicle:ID", id);
+                    v.SetData("Vehicle:ID", id);
                     v.SetSharedData("vehicle:EngineHealth", j.EngineHealth);
                     v.SetSharedData("vehicle:BodyHealth", j.BodyHealth);
                     vehicles[Convert.ToInt32(id)] = v;
@@ -272,9 +272,9 @@ namespace Server.Vehicles
         {
             if (player.Vehicle != null)//járműben ül
             {
-                if(player.Vehicle.HasData("vehicle:ID"))//van id-je
+                if(player.Vehicle.HasData("Vehicle:ID"))//van id-je
                 {
-                    uint vehid = player.Vehicle.GetData<uint>("vehicle:ID");
+                    uint vehid = player.Vehicle.GetData<uint>("Vehicle:ID");
                     if (Inventory.Items.HasItemWithValue(player, 28, vehid.ToString()))//van neki járműkulcs iteme (15) és az itemvalue az id-je
                     {
                         player.Vehicle.EngineStatus = !player.Vehicle.EngineStatus;
@@ -299,7 +299,7 @@ namespace Server.Vehicles
             
             if (player.Vehicle != null)//járműben ül
             {
-                uint vehid = player.Vehicle.GetData<uint>("vehicle:ID");
+                uint vehid = player.Vehicle.GetData<uint>("Vehicle:ID");
                 if (Inventory.Items.HasItemWithValue(player, 28, vehid.ToString()))//van neki járműkulcs iteme (15) és az itemvalue az id-je
                 {
                     player.Vehicle.EngineStatus = !player.Vehicle.EngineStatus;
@@ -524,7 +524,7 @@ namespace Server.Vehicles
         //lesz majd egy DATA-ja a kocsinak, todespawn és egy datetime lesz benne. ha elmúlt a datetime akkor despawnolja, pl óránta nézi meg az összes járművet
         public async static void LoadPlayerVehicles(Player player)
         {
-            uint charid = player.GetData<uint>("player:charID");
+            uint charid = player.GetData<uint>("Player:CharID");
             Jarmu[] j = await GetPlayerVehicles(charid);
 
             foreach (var item in j)
@@ -544,9 +544,9 @@ namespace Server.Vehicles
                         v.Rotation = item.Rotation;
                         NAPI.Vehicle.SetVehiclePearlescentColor(v, item.Pearlescent);
                         NAPI.Vehicle.SetVehicleMod(v, 53, item.NumberPlateType);
-                        v.SetData("vehicle:ID", item.ID);
-                        v.SetData("vehicle:OwnerType", item.OwnerType);
-                        v.SetData("vehicle:OwnerID", item.OwnerID);
+                        v.SetData("Vehicle:ID", item.ID);
+                        v.SetData("Vehicle:OwnerType", item.OwnerType);
+                        v.SetData("Vehicle:OwnerID", item.OwnerID);
                         v.SetSharedData("vehicle:EngineHealth", item.EngineHealth);
                         v.SetSharedData("vehicle:BodyHealth", item.BodyHealth);
                         player.SendChatMessage("Jámű betöltve! " + item.Model + " (" + item.ID + ")");
@@ -561,19 +561,18 @@ namespace Server.Vehicles
         {
             foreach (var item in vehicles)
             {
-                if (item.Value.HasData("vehicle:OwnerType") && item.Value.HasData("vehicle:OwnerID"))//vannak beállítva tulajdonoshoz adatok
+                if (item.Value.HasData("Vehicle:OwnerType") && item.Value.HasData("Vehicle:OwnerID"))//vannak beállítva tulajdonoshoz adatok
                 {
-                    if (item.Value.GetData<uint>("vehicle:OwnerType") == 0)//0 tehát játékos által birtokolt
+                    if (item.Value.GetData<uint>("Vehicle:OwnerType") == 0)//0 tehát játékos által birtokolt
                     {
-                        uint charid = player.GetData<uint>("player:charID");
-                        if (item.Value.GetData<uint>("vehicle:OwnerID") == charid)//a tulajdonos megegyezik a lelépő játékossal
+                        uint charid = player.GetData<uint>("Player:CharID");
+                        if (item.Value.GetData<uint>("Vehicle:OwnerID") == charid)//a tulajdonos megegyezik a lelépő játékossal
                         {
                             DateTime dateTime = DateTime.Now;
                             TimeSpan span = TimeSpan.FromDays(3);
                             DateTime despawn = dateTime.Add(span);
                             
-                            Database.Log.Log_Server("Jármű ID: " + item.Key + " - Idő: "+ DateTime.Now + " Despawn: " + despawn);
-                            item.Value.SetData("vehicle:Despawn", despawn);
+                            item.Value.SetData("Vehicle:Despawn", despawn);
                         }
                     }
                 }
@@ -585,12 +584,12 @@ namespace Server.Vehicles
         {
             foreach (var item in vehicles)
             {
-                if (item.Value.HasData("vehicle:Despawn"))
+                if (item.Value.HasData("Vehicle:Despawn"))
                 {
-                    DateTime despawn = item.Value.GetData<DateTime>("vehicle:Despawn");
+                    DateTime despawn = item.Value.GetData<DateTime>("Vehicle:Despawn");
                     if (despawn < DateTime.Now)
                     {
-                        int vehid = Convert.ToInt32(item.Value.GetData<uint>("vehicle:ID"));
+                        int vehid = Convert.ToInt32(item.Value.GetData<uint>("Vehicle:ID"));
                         item.Value.Delete();//töröljük a járművet
                         vehicles.Remove(vehid);//töröljük a listából
                         Database.Log.Log_Server("Jármú despawnolva.");

@@ -81,14 +81,14 @@ namespace Server.Interior
     }
 
 
-    internal class Interiors : Script
+    internal class Properties : Script
     {
-        static List<Property> Properties = new List<Property>();
+        static List<Property> Props = new List<Property>();
 
 
         public async Task<Property> GetPropertyByID(uint id)
         {
-            foreach (var item in Properties)
+            foreach (var item in Props)
             {
                 if (item.ID == id)
                 {
@@ -352,8 +352,8 @@ namespace Server.Interior
                     DateTime create = DateTime.Now;
                     Property p = new Property(Convert.ToUInt32(id), propType, name, 0, 0, entrance, heading, dim, i.Position, i.Heading, Convert.ToUInt32(id), i.IPL, true, price, 1, streetName, currentNumber+1);
                     p.OwnerName = "Nincs";
-                    
-                    Properties.Add(p);
+
+                    Props.Add(p);
 
                     DateTime created = DateTime.Now;
                     DateTime end = DateTime.Now;
@@ -395,8 +395,7 @@ namespace Server.Interior
         {
             NAPI.Task.Run(() =>
             {
-                player.TriggerEvent("client:ReloadProperties", NAPI.Util.ToJson(Properties));
-                player.SendChatMessage(NAPI.Util.ToJson(Properties));
+                player.TriggerEvent("client:ReloadProperties", NAPI.Util.ToJson(Props));
             });
         }
 
@@ -441,7 +440,7 @@ namespace Server.Interior
 
             TimeSpan LoadTime = timestamp2 - timestamp1;
 
-            NAPI.Util.ConsoleOutput(Properties.Count + " db interior betöltve " + LoadTime.Milliseconds + " ms alatt.");
+            NAPI.Util.ConsoleOutput(Props.Count + " db interior betöltve " + LoadTime.Milliseconds + " ms alatt.");
             //Database.Log.Log_Server(Properties.Count + " db interior betöltve " + LoadTime.Milliseconds + " ms alatt.");
         }
 
@@ -496,7 +495,7 @@ namespace Server.Interior
                                 Property p = new Property(Convert.ToUInt32(reader["id"]), Convert.ToByte(reader["propType"]), reader["name"].ToString(), Convert.ToUInt32(reader["ownerType"]), Convert.ToUInt32(reader["ownerID"]), new Vector3(Convert.ToSingle(reader["entranceX"]), Convert.ToSingle(reader["entranceY"]), Convert.ToSingle(reader["entranceZ"])), Convert.ToSingle(reader["entranceHeading"]), Convert.ToUInt32(reader["entranceDimension"]), new Vector3(Convert.ToSingle(reader["exitX"]), Convert.ToSingle(reader["exitY"]), Convert.ToSingle(reader["exitZ"])), Convert.ToSingle(reader["exitHeading"]), Convert.ToUInt32(reader["exitDimension"]), reader["ipl"].ToString(), Convert.ToBoolean(reader["locked"]), Convert.ToInt32(reader["price"]), Convert.ToUInt32(reader["postal"]), Convert.ToString(reader["streetName"]), Convert.ToUInt32(reader["streetNumber"]));
                                 
                                 p.OwnerName = await GetOwnerName(p);
-                                Properties.Add(p);
+                                Props.Add(p);
                             }
                         }
                     }
@@ -674,7 +673,7 @@ namespace Server.Interior
         [RemoteEvent("server:SetCPHeight")]
         public void SetCheckpointHeight(Player player, float height)
         {
-            player.SetData("interior:CPheight", height);
+            player.SetData("Interior:CPheight", height);
         }
 
         [RemoteEvent("server:TogglePropertyLock")]

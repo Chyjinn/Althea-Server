@@ -1200,24 +1200,24 @@ namespace Server.Inventory
 
         public static void AddItemToPlayerInventory(Player player, Item item)
         {
-            uint charid = player.GetData<UInt32>("player:charID");
+            uint charid = player.GetData<UInt32>("Player:CharID");
             Inventories[new Tuple<int, uint>(0, charid)].Add(item);
         }
         public static void RemoveItemFromPlayerInventory(Player player, Item item)
         {
-            uint charid = player.GetData<UInt32>("player:charID");
+            uint charid = player.GetData<UInt32>("Player:CharID");
             Inventories[new Tuple<int, uint>(0, charid)].Remove(item);
         }
 
         public static void SetPlayerInventory(Player player, List<Item> items)
         {
-            uint charid = player.GetData<UInt32>("player:charID");
+            uint charid = player.GetData<UInt32>("Player:CharID");
             Inventories[new Tuple<int, uint>(0, charid)] = items;
         }
 
         public static List<Item> GetPlayerInventory(Player player)
         {
-            uint charid = player.GetData<UInt32>("player:charID");
+            uint charid = player.GetData<UInt32>("Player:CharID");
             if (charid != 0)
             {
                 return Inventories[new Tuple<int, uint>(0, charid)];
@@ -1440,7 +1440,7 @@ namespace Server.Inventory
             Database.Log.Log_Server(NAPI.Util.ToJson(c));
             Database.Log.Log_Server(NAPI.Util.ToJson(t));
             */
-            uint charid = target.GetData<UInt32>("player:charID");
+            uint charid = target.GetData<UInt32>("Player:CharID");
             Item i = new Item(0, charid, 0, itemid, itemvalue, amount, false, false, 1000);
 
             uint dbid = await AddItemToDatabase(charid, i);
@@ -1510,14 +1510,14 @@ namespace Server.Inventory
 
         public static void LoadInventory(Player player)
         {
-            uint charid = player.GetData<UInt32>("player:charID");
+            uint charid = player.GetData<UInt32>("Player:CharID");
             RefreshInventory(player, charid);
         }
 
         [Command("refreshinv", Alias = "refreshinventory")]
         public void RefreshFasz(Player player)
         {
-            uint charid = player.GetData<UInt32>("player:charID");
+            uint charid = player.GetData<UInt32>("Player:CharID");
             List<Item> itemz = GetPlayerInventory(player);
             string json = NAPI.Util.ToJson(itemz);
             player.SendChatMessage(json);
@@ -1614,9 +1614,9 @@ namespace Server.Inventory
         public void OpenVehicleTrunk(Player player, ushort entityid)
         {
             Vehicle v = GetVehicleByID(entityid);
-            if (v.HasData("vehicle:ID") && Vector3.Distance(player.Position, v.Position) < 3f)
+            if (v.HasData("Vehicle:ID") && Vector3.Distance(player.Position, v.Position) < 3f)
             {
-                uint vehid = v.GetData<uint>("vehicle:ID");
+                uint vehid = v.GetData<uint>("Vehicle:ID");
 
                 if (vehid > 0)
                 {
@@ -1666,10 +1666,10 @@ namespace Server.Inventory
         [RemoteEvent("server:ClosedContainer")]
         public async void PlayerCloseContainer(Player player)//bezárta a tárolót, tehát bezárjuk szerver oldalon is
         {
-            if (player.HasData("player:OpenedContainerOwnerType"))
+            if (player.HasData("Player:OpenedContainerOwnerType"))
             {
-                int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-                uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                int container_ownertype = player.GetData<int>("Player:OpenedContainerOwnerType");
+                uint container_targetid = player.GetData<uint>("Player:OpenedContainerID");
                 switch (container_ownertype)
                 {
                     case 1:
@@ -1690,8 +1690,8 @@ namespace Server.Inventory
                     default:
                         break;
                 }
-                player.ResetData("player:OpenedContainerOwnerType");
-                player.ResetData("player:OpenedContainerID");
+                player.ResetData("Player:OpenedContainerOwnerType");
+                player.ResetData("Player:OpenedContainerID");
                 SetInventoryInUse(container_ownertype, container_targetid, false);
             }
 
@@ -1699,8 +1699,8 @@ namespace Server.Inventory
 
         public async Task<bool> HasAccessToItem(Player player, Item item)
         {
-            int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-            uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+            int container_ownertype = player.GetData<int>("Player:OpenedContainerOwnerType");
+            uint container_targetid = player.GetData<uint>("Player:OpenedContainerID");
             if (GetPlayerInventory(player).Contains(item))
             {
                 return true;
@@ -1719,9 +1719,9 @@ namespace Server.Inventory
         public void OpenVehicleGloveBox(Player player)
         {
             Vehicle v = player.Vehicle;
-            if (v.HasData("vehicle:ID"))
+            if (v.HasData("Vehicle:ID"))
             {
-                uint vehid = v.GetData<uint>("vehicle:ID");
+                uint vehid = v.GetData<uint>("Vehicle:ID");
 
                 if (vehid > 0)//pozitív a jármű id (nem ideiglenes)
                 {
@@ -1785,8 +1785,8 @@ namespace Server.Inventory
         {
             NAPI.Task.Run(() =>
             {
-                player.SetData("player:OpenedContainerOwnerType", Convert.ToInt32(ownertype));//beállítjuk hogy tudjuk melyik van megnyitva neki
-                player.SetData("player:OpenedContainerID", Convert.ToUInt32(ownerid));//beállítjuk hogy tudjuk melyik van megnyitva neki
+                player.SetData("Player:OpenedContainerOwnerType", Convert.ToInt32(ownertype));//beállítjuk hogy tudjuk melyik van megnyitva neki
+                player.SetData("Player:OpenedContainerID", Convert.ToUInt32(ownerid));//beállítjuk hogy tudjuk melyik van megnyitva neki
                 SetInventoryInUse(ownertype, ownerid, true);
                 string json = NAPI.Util.ToJson(items);
                 player.TriggerEvent("client:ContainerFromServer", json);
@@ -1833,11 +1833,11 @@ namespace Server.Inventory
         {
             if (IsItemContainer(containeritem.ItemID))
             {
-                int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-                uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                int container_ownertype = player.GetData<int>("Player:OpenedContainerOwnerType");
+                uint container_targetid = player.GetData<uint>("Player:OpenedContainerID");
                 //bezárjuk ha van megnyitott tároló
-                player.ResetData("player:OpenedContainerOwnerType");
-                player.ResetData("player:OpenedContainerID");
+                player.ResetData("Player:OpenedContainerOwnerType");
+                player.ResetData("Player:OpenedContainerID");
 
                 if (!IsInventoryInUse(1, containeritem.DBID))
                 {
@@ -1865,11 +1865,11 @@ namespace Server.Inventory
 
         public void CloseContainer(Player player, Item closedcontainer)
         {
-            int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-            uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+            int container_ownertype = player.GetData<int>("Player:OpenedContainerOwnerType");
+            uint container_targetid = player.GetData<uint>("Player:OpenedContainerID");
             Chat.Commands.ChatEmoteME(player, "bezár egy tárolót. ((" + closedcontainer.DBID + "))");
-            player.ResetData("player:OpenedContainerOwnerType");
-            player.ResetData("player:OpenedContainerID");
+            player.ResetData("Player:OpenedContainerOwnerType");
+            player.ResetData("Player:OpenedContainerID");
             SetInventoryInUse(container_ownertype, container_targetid, false);
             player.TriggerEvent("client:CloseContainer");
         }
@@ -1877,13 +1877,13 @@ namespace Server.Inventory
         [ServerEvent(Event.PlayerDisconnected)]
         public void PlayerDisconnected(Player player, DisconnectionType type, string reason)
         {
-            if(player.HasData("player:OpenedContainerOwnerType"))
+            if(player.HasData("Player:OpenedContainerOwnerType"))
             {
-                int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-                uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                int container_ownertype = player.GetData<int>("Player:OpenedContainerOwnerType");
+                uint container_targetid = player.GetData<uint>("Player:OpenedContainerID");
 
-                player.ResetData("player:OpenedContainerOwnerType");
-                player.ResetData("player:OpenedContainerID");
+                player.ResetData("Player:OpenedContainerOwnerType");
+                player.ResetData("Player:OpenedContainerID");
                 SetInventoryInUse(container_ownertype, container_targetid, false);
             }
         }
@@ -1903,12 +1903,12 @@ namespace Server.Inventory
                             Player target = Admin.Commands.GetPlayerById(target_id);
                             if (Vector3.Distance(player.Position, target.Position) < 5f)//elég közel vannak egymáshoz
                             {
-                                uint charid = target.GetData<UInt32>("player:charID");
+                                uint charid = target.GetData<UInt32>("Player:CharID");
                                 if (await HasSpaceForItem(0,charid,ItemList.GetItemWeight(i.ItemID)))//ha a célpontnak van elég helye
                                 {
                                     //átadjuk a másiknak
-                                    int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-                                    uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                                    int container_ownertype = player.GetData<int>("Player:OpenedContainerOwnerType");
+                                    uint container_targetid = player.GetData<uint>("Player:OpenedContainerID");
                                     if (container_ownertype == 1 && container_targetid == i.DBID)//ha item tároló van megnyitva és az amit épp átadunk akkor bezárjuk
                                     {
                                         CloseContainer(player, i);
@@ -1931,6 +1931,11 @@ namespace Server.Inventory
                                         string json = NAPI.Util.ToJson(i);
                                         target.TriggerEvent("client:AddItemToInventory", json);
                                         Chat.Commands.ChatEmoteME(player, "átad " + amount + " db " + ItemList.GetItemName(i.ItemID) + " tárgyat " + target.Name + "-nak.");
+                                        if (i.ItemID <= 27)//ha ruha
+                                        {
+
+                                        }
+
                                     }
                                     else//csak egy részét adjuk át
                                     {
@@ -1970,7 +1975,7 @@ namespace Server.Inventory
                         Item i = await LoadItemFromGround(gi.Item_DBID);
                         if (i != null)//létezik az eldobott item és tényleg el van dobva (ownertype = 6)
                         {
-                            uint charid = player.GetData<UInt32>("player:charID");
+                            uint charid = player.GetData<UInt32>("Player:CharID");
                             if (await HasSpaceForItem(0, charid, ItemList.GetItemWeight(i.ItemID)))//ha a célpontnak van elég helye
                             {
                                 GroundItems.Remove(gi);
@@ -2056,8 +2061,8 @@ namespace Server.Inventory
                             string itemObj = ItemList.GetItemObject(i.ItemID);
                             if (itemObj != "-1" && itemObj != "")//létezik mert nem -1 (nem található item) és nem üres string (nincs object -> nem eldobható)
                             {
-                                int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-                                uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                                int container_ownertype = player.GetData<int>("Player:OpenedContainerOwnerType");
+                                uint container_targetid = player.GetData<uint>("Player:OpenedContainerID");
                                 if (container_ownertype == 1 && container_targetid == i.DBID)//ha item tároló van megnyitva és az amit épp eldobunk akkor bezárjuk
                                 {
                                     CloseContainer(player, i);
@@ -2067,7 +2072,7 @@ namespace Server.Inventory
                                 Vector3 rot = new Vector3(objRotX, objRotY, objRotZ);
 
                                 pos.Z = groundZ;
-                                uint charid = player.GetData<UInt32>("player:charID");
+                                uint charid = player.GetData<UInt32>("Player:CharID");
                                 //
                                 GroundItem gi = new GroundItem(0, i.DBID, pos, rot, player.Dimension, DateTime.Now, charid);
                                 string szoveg = "";
@@ -2153,8 +2158,8 @@ namespace Server.Inventory
                         {
                             if (IsItemContainer(i.ItemID, draw))//ha ez a drawable (modell) tároló, akkor fogjuk megnyitni a tároló inventoryt
                             {
-                                int target_owner_type = player.GetData<int>("player:OpenedContainerOwnerType");
-                                uint target_owner_id = player.GetData<uint>("player:OpenedContainerID");
+                                int target_owner_type = player.GetData<int>("Player:OpenedContainerOwnerType");
+                                uint target_owner_id = player.GetData<uint>("Player:OpenedContainerID");
                                 if (target_owner_type == 1 && target_owner_id == item_dbid)//már meg van nyitva a tároló, be akarja zárni
                                 {
                                     CloseContainer(player, i);
@@ -2172,8 +2177,8 @@ namespace Server.Inventory
                         }
                         else//nem ruhadarab de tároló
                         {
-                            int target_owner_type = player.GetData<int>("player:OpenedContainerOwnerType");
-                            uint target_owner_id = player.GetData<uint>("player:OpenedContainerID");
+                            int target_owner_type = player.GetData<int>("Player:OpenedContainerOwnerType");
+                            uint target_owner_id = player.GetData<uint>("Player:OpenedContainerID");
                             if (target_owner_type == 1 && target_owner_id == item_dbid)//már meg van nyitva a tároló, be akarja zárni
                             {
                                 CloseContainer(player, i);
@@ -2281,8 +2286,8 @@ namespace Server.Inventory
                 {
                     if (await HasAccessToItem(player,i2))
                     {
-                        int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-                        uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+                        int container_ownertype = player.GetData<int>("Player:OpenedContainerOwnerType");
+                        uint container_targetid = player.GetData<uint>("Player:OpenedContainerID");
                         if (i2 != null)
                         {
                             if (i2.OwnerType == container_ownertype && i2.OwnerID == container_targetid)//megegyezik a megnyitott tárolóval, nincs baj
@@ -2461,7 +2466,7 @@ namespace Server.Inventory
 
                 if (await HasAccessToItem(player, i1))
                 {
-                    uint charid = player.GetData<UInt32>("player:charID");
+                    uint charid = player.GetData<UInt32>("Player:CharID");
                     int originalowner = i1.OwnerType;
                     uint originalownerid = i1.OwnerID;
                     if (await HasSpaceForItem(0, charid, Convert.ToUInt32(ItemList.GetItemWeight(i1.ItemID) * i1.ItemAmount)))//ha a célpontnak van elég helye
@@ -2612,8 +2617,8 @@ namespace Server.Inventory
                 Item i1 = await GetItemByDbId(item_dbid);
                 if (await HasAccessToItem(player,i1))
                 {
-                    int target_owner_type = player.GetData<int>("player:OpenedContainerOwnerType");
-                    uint target_owner_id = player.GetData<uint>("player:OpenedContainerID");
+                    int target_owner_type = player.GetData<int>("Player:OpenedContainerOwnerType");
+                    uint target_owner_id = player.GetData<uint>("Player:OpenedContainerID");
                     if (await HasSpaceForItem(target_owner_type, target_owner_id, Convert.ToUInt32(ItemList.GetItemWeight(i1.ItemID)*i1.ItemAmount)))//ha a célpontnak van elég helye
                     {
                         if (target_owner_type == 1 && IsItemContainer(i1.ItemID))//ha a tároló amibe bele szeretnénk tenni egy tároló item, és tárolót szeretnénk beletenni az nem jó
@@ -2909,7 +2914,7 @@ namespace Server.Inventory
         [RemoteEvent("server:RequestInventoryWeight")]
         public async void RequestInventoryWeight(Player player)
         {
-            uint charid = player.GetData<UInt32>("player:charID");
+            uint charid = player.GetData<UInt32>("Player:CharID");
             uint invweight = await GetInventoryWeight(0, charid);
             NAPI.Task.Run(() =>
             {
@@ -2920,8 +2925,8 @@ namespace Server.Inventory
         [RemoteEvent("server:RequestContainerWeight")]
         public async void RequestContainerWeight(Player player)
         {
-            int container_ownertype = player.GetData<int>("player:OpenedContainerOwnerType");
-            uint container_targetid = player.GetData<uint>("player:OpenedContainerID");
+            int container_ownertype = player.GetData<int>("Player:OpenedContainerOwnerType");
+            uint container_targetid = player.GetData<uint>("Player:OpenedContainerID");
             uint invweight = await GetInventoryWeight(container_ownertype, container_targetid);
             NAPI.Task.Run(() =>
             {
@@ -3232,7 +3237,7 @@ namespace Server.Inventory
             {
                 if (ItemList.GetItemType(i.ItemID) == 1 && i.InUse == false)//1-es típus: ruha és nincs felvéve
                 {
-                    uint charid = player.GetData<UInt32>("player:charID");
+                    uint charid = player.GetData<UInt32>("Player:CharID");
                     if (await HasSpaceForItem(0, charid, ItemList.GetItemWeight(i.ItemID)))//ha a célpontnak van elég helye
                     {
                         int clothing_id = -1;
@@ -3331,7 +3336,7 @@ namespace Server.Inventory
         {
             try
             {
-                uint charid = player.GetData<UInt32>("player:charID");
+                uint charid = player.GetData<UInt32>("Player:CharID");
                 AddItemToInventory(player, i1.OwnerType, i1.OwnerID, i1);
                 AddItemToInventory(player, i2.OwnerType, i2.OwnerID, i2);
 
@@ -3388,6 +3393,7 @@ namespace Server.Inventory
                 }
 
                 player.TriggerEvent("client:RefreshInventoryPreview");
+                player.TriggerEvent("client:SetClothingImage", i1.DBID, gender, clothing_id, correctDrawable, t.Texture);
             }
             catch (Exception ex)
             {
@@ -3402,7 +3408,7 @@ namespace Server.Inventory
                 {
                     try
                     {
-                        uint charid = player.GetData<UInt32>("player:charID");
+                        uint charid = player.GetData<UInt32>("Player:CharID");
                         AddItemToInventory(player, i.OwnerType, i.OwnerID, i);
 
                         //player.TriggerEvent("client:RemoveItem", i.DBID);
@@ -3453,6 +3459,7 @@ namespace Server.Inventory
                         string json = NAPI.Util.ToJson(i);
                         player.TriggerEvent("client:AddItemToClothing", json);
                         player.TriggerEvent("client:RefreshInventoryPreview");
+                        player.TriggerEvent("client:SetClothingImage", i.DBID, gender, clothing_id, correctDrawable, t.Texture);
                     }
                     catch (Exception ex)
                     {
@@ -3468,7 +3475,7 @@ namespace Server.Inventory
             {
                 try
                 {
-                    uint charid = player.GetData<UInt32>("player:charID");
+                    uint charid = player.GetData<UInt32>("Player:CharID");
                     AddItemToInventory(player, i1.OwnerType, i1.OwnerID, i1);
                     AddItemToInventory(player, i2.OwnerType, i2.OwnerID, i2);
                     //player.TriggerEvent("client:RemoveItem", i.DBID);
@@ -3541,7 +3548,7 @@ namespace Server.Inventory
             {
                 try
                 {
-                    uint charid = player.GetData<UInt32>("player:charID");
+                    uint charid = player.GetData<UInt32>("Player:CharID");
                     AddItemToInventory(player,i.OwnerType, i.OwnerID, i);
 
                     //player.TriggerEvent("client:RemoveItem", i.DBID);
@@ -3606,7 +3613,7 @@ namespace Server.Inventory
             {
                 try
                 {
-                    uint charid = player.GetData<UInt32>("player:charID");
+                    uint charid = player.GetData<UInt32>("Player:CharID");
                     AddItemToInventory(player, i1.OwnerType, i1.OwnerID, i1);
                     AddItemToInventory(player, i2.OwnerType, i2.OwnerID, i2);
 
@@ -3630,6 +3637,7 @@ namespace Server.Inventory
                         player.TriggerEvent("client:AddItemToContainer", json2);
                     }
                     player.TriggerEvent("client:RefreshInventoryPreview");
+                    player.TriggerEvent("client:SetClothingImage", i1.DBID, gender, clothing_id, correctDrawable, c.Texture);
                 }
                 catch (Exception ex)
                 {
@@ -3646,7 +3654,7 @@ namespace Server.Inventory
             {
                 try
                 {
-                    uint charid = player.GetData<UInt32>("player:charID");
+                    uint charid = player.GetData<UInt32>("Player:CharID");
                     AddItemToInventory(player, i.OwnerType, i.OwnerID, i);
 
                     //player.TriggerEvent("client:RemoveItem", i.DBID);
@@ -3659,6 +3667,7 @@ namespace Server.Inventory
                     string json = NAPI.Util.ToJson(i);
                     player.TriggerEvent("client:AddItemToClothing", json);
                     player.TriggerEvent("client:RefreshInventoryPreview");
+                    player.TriggerEvent("client:SetClothingImage", i.DBID, gender, clothing_id, correctDrawable, c.Texture);
                 }
                 catch (Exception ex)
                 {
@@ -3669,12 +3678,11 @@ namespace Server.Inventory
 
         public async void ItemValueToAccessorySwap(Player player, Item i1, Item i2, int clothing_id)
         {
-
             NAPI.Task.Run(() =>
             {
                 try
                 {
-                    uint charid = player.GetData<UInt32>("player:charID");
+                    uint charid = player.GetData<UInt32>("Player:CharID");
                     AddItemToInventory(player, i1.OwnerType, i1.OwnerID, i1);
                     AddItemToInventory(player, i2.OwnerType, i2.OwnerID, i2);
                     //player.TriggerEvent("client:RemoveItem", i1.DBID);
@@ -3698,6 +3706,7 @@ namespace Server.Inventory
                         player.TriggerEvent("client:AddItemToContainer", json2);
                     }
                     player.TriggerEvent("client:RefreshInventoryPreview");
+                    player.TriggerEvent("client:SetPropImage", i1.DBID, gender, clothing_id, correctDrawable, c.Texture);
                 }
                 catch (Exception ex)
                 {
@@ -3714,7 +3723,7 @@ namespace Server.Inventory
             {
                 try
                 {
-                    uint charid = player.GetData<UInt32>("player:charID");
+                    uint charid = player.GetData<UInt32>("Player:CharID");
                     AddItemToInventory(player, i.OwnerType, i.OwnerID, i);
                     //player.TriggerEvent("client:RemoveItem", i.DBID);
                     Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
@@ -3725,6 +3734,7 @@ namespace Server.Inventory
                     string json = NAPI.Util.ToJson(i);
                     player.TriggerEvent("client:AddItemToClothing", json);
                     player.TriggerEvent("client:RefreshInventoryPreview");
+                    player.TriggerEvent("client:SetPropImage", i.DBID, gender, clothing_id, correctDrawable, c.Texture);
                 }
                 catch (Exception ex)
                 {

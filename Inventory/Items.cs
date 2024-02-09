@@ -1461,12 +1461,12 @@ namespace Server.Inventory
         }
 
 
-        [Command("greenscreen")]
+        [Command("takeclothingpictures")]
         public async void SetupItemPictures(Player player, bool gender)
         {
             player.Dimension = 9873;
-            player.SetSharedData("player:Frozen", true);
-            player.SetSharedData("player:Invisible", true);
+            player.SetSharedData("Player:Frozen", true);
+            player.SetSharedData("Player:Invisible", true);
             player.Position = new Vector3(228.6f, -989.3f, -98.5f);
             player.Rotation = new Vector3(0f, 0f, 0f);
             player.TriggerEvent("client:TakeItemPictures", gender);
@@ -1475,8 +1475,8 @@ namespace Server.Inventory
         [Command("takepicture")]
         public async void TakeCharacterPicture(Player player)
         {
-            player.SetSharedData("player:Frozen", true);
-            player.SetSharedData("player:Invisible", true);
+            player.SetSharedData("Player:Frozen", true);
+            player.SetSharedData("Player:Invisible", true);
             player.Dimension = Convert.ToUInt32(player.Id+1);
             player.Position = new Vector3(221.45f, -984.5f, -99f);
             player.Rotation = new Vector3(0f, 0f, -90f);

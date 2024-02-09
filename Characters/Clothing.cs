@@ -698,7 +698,7 @@ namespace Server.Characters
                                 NAPI.Task.Run(() =>
                                 {
                                     
-                                    player.SetSharedData("player:Frozen", false);
+                                    player.SetSharedData("Player:Frozen", false);
                                     player.TriggerEvent("client:DeleteCamera", true);
                                     player.SetData("Player:InClothingShop", false);
 
@@ -732,7 +732,7 @@ namespace Server.Characters
                                 player.TriggerEvent("client:SkyCam", true);
                                 NAPI.Task.Run(() =>
                                 {
-                                    player.SetSharedData("player:Frozen", true);
+                                    player.SetSharedData("Player:Frozen", true);
                                     player.SetData("Player:InClothingShop", true);
 
                                     player.Dimension = Convert.ToUInt32(player.Id + 1);
@@ -768,7 +768,7 @@ namespace Server.Characters
                             player.TriggerEvent("client:SkyCam", true);
                             NAPI.Task.Run(() =>
                             {
-                                player.SetSharedData("player:Frozen", true);
+                                player.SetSharedData("Player:Frozen", true);
                                 player.SetData("Player:InClothingShop", true);
 
                                 player.Dimension = Convert.ToUInt32(player.Id + 1);
@@ -842,7 +842,7 @@ namespace Server.Characters
         {
             player.Position = new Vector3(430f, -811.3f, 29.5f);
             player.Dimension = 0;
-            player.SetSharedData("player:Frozen", false);
+            player.SetSharedData("Player:Frozen", false);
             player.TriggerEvent("client:DeleteCamera", true);
         }
 

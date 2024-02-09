@@ -37,7 +37,7 @@ namespace Server.Characters
             uint accID = player.GetData<uint>("Player:AccID");
             player.Dimension = Convert.ToUInt32(accID);
             player.TriggerEvent("client:SkyCam", true);
-            player.SetSharedData("player:Frozen", false);
+            player.SetSharedData("Player:Frozen", false);
             SetCharacterDataForPlayer(player, accID);
         }
 
@@ -61,7 +61,7 @@ namespace Server.Characters
                     int randomscene = r.Next(0, scenes.Count);
 
                     Vector3[] coords = scenes[randomscene];
-                    player.SetSharedData("player:Frozen", true);
+                    player.SetSharedData("Player:Frozen", true);
                     NAPI.Player.SpawnPlayer(player, coords[0], coords[1].Z);
 
                     string json = NAPI.Util.ToJson(characters);
@@ -81,7 +81,7 @@ namespace Server.Characters
             {
                 NAPI.Task.Run(() =>
                 {
-                    player.SetSharedData("player:Frozen", true);
+                    player.SetSharedData("Player:Frozen", true);
                     NAPI.Player.SpawnPlayer(player, new Vector3(-818f, 177f, 73f));
                     Editor.SetupCharEditor(player, accID);//nincs karaktere, bedobni karakter készítőbe
                 }, 1000);
@@ -95,13 +95,13 @@ namespace Server.Characters
     [RemoteEvent("server:CharChange")]
     public static void HandleCharacterChange(Player player, int characterid)
     {
-        player.SetSharedData("player:Invisible", true);
+        player.SetSharedData("Player:Invisible", true);
         uint charid = Convert.ToUInt32(characterid);
         Appearance.HandleCharacterAppearanceById(player, charid);
 
             NAPI.Task.Run(() =>
             {
-                player.SetSharedData("player:Invisible", false);
+                player.SetSharedData("Player:Invisible", false);
             }, 150);
         }
 
@@ -148,7 +148,7 @@ namespace Server.Characters
 
                         Properties.SendPropertiesToPlayer(player);
                         
-                        player.SetSharedData("player:Frozen", false);
+                        player.SetSharedData("Player:Frozen", false);
                         player.SetData<string>("Player:CharacterSelector", null);
                         player.TriggerEvent("client:Chat", true);
                         player.TriggerEvent("client:HUD", true);

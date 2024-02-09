@@ -127,7 +127,7 @@ namespace Server.Characters
                 {
                     NAPI.Task.Run(() =>
                     {
-                        player.SetSharedData("player:Frozen", false);
+                        player.SetSharedData("Player:Frozen", false);
                         Selector.ProcessCharScreen(player);
                     }, 5000);
                 }
@@ -143,7 +143,7 @@ namespace Server.Characters
                 {
                     NAPI.Task.Run(() =>
                     {
-                        player.SetSharedData("player:Frozen", false);
+                        player.SetSharedData("Player:Frozen", false);
                         player.StopAnimation();
                         Selector.ProcessCharScreen(player);
                     }, 5000);

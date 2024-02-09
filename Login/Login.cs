@@ -14,7 +14,7 @@ namespace Server.Auth
         [ServerEvent(Event.PlayerConnected)]
         public void OnPlayerConnect(Player player)
         {
-            player.SetSharedData("player:Frozen", true);
+            player.SetSharedData("Player:Frozen", true);
             player.Position = new Vector3(24.36f, 7644.2f, 19.2f);
             string serial = player.Serial;
             ulong socialID = player.SocialClubId;

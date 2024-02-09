@@ -210,8 +210,8 @@ namespace Server.Vehicles
             player.Dimension = Convert.ToUInt32(player.Id+1);
             player.Position = new Vector3(-42.3f, -1104f, 26.4f);
             
-            player.SetSharedData("player:Frozen", true);
-            player.SetSharedData("player:Invisible", true);
+            player.SetSharedData("Player:Frozen", true);
+            player.SetSharedData("Player:Invisible", true);
             
             Vehicle v = NAPI.Vehicle.CreateVehicle(NAPI.Util.GetHashKey("elegy"), new Vector3(-44.7f, -1098.1f, 26.2f), 150f, 0, 0, "", 255, true, false, player.Dimension);
 

@@ -974,10 +974,10 @@ namespace Server.Admin
             Player target = GetPlayerById(targetid);
             if (target != null)
             {
-                if (target.HasSharedData("player:Frozen"))
+                if (target.HasSharedData("Player:Frozen"))
                 {
-                    bool state = target.GetSharedData<bool>("player:Frozen");
-                    NAPI.Data.SetEntitySharedData(target, "player:Frozen", !state);
+                    bool state = target.GetSharedData<bool>("Player:Frozen");
+                    NAPI.Data.SetEntitySharedData(target, "Player:Frozen", !state);
                     if (!state)
                     {
                         player.SendChatMessage("Lefagyasztottad " + target.Name + " játékost.");
@@ -992,7 +992,7 @@ namespace Server.Admin
                 }
                 else
                 {
-                    NAPI.Data.SetEntitySharedData(target, "player:Frozen", true);
+                    NAPI.Data.SetEntitySharedData(target, "Player:Frozen", true);
                     player.SendChatMessage("Lefagyasztottad " + target.Name + " játékost.");
                     target.SendChatMessage(player.Name + " lefagyasztott téged.");
                 }
@@ -1007,14 +1007,14 @@ namespace Server.Admin
         [Command("disappear", Alias = "dis")]
         public void Disappear(Player player)
         {
-            if (player.HasSharedData("player:Invisible"))
+            if (player.HasSharedData("Player:Invisible"))
             {
-                bool state = player.GetSharedData<bool>("player:Invisible");
-                NAPI.Data.SetEntitySharedData(player, "player:Invisible", !state);
+                bool state = player.GetSharedData<bool>("Player:Invisible");
+                NAPI.Data.SetEntitySharedData(player, "Player:Invisible", !state);
             }
             else
             {
-                NAPI.Data.SetEntitySharedData(player, "player:Invisible", true);
+                NAPI.Data.SetEntitySharedData(player, "Player:Invisible", true);
             }
         }
 
@@ -1089,16 +1089,16 @@ namespace Server.Admin
                 {
                     NAPI.Notification.SendNotificationToPlayer(player, "FLY kikapcsolva.", false);
                     NAPI.Data.SetEntitySharedData(player, "player:Flying", false);
-                    NAPI.Data.SetEntitySharedData(player, "player:Invisible", false);
-                    NAPI.Data.SetEntitySharedData(player, "player:Frozen", false);
+                    NAPI.Data.SetEntitySharedData(player, "Player:Invisible", false);
+                    NAPI.Data.SetEntitySharedData(player, "Player:Frozen", false);
                     player.TriggerEvent("client:Fly");
                 }
                 else
                 {
                     NAPI.Notification.SendNotificationToPlayer(player, "FLY bekapcsolva.", false);
                     NAPI.Data.SetEntitySharedData(player, "player:Flying", true);
-                    NAPI.Data.SetEntitySharedData(player, "player:Invisible", true);
-                    NAPI.Data.SetEntitySharedData(player, "player:Frozen", true);
+                    NAPI.Data.SetEntitySharedData(player, "Player:Invisible", true);
+                    NAPI.Data.SetEntitySharedData(player, "Player:Frozen", true);
                     player.TriggerEvent("client:Fly");
                 }
             }

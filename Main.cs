@@ -6,6 +6,7 @@ using MySql.Data.MySqlClient;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Security.AccessControl;
+using Server.Admin;
 
 namespace Server
 {
@@ -99,14 +100,14 @@ namespace Server
             {3056410471, "Ray Minigun"},
             {2481070269, "Grenade"},
             {2694266206, "BZ Gas"},
-            {4256991824, "Smoke Grenade"},
+            {4256991824, "Füstgránát"},
             {1233104067, "Flare"},
             {615608432, "Molotov koktél"},
             {741814745, "Sticky Bomb"},
             {2874559379, "Proximity Mine"},
-            {126349499, "Snowball"},
+            {126349499, "Hógolyó"},
             {3125143736, "Pipe Bomb"},
-            {600439132, "Baseball"},
+            {600439132, "Baseball ütő"},
             {883325847, "Jerry Can"},
             {101631238, "Tűzoltókészülék"},
             {4222310262, "Ejtőernyő"},
@@ -478,6 +479,17 @@ namespace Server
                 Database.Log.Log_Server(player.Name + " meghalt. Indok: " + WeaponDatabase.GetWeaponName(reason));
             }
 
+            Vector3 pos = player.Position;
+            NAPI.Player.SpawnPlayer(player, pos);
+            player.Position = pos;
+        }
+
+        [RemoteEvent("server:AddDamageToPlayer")]
+        public void AddDamageToPlayer(Player player, int targetid, int damage, int bone)
+        {
+            Player target = Commands.GetPlayerById(targetid);
+            WeaponHash weapon = NAPI.Player.GetPlayerCurrentWeapon(player);
+            Database.Log.Log_Server(player.Name + " megsebezte " + target.Name + " játékost. DMG: " + damage + " Bone: " + bone + " Weapon: " + weapon.ToString());
         }
     }
 }

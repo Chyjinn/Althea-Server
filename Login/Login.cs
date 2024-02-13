@@ -111,7 +111,7 @@ namespace Server.Auth
                                         player.TriggerEvent("client:DestroyAuthForm");
                                         Selector.ProcessCharScreen(player);
 
-                                        player.SetSharedData("player:AdminLevel", adminData.Item1);
+                                        player.SetSharedData("Player:AdminLevel", adminData.Item1);
                                         player.SetSharedData("player:AdminNick", adminData.Item2);
                                         player.SetSharedData("player:AdminDuty", false);
                                     });

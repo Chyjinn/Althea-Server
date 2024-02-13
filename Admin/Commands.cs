@@ -300,7 +300,7 @@ namespace Server.Admin
         [Command("adminduty", Alias = "aduty", Hide = true)]
         public void Adminduty(Player player)
         {
-            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
 
             if (Levels.IsPlayerAdmin("adminduty", adminlevel))
             {
@@ -334,7 +334,7 @@ namespace Server.Admin
         [Command("unjail", Alias = "unaj", Hide = true)]
         public async void UnJail(Player player, int targetid = -1)
         {
-            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
 
             if (Levels.IsPlayerAdmin("unjail", adminlevel))
             {
@@ -400,7 +400,7 @@ namespace Server.Admin
                 int targetid;
             int time;
             string reason = "";
-            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
 
             if (Levels.IsPlayerAdmin("adminjail", adminlevel))
             {
@@ -527,7 +527,7 @@ namespace Server.Admin
         [Command("reloadacmds")]
         public void ReloadAdminCommands(Player player)
         {
-            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
             if (Levels.IsPlayerAdmin("reloadacmds", adminlevel))
             {
                 Admin.Levels.LoadAcmds();
@@ -538,7 +538,7 @@ namespace Server.Admin
         [Command("setcommandlevel", Alias = "setacmd", GreedyArg = true, Hide = true)]
         public async void SetAdminCommandLevel(Player player, string parameters = "")
         {
-            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
 
             if (Levels.IsPlayerAdmin("setcommandlevel", adminlevel))
             {
@@ -564,7 +564,7 @@ namespace Server.Admin
         [Command("setadminnick", Alias = "setanick", GreedyArg = true, Hide = true)]
         public async void SetPlayerAdminNick(Player player, string parameters = "")
         {
-            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
 
             if (Levels.IsPlayerAdmin("setadminnick", adminlevel))
             {
@@ -617,7 +617,7 @@ namespace Server.Admin
         [Command("setadminlevel",Alias = "setalevel", GreedyArg = true, Hide = true)]
         public async void SetPlayerAdminLevel(Player player, string parameters = "")
         {
-            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
             
             if (Levels.IsPlayerAdmin("setadminlevel", adminlevel))
             {
@@ -648,9 +648,9 @@ namespace Server.Admin
                         //megkeressük a target játékost
                         if (target != null)
                         {
-                            int targetoriginallevel = target.GetSharedData<int>("player:AdminLevel");
+                            int targetoriginallevel = target.GetSharedData<int>("Player:AdminLevel");
                             string adminnick = player.GetSharedData<string>("player:AdminNick");
-                            target.SetSharedData("player:AdminLevel", targetlevel);
+                            target.SetSharedData("Player:AdminLevel", targetlevel);
                             uint accid = target.GetData<uint>("Player:AccID");
                             NAPI.Chat.SendChatMessageToAll(adminnick + " átállította " + target.Name + " admin szintjét. [" + targetoriginallevel + "->" + targetlevel+"]");
                             await Admin.Levels.SetAdminLevel(accid, targetlevel);
@@ -743,12 +743,10 @@ namespace Server.Admin
             {
                 if (player.Dead == true)
                 {
+                    Vector3 pos = player.Position;
                     NAPI.Player.SetPlayerHealth(player, hp);
                     NAPI.Player.WarpPlayerOutOfVehicle(player);
-                    Vector3 pos = player.Position;
-                    NAPI.Player.SpawnPlayer(player, pos);
-                    
-                    player.Health = hp;
+                    player.Position = pos;
                     player.SendChatMessage("HP-d sikeresen átállítva. (" + hp + ")");
                 }
                 else
@@ -764,16 +762,15 @@ namespace Server.Admin
                 {
                     if (target.Dead == true)
                     {
-                        target.WarpOutOfVehicle();
                         Vector3 pos = target.Position;
-                        NAPI.Player.SpawnPlayer(target, pos);
-                        player.Health = hp;
+                        NAPI.Player.SetPlayerHealth(target, hp);
+                        NAPI.Player.WarpPlayerOutOfVehicle(target);
+                        target.Position = pos;
                         player.SendChatMessage(target.Name + " HP-ja átállítva. (" + hp + ")");
                         target.SendChatMessage(player.Name + " átállította a HP-d. (" + hp + ")");
                     }
                     else
                     {
-                        
                         NAPI.Player.SetPlayerHealth(target, hp);
                         player.SendChatMessage(target.Name + " HP-ja átállítva. (" + hp + ")");
                         target.SendChatMessage(player.Name + " átállította a HP-d. (" + hp + ")");
@@ -868,7 +865,7 @@ namespace Server.Admin
         [Command("setdimension", Alias = "setdim", GreedyArg = true, Hide = true)]
         public void SetDimension(Player player, string parameters = "")
         {
-            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
 
             if (Levels.IsPlayerAdmin("setdimension", adminlevel))
             {
@@ -916,7 +913,7 @@ namespace Server.Admin
         [Command("admin")]
         public void GetAdminLevel(Player player)
         {
-            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
+            int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
             player.SendChatMessage("Admin szinted: " + adminlevel);
         }
 
@@ -1078,37 +1075,41 @@ namespace Server.Admin
         [Command("fly", Alias ="freecam")]
         public void ToggleFly(Player player)
         {
-            int adminlevel = player.GetSharedData<int>("player:AdminLevel");
-
-            if (Levels.IsPlayerAdmin("fly", adminlevel))
+            if (player.HasSharedData("Player:AdminLevel"))
             {
-                bool state = false;
-                if (NAPI.Data.HasEntitySharedData(player, "player:Flying"))
-                {
-                    state = (bool)NAPI.Data.GetEntitySharedData(player, "player:Flying");
-                }
+                int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
 
-                if (state)
+                if (Levels.IsPlayerAdmin("fly", adminlevel))
                 {
-                    NAPI.Notification.SendNotificationToPlayer(player, "FLY kikapcsolva.", false);
-                    NAPI.Data.SetEntitySharedData(player, "player:Flying", false);
-                    NAPI.Data.SetEntitySharedData(player, "Player:Invisible", false);
-                    NAPI.Data.SetEntitySharedData(player, "Player:Frozen", false);
-                    player.TriggerEvent("client:Fly");
+                    bool state = false;
+                    if (NAPI.Data.HasEntitySharedData(player, "player:Flying"))
+                    {
+                        state = (bool)NAPI.Data.GetEntitySharedData(player, "player:Flying");
+                    }
+
+                    if (state)
+                    {
+                        NAPI.Notification.SendNotificationToPlayer(player, "FLY kikapcsolva.", false);
+                        NAPI.Data.SetEntitySharedData(player, "player:Flying", false);
+                        NAPI.Data.SetEntitySharedData(player, "Player:Invisible", false);
+                        NAPI.Data.SetEntitySharedData(player, "Player:Frozen", false);
+                        player.TriggerEvent("client:Fly");
+                    }
+                    else
+                    {
+                        NAPI.Notification.SendNotificationToPlayer(player, "FLY bekapcsolva.", false);
+                        NAPI.Data.SetEntitySharedData(player, "player:Flying", true);
+                        NAPI.Data.SetEntitySharedData(player, "Player:Invisible", true);
+                        NAPI.Data.SetEntitySharedData(player, "Player:Frozen", true);
+                        player.TriggerEvent("client:Fly");
+                    }
                 }
                 else
                 {
-                    NAPI.Notification.SendNotificationToPlayer(player, "FLY bekapcsolva.", false);
-                    NAPI.Data.SetEntitySharedData(player, "player:Flying", true);
-                    NAPI.Data.SetEntitySharedData(player, "Player:Invisible", true);
-                    NAPI.Data.SetEntitySharedData(player, "Player:Frozen", true);
-                    player.TriggerEvent("client:Fly");
+                    NAPI.Chat.SendChatMessageToPlayer(player, "Nincs jogod ehhez a parancshoz!");
                 }
             }
-            else
-            {
-                NAPI.Chat.SendChatMessageToPlayer(player, "Nincs jogod ehhez a parancshoz!");
-            }
+
 
         }
         [RemoteEvent("server:VehicleIndicator")]

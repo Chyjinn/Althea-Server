@@ -743,9 +743,11 @@ namespace Server.Admin
             {
                 if (player.Dead == true)
                 {
-                    player.WarpOutOfVehicle();
+                    NAPI.Player.SetPlayerHealth(player, hp);
+                    NAPI.Player.WarpPlayerOutOfVehicle(player);
                     Vector3 pos = player.Position;
                     NAPI.Player.SpawnPlayer(player, pos);
+                    
                     player.Health = hp;
                     player.SendChatMessage("HP-d sikeresen átállítva. (" + hp + ")");
                 }
@@ -762,7 +764,7 @@ namespace Server.Admin
                 {
                     if (target.Dead == true)
                     {
-                        player.WarpOutOfVehicle();
+                        target.WarpOutOfVehicle();
                         Vector3 pos = target.Position;
                         NAPI.Player.SpawnPlayer(target, pos);
                         player.Health = hp;
@@ -771,6 +773,7 @@ namespace Server.Admin
                     }
                     else
                     {
+                        
                         NAPI.Player.SetPlayerHealth(target, hp);
                         player.SendChatMessage(target.Name + " HP-ja átállítva. (" + hp + ")");
                         target.SendChatMessage(player.Name + " átállította a HP-d. (" + hp + ")");

@@ -472,13 +472,12 @@ namespace Server
             if (killer != null)
             {
                 Database.Log.Log_Server(killer.Name + " megölte "+ player.Name + " játékost. Indok: " + WeaponDatabase.GetWeaponName(reason));
-
             }
             else
             {
                 Database.Log.Log_Server(player.Name + " meghalt. Indok: " + WeaponDatabase.GetWeaponName(reason));
-
             }
+
         }
     }
 }

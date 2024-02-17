@@ -197,6 +197,7 @@ namespace Server.Admin
                             state = true;
                         }
                     }
+                   
                     catch (Exception ex)
                     {
                         Database.Log.Log_Server(ex.ToString());
@@ -210,7 +211,7 @@ namespace Server.Admin
         public static async Task<bool> UpdateAdminUnJail(long jailid, uint adminid)
         {
             bool state = false;
-            string query = $"UPDATE `adminjail` SET `unjailBy` = @AdminID WHERE `adminjail`.`id` = @JailID;";
+            string query = $"UPDATE `adminjail` SET `unjailBy` = @AdminID, `servedDate` = CURRENT_TIMESTAMP WHERE `adminjail`.`id` = @JailID;";
             using (MySqlConnection con = new MySqlConnection())
             {
                 con.ConnectionString = await Database.DBCon.GetConString();
@@ -397,7 +398,7 @@ namespace Server.Admin
             
                 //ha jailben van akkor törölje az előzőt neki és írjon egy figyelmeztetést/logot -> visszaélés ellen
 
-                int targetid;
+            int targetid;
             int time;
             string reason = "";
             int adminlevel = player.GetSharedData<int>("Player:AdminLevel");
@@ -418,7 +419,7 @@ namespace Server.Admin
                         }
 
                         Player target = GetPlayerById(targetid);
-                        if (true)//player != target)
+                        if (player != target)
                         {
                             if (target.HasData("Player:CharID") && target.HasData("Player:AccID"))//ha be van jelentkezve és karakterben is van
                             {
@@ -560,7 +561,7 @@ namespace Server.Admin
                 }
             }
         }
-
+        
         [Command("setadminnick", Alias = "setanick", GreedyArg = true, Hide = true)]
         public async void SetPlayerAdminNick(Player player, string parameters = "")
         {
@@ -729,9 +730,6 @@ namespace Server.Admin
                 player.SendChatMessage("ragdoll on");
                 NAPI.Data.SetEntitySharedData(player, "player:Ragdoll", true);
             }
-
-
-            
         }
 
 
@@ -744,15 +742,36 @@ namespace Server.Admin
                 if (player.Dead == true)
                 {
                     Vector3 pos = player.Position;
-                    NAPI.Player.SetPlayerHealth(player, hp);
+                    Vector3 rot = player.Rotation;
+                    
                     NAPI.Player.WarpPlayerOutOfVehicle(player);
-                    player.Position = pos;
+
                     player.SendChatMessage("HP-d sikeresen átállítva. (" + hp + ")");
+                    
+                    if (hp == 100)
+                    {
+                        Characters.Injuries.HealPlayerInjuries(player);
+                        player.SetSharedData("Player:Frozen", false);
+                        Characters.Injuries.StopPlayerAnim(player);
+                        Characters.Injuries.CheckPlayerDamage(player);
+                        player.ResetData("Player:InAnim");
+                    }
+                    NAPI.Player.SpawnPlayer(player, pos, rot.Z);
+                    NAPI.Player.SetPlayerHealth(player, hp);
                 }
                 else
                 {
                     NAPI.Player.SetPlayerHealth(player, hp);
                     player.SendChatMessage("HP-d sikeresen átállítva. (" + hp + ")");
+
+                    if (hp == 100)
+                    {
+                        Characters.Injuries.HealPlayerInjuries(player);
+                        player.SetSharedData("Player:Frozen", false);
+                        Characters.Injuries.StopPlayerAnim(player);
+                        Characters.Injuries.CheckPlayerDamage(player);
+                        player.ResetData("Player:InAnim");
+                    }
                 }
             }
             else
@@ -763,17 +782,39 @@ namespace Server.Admin
                     if (target.Dead == true)
                     {
                         Vector3 pos = target.Position;
-                        NAPI.Player.SetPlayerHealth(target, hp);
+                        Vector3 rot = target.Rotation;
+            
                         NAPI.Player.WarpPlayerOutOfVehicle(target);
-                        target.Position = pos;
+
                         player.SendChatMessage(target.Name + " HP-ja átállítva. (" + hp + ")");
                         target.SendChatMessage(player.Name + " átállította a HP-d. (" + hp + ")");
+
+                        if (hp == 100)
+                        {
+                            Characters.Injuries.HealPlayerInjuries(target);
+                            target.SetSharedData("Player:Frozen", false);
+                            Characters.Injuries.StopPlayerAnim(target);
+                            Characters.Injuries.CheckPlayerDamage(target);
+                            target.ResetData("Player:InAnim");
+                        }
+
+                        NAPI.Player.SpawnPlayer(target, pos, rot.Z);
+                        NAPI.Player.SetPlayerHealth(target, hp);
                     }
                     else
                     {
                         NAPI.Player.SetPlayerHealth(target, hp);
                         player.SendChatMessage(target.Name + " HP-ja átállítva. (" + hp + ")");
                         target.SendChatMessage(player.Name + " átállította a HP-d. (" + hp + ")");
+
+                        if (hp == 100)
+                        {
+                            Characters.Injuries.HealPlayerInjuries(target);
+                            target.SetSharedData("Player:Frozen", false);
+                            Characters.Injuries.StopPlayerAnim(target);
+                            Characters.Injuries.CheckPlayerDamage(target);
+                            target.ResetData("Player:InAnim");
+                        }
                     }
                     
                 }
@@ -781,8 +822,6 @@ namespace Server.Admin
                 {
                     player.SendChatMessage("Nincs ilyen játékos");
                 }
-
-
             }
         }
 
@@ -1144,7 +1183,6 @@ namespace Server.Admin
                     }
                 }
             }
-
         }
 
         [RemoteEvent("server:ToggleCrouching")]
@@ -1160,6 +1198,9 @@ namespace Server.Admin
                 player.SetSharedData("Player:Crouching", true);
             }
         }
+
+
+
 
         [Command("serial")]
         public void ShowSerial(Player player)

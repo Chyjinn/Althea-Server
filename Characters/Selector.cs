@@ -119,7 +119,7 @@ namespace Server.Characters
                     player.TriggerEvent("client:DeleteCamera");
                     player.TriggerEvent("client:hideCharScreen");
                     player.SetData("Player:CharID",charid);
-                    player.SetData("Player:Gender", c.Appearance.Gender);
+                    player.SetSharedData("Player:Gender", c.Appearance.Gender);
                     player.SetSharedData("Player:CharacterName",c.Name);
                     player.SetSharedData("Player:VisibleName",c.Name);
                     player.Dimension = 0;
@@ -138,12 +138,14 @@ namespace Server.Characters
                                 player.Dimension = player.Id;
                                 player.SendChatMessage("[AdminJail] " + aj.AdminNick + " bebörtönzött téged " + aj.Time + " percre. Hátravan még: "+aj.Remaining+" perc. Indok: " + aj.Reason);
                                 player.TriggerEvent("client:SkyCam", false);
-                            });
+                                Characters.Injuries.SetPlayerInjuries(player);
+                            }); 
                         }
                         else
                         {
                             NAPI.Player.SpawnPlayer(player, new Vector3(c.posX, c.posY, c.posZ), c.Rot);
                             player.TriggerEvent("client:SkyCam", false);
+                            Characters.Injuries.SetPlayerInjuries(player);
                         }
 
                         Properties.SendPropertiesToPlayer(player);

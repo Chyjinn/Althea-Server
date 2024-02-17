@@ -87,7 +87,6 @@ namespace Server.Admin
 
         public static async Task<bool> SetCommandLevel(string adminCmd, int adminlevel)
         {
-
             string query = $"UPDATE `acmds` SET `adminLevel` = @AdminLevel WHERE `acmds`.`command` = @AdminCMD;";
             using (MySqlConnection con = new MySqlConnection())
             {
@@ -178,8 +177,8 @@ namespace Server.Admin
                     {
                         Database.Log.Log_Server(ex.ToString());
                     }
-                    await con.CloseAsync();
                 }
+                con.CloseAsync();
             }
 
             return state;

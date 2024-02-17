@@ -1488,7 +1488,7 @@ namespace Server.Inventory
         [Command("bra")]
         public async void ToggleBra(Player player)
         {
-            bool gender = player.GetData<bool>("Player:Gender");
+            bool gender = player.GetSharedData<bool>("Player:Gender");
             if (!gender)
             {
                 if (player.GetClothesDrawable(11) == 82)
@@ -2517,7 +2517,7 @@ namespace Server.Inventory
                                 {
                                     NAPI.Task.Run(() =>
                                     {
-                                        bool gender = player.GetData<bool>("Player:Gender");
+                                        bool gender = player.GetSharedData<bool>("Player:Gender");
                                         //player.TriggerEvent("client:RemoveItem", i1.DBID);
                                         //beállítjuk a rajta lévő pólót mivel levette a kesztyűt, csak a torso-t akarjuk az alap értékre állítani
                                         Item Polo;
@@ -2646,7 +2646,7 @@ namespace Server.Inventory
 
                                             NAPI.Task.Run(() =>
                                             {
-                                                bool gender = player.GetData<bool>("Player:Gender");
+                                                bool gender = player.GetSharedData<bool>("Player:Gender");
                                                 //player.TriggerEvent("client:RemoveItem", i1.DBID);
                                                 //beállítjuk a rajta lévő pólót mivel levette a kesztyűt, csak a torso-t akarjuk az alap értékre állítani
                                                 Item Polo;
@@ -2937,7 +2937,7 @@ namespace Server.Inventory
         [RemoteEvent("server:SetWornClothing")]
         public static async void SetWornClothing(Player player)
         {
-            bool gender = player.GetData<bool>("Player:Gender");
+            bool gender = player.GetSharedData<bool>("Player:Gender");
 
             if (gender)//férfi
             {
@@ -3231,7 +3231,7 @@ namespace Server.Inventory
         public async void MoveItemToClothing(Player player, uint db_id, int target_slot)
         {
             //slotokat kezelni, a megfelelő ruhát ráadni a playerre, törölni az inventory-jából vagy container-ből az itemet nála és hozzáadni a slothoz
-            bool gender = player.GetData<bool>("Player:Gender");
+            bool gender = player.GetSharedData<bool>("Player:Gender");
             Item i = await GetItemByDbId(db_id);
             if (await HasAccessToItem(player,i))
             {
@@ -3620,7 +3620,7 @@ namespace Server.Inventory
                     //player.TriggerEvent("client:RemoveItem", i1.DBID);
                     //player.TriggerEvent("client:RemoveItem", i2.DBID);
                     Clothing c = NAPI.Util.FromJson<Clothing>(i1.ItemValue);
-                    bool gender = player.GetData<bool>("Player:Gender");
+                    bool gender = player.GetSharedData<bool>("Player:Gender");
                     int correctDrawable = GetCorrectClothing(gender, clothing_id, c.Drawable);
                     player.SetClothes(clothing_id, correctDrawable, c.Texture);
 
@@ -3660,7 +3660,7 @@ namespace Server.Inventory
                     //player.TriggerEvent("client:RemoveItem", i.DBID);
                     Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
 
-                    bool gender = player.GetData<bool>("Player:Gender");
+                    bool gender = player.GetSharedData<bool>("Player:Gender");
                     int correctDrawable = GetCorrectClothing(gender, clothing_id, c.Drawable);
                     player.SetClothes(clothing_id, correctDrawable, c.Texture);
 
@@ -3689,7 +3689,7 @@ namespace Server.Inventory
                     //player.TriggerEvent("client:RemoveItem", i2.DBID);
                     Clothing c = NAPI.Util.FromJson<Clothing>(i1.ItemValue);
 
-                    bool gender = player.GetData<bool>("Player:Gender");
+                    bool gender = player.GetSharedData<bool>("Player:Gender");
                     int correctDrawable = GetCorrectAccessory(gender, clothing_id, c.Drawable);
                     player.SetAccessories(clothing_id, correctDrawable, c.Texture);
 
@@ -3727,7 +3727,7 @@ namespace Server.Inventory
                     AddItemToInventory(player, i.OwnerType, i.OwnerID, i);
                     //player.TriggerEvent("client:RemoveItem", i.DBID);
                     Clothing c = NAPI.Util.FromJson<Clothing>(i.ItemValue);
-                    bool gender = player.GetData<bool>("Player:Gender");
+                    bool gender = player.GetSharedData<bool>("Player:Gender");
                     int correctDrawable = GetCorrectAccessory(gender, clothing_id, c.Drawable);
                     player.SetAccessories(clothing_id, correctDrawable, c.Texture);
 

@@ -725,7 +725,7 @@ namespace Server.Characters
                     {
                         if (item.ID == shopid)
                         {
-                            bool gender = player.GetData<bool>("Player:Gender");
+                            bool gender = player.GetSharedData<bool>("Player:Gender");
                             List<ClothingItem> clothes = await GetClothingShopItems(item, gender);
                             NAPI.Task.Run(() =>
                             {
@@ -760,7 +760,7 @@ namespace Server.Characters
                 {
                     if (item.ID == shopid)
                     {
-                        bool gender = player.GetData<bool>("Player:Gender");
+                        bool gender = player.GetSharedData<bool>("Player:Gender");
                         List<ClothingItem> clothes = await GetClothingShopItems(item, gender);
                         
                         NAPI.Task.Run(() =>
@@ -801,7 +801,7 @@ namespace Server.Characters
         [Command("clothingshop", Alias = "clothes")]
         public async void Clothes(Player player, uint shopid)
         {
-            bool gender = player.GetData<bool>("Player:Gender");
+            bool gender = player.GetSharedData<bool>("Player:Gender");
             ClothingShop shop = ClothingShops.Where((i) => i.ID == shopid).FirstOrDefault();
             
             List<ClothingItem> clothes = await GetClothingShopItems(shop, gender);

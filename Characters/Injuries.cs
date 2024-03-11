@@ -444,7 +444,7 @@ namespace Server.Characters
                     }
 
                     player.SetSharedData("Player:Frozen", true);
-                }, 5000);
+                }, 3000);
             }
             else//nincs animban
             {            
@@ -468,45 +468,23 @@ namespace Server.Characters
                     }
 
 
-                    if (HeadShot(player))//fejbe lőtték, meghalt
+                    if (killer != null)
                     {
-                        if (killer != null)
-                        {
-                            Database.Log.Log_Server(killer.Name + " megölte " + player.Name + " játékost. (Fejlövés) Indok: " + Characters.WeaponDatabase.GetWeaponName(reason) + "\nSérülései:\n" + inj);
-                        }
-                        else
-                        {
-                            Database.Log.Log_Server(player.Name + " meghalt. (Fejlövés) Indok: " + Characters.WeaponDatabase.GetWeaponName(reason) + "\nSérülései:\n" + inj);
-                        }
-
-                        player.SendChatMessage("Fejbelőttek");
-                        if (killer != null)
-                        {
-                            killer.SendChatMessage("Headshot!");
-                        }
-
-                        player.SetSharedData("Player:Frozen", true);
-                
+                        Database.Log.Log_Server(killer.Name + " animba kényszerítette " + player.Name + " játékost. Indok: " + Characters.WeaponDatabase.GetWeaponName(reason) + "\nSérülései:\n" + inj);
                     }
-                    else//nincs fejlövése, csekkoljuk az animot
+                    else
                     {
-                        if (killer != null)
-                        {
-                            Database.Log.Log_Server(killer.Name + " animba kényszerítette " + player.Name + " játékost. Indok: " + Characters.WeaponDatabase.GetWeaponName(reason) + "\nSérülései:\n" + inj);
-                        }
-                        else
-                        {
 
-                            Database.Log.Log_Server(player.Name + " animba esett. Indok: " + Characters.WeaponDatabase.GetWeaponName(reason) + "\nSérülései:\n" + inj);
-                        }
-
-                        CheckForAnim(player);
+                        Database.Log.Log_Server(player.Name + " animba esett. Indok: " + Characters.WeaponDatabase.GetWeaponName(reason) + "\nSérülései:\n" + inj);
                     }
+
+                    CheckForAnim(player);
+                    
 
                     //beállítjuk a hp-ját 20-ra, megnézzük a sérüléseit és a megfelelő animba helyezzük őt
 
                     //Characters.Injuries.HealPlayerInjuries(player);
-                }, 5000);
+                }, 3000);
 
             }
 
@@ -682,19 +660,25 @@ namespace Server.Characters
         }
 
         [RemoteEvent("server:PlayerCrashed")]
-        public void PlayerCrashed(Player player, int damage, uint bone)
+        public void PlayerCrashed(Player player, int damage, uint bone, float bodyhpdmg)
         {
             string dmgtype = "Autóbaleset";
-
+            if (bodyhpdmg >= 50f)
+            {
+                PlayerAnimInVehicle(player);
+            }
             AddPlayerInjury(player, "-", damage, bone, dmgtype);
         }
 
         [RemoteEvent("server:PlayerCrashedPlayer")]
-        public void PlayerCrashedPlayer(Player player, int targetid, int damage, uint bone)
+        public void PlayerCrashedPlayer(Player player, int targetid, int damage, uint bone, float bodyhpdmg)
         {
             Player target = Admin.Commands.GetPlayerById(targetid);
             string dmgtype = "Autóbaleset";
-
+            if (bodyhpdmg >= 50f)
+            {
+                PlayerAnimInVehicle(player);
+            }
             AddPlayerInjury(player, target.Name, damage, bone, dmgtype);
         }
 
@@ -704,6 +688,16 @@ namespace Server.Characters
             string dmgtype = "Elütés";
             AddPlayerInjury(player,"-", damage, bone, dmgtype);
         }
+
+
+        public void PlayerAnimInVehicle(Player player)
+        {
+            player.SendChatMessage("Animba estél!");
+            NAPI.Player.SetPlayerHealth(player, 20);
+            player.TriggerEvent("client:EnableAnim");
+            player.SetData("Player:InAnim", false);
+        }
+
 
         public async void AddPlayerInjury(Player player, string causedby, int damage, uint bone, string dmgtype)
         {
